@@ -1,0 +1,12 @@
+{
+  "fileLink": "http://localhost/downloads/",
+  "fileLinkEnabled": false,
+  "folderLink": "http://localhost/downloads/",
+  "folderLinkEnabled": false,
+  "incompleteFileLink": "http://localhost/downloads/incomplete/",
+  "incompleteFileLinkEnabled": false,
+  "incompleteFolderLink": "http://localhost/downloads/incomplete/",
+  "incompleteFolderLinkEnabled": false,
+  "torrentLink": "http://localhost/torrents/",
+  "torrentLinkEnabled": false
+}
