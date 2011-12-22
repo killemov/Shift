@@ -89,7 +89,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
   
   shift: {
-    version: 0.9,
+    version: "0.9.1",
     
     updateTorrents: newPeriodicalUpdater( "torrent-get", 1, function( response ) {
       var arguments = getArguments( response );
@@ -1755,6 +1755,11 @@ function renderPage() {
   globals.uBrowse = rInput( null, { "class": "styled upload", type: "button", value: "Browse" } );
   globals.uUrlLed = rLed().observe( "click", selectFileLed.curry( false ) );
   globals.uUrl = rInput( null );
+  globals.uDir = rInput( globals.shift.session["download-dir"] );
+  
+  globals.uPausedLed = rLed();
+  globals.uPausedLed.observe( "click", globals.uPausedLed.toggle );
+  
   globals.uUpload = rInput( null, { "class": "styled upload", type: "button", value: "Upload" } );
   selectFileLed( true );
   
@@ -1782,10 +1787,10 @@ function renderPage() {
   ).insert(
     rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
       rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", style: "display: none" } ) ).insert(
-      rE("div").insert( [ globals.uFileLed, rSpan( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ).insert(
-      rE("div").insert( [ globals.uUrlLed, rSpan( { "class": "upload" }, "Url" ), globals.uUrl ] ).insert(
-      rE("div").insert( globals.uUpload ) )
-    ) )
+      rE("div").insert( [ globals.uFileLed, rSpan( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ) ).insert(
+      rE("div").insert( [ globals.uUrlLed, rSpan( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
+      rE("div").insert( [ rSpan( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
+      rE("div").insert( [ globals.uPausedLed, rSpan( { id: "labelPaused" }, "Add paused" ), globals.uUpload ] ) )
   ) );
 
   globals.uFile.observe( "change", function( event ) {
@@ -1808,7 +1813,7 @@ function renderPage() {
     if ( globals.uploadFile ) {
       if ( globals.uFileName.value.length > 0 ) {
         wait();
-        processFile( globals.uFile.files[0] );
+        processFile( globals.uFile.files[0], globals.uDir.value, globals.uPausedLed.value );
         $("popups").close();
         globals.uFileName.value = "";
       }
@@ -1816,7 +1821,7 @@ function renderPage() {
     else {
       if ( globals.uUrl.value.length > 0 ) {
         wait();
-        processURL( globals.uUrl.value );
+        processURL( globals.uUrl.value, globals.uDir.value, globals.uPausedLed.value );
         $("popups").close();
         globals.uUrl.value = "";
       }
@@ -1849,7 +1854,7 @@ function renderPage() {
 
 var fileRead = window.File && window.FileReader && window.FileList && window.Blob;
 
-function processFile( file ) {
+function processFile( file, target, paused ) {
   if ( file == null || file.size == 0 ) {
     return;
   }
@@ -1865,7 +1870,7 @@ function processFile( file ) {
     var index = event.target.result.indexOf( search );
     if ( index > -1 ) {
       var result = event.target.result.substring( index + search.length );
-      doRequest( newRequest( "torrent-add", { "metainfo": result }, function( response ) {
+      doRequest( newRequest( "torrent-add", { "download-dir": target, "paused": paused, "metainfo": result }, function( response ) {
         $( dropId ).remove();
         // Transmisssion could not handle the file. Parse it for URL extraction.
         if ( response.responseJSON.result != "success" ) {
@@ -1884,17 +1889,17 @@ function processFile( file ) {
   torrentReader.readAsDataURL( file );
 }
 
-function processURL( url ) {
+function processURL( url, target, paused ) {
   if ( url == null || url.length == 0 ) {
     return
   }
 
-  doRequest( newRequest( "torrent-add", { "filename": url }, function( response ) {
+  doRequest( newRequest( "torrent-add", { "download-dir": target, "paused": paused, "filename": url }, function( response ) {
     if ( response.responseJSON.result == "success" ) {
       if ( url.startsWith( "magnet:" ) ) {
         globals.magnets.push( response.responseJSON.arguments["torrent-added"].id );
-        updateTorrents( [ response.responseJSON.arguments["torrent-added"] ] );
       }
+      updateTorrents( [ response.responseJSON.arguments["torrent-added"] ] );
     }
   } ) );
 }

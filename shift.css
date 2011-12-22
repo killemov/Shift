@@ -116,8 +116,12 @@ div#popupAbout {
 }
 
 div#popupAdd {
-  height: 180px;
+  height: 196px;
   width: 368px;
+}
+
+span#labelDir {
+  padding-left: 21px;
 }
 
 #popupPriority ul li {
