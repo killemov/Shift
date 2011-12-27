@@ -1052,6 +1052,7 @@ function renderTable( id, columnDefinitions, click ) {
         header.insert( cell );
       }
     }
+    updateOrder( columnDefinitions );
   }
   return table;
 }
@@ -1299,13 +1300,18 @@ function renderFiles( torrent ) {
     file.folderNodes = folderNodes;
     lastFileParts = fileParts;
 
-    if ( !file.renderNode ) {
-      Object.extend( file, torrent.fileStats[file.index] );
-      file.percentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length
-      var fileDone = file.bytesCompleted == file.length;
-      var fileName = fileParts.last();
-      var base = fileDone ? fileLink : incompleteFileLink;
+    var fileDone = file.bytesCompleted == file.length;
+    var fileName = fileParts.last();
+    var base = fileDone ? fileLink : incompleteFileLink;
 
+    if ( file.renderNode ) {
+      if ( globals.shift.settingsChanged ) {
+        file.renderNode.down( "td.name" ).update( base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName );
+      }
+    }
+    else {
+      Object.extend( file, torrent.fileStats[file.index] );
+      file.percentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
       file.renderNode = rE( "tr", { id: "f_" + file.index } );
       file.renderNode.insert(
         rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileListHandler ) ) ).insert(
@@ -1318,19 +1324,37 @@ function renderFiles( torrent ) {
     currentNode = file.renderNode;
   } );
 
+  globals.shift.settingsChanged = false;
+
   if ( dummyNode ) {
     dummyNode.remove();
   }
 }
 
 function renderFileTable( torrent ) {
-  if ( !$("fileTable" ) ) {
+  if ( $("fileTable" ) ) {
+    torrent.files.each( function( file ) {
+      var index = file.index;
+      var row = $( "f_" + index );
+      var fileStat = torrent.fileStats[ index ];
+
+      if ( fileStat.bytesCompleted != file.bytesCompleted ) {
+        file.percentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
+        updateElement( row.down( "td.percentDone" ), renderPercentage( file.percentDone ) );
+      }
+      if ( fileStat.wanted != file.wanted || fileStat.priority != file.priority ) {
+        row.down( ".led" ).set( filePriorityKeys[ fileStat.wanted ? ( 1 - fileStat.priority ) : 3 ] );
+      }
+      Object.extend( file, fileStat );
+    } );
+  }
+  else {
     globals.currentTorrent = torrent;
     var table = renderTable( "fileTable", fileColumns, function( event ) {
       for ( var i = 0, len = torrent.files.length; i < len; ++i ) {
         torrent.files[i].i = i;
       }
-      property = updateOrder( fileColumns, this.id.substring( 2 ) );      
+      var property = updateOrder( fileColumns, this.id.substring( 2 ) );
       var column = fileColumns[property];
       var o = column.order;
       
@@ -1349,22 +1373,6 @@ function renderFileTable( torrent ) {
       torrent.files[i].folderNodes = [];
     }
     renderFiles( torrent );
-  }
-  else {
-    torrent.files.each( function( file ) {
-      var index = file.index;
-      var row =  $( "f_" + index );
-      var fileStat = torrent.fileStats[ index ];
-
-      if ( fileStat.bytesCompleted != file.bytesCompleted ) {
-        file.percentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
-        updateElement( row.down( "td.percentDone" ), renderPercentage( file.percentDone ) );
-      }
-      if ( fileStat.wanted != file.wanted || fileStat.priority != file.priority ) {
-        row.down( ".led" ).set( filePriorityKeys[ fileStat.wanted ? ( 1 - fileStat.priority ) : 3 ] );
-      }
-      Object.extend( file, fileStat );
-    } );
   }
   return;
 }
@@ -1546,7 +1554,8 @@ function renderShiftTable() {
   shiftTable.body.insert(
     rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( event ) {
       var data = getChangedData( globals.shift.settings, "s_", shiftFields );
-      if ( !Object.isEmpty( data ) ) {
+      globals.shift.settingsChanged = !Object.isEmpty( data );
+      if ( globals.shift.settingsChanged ) {
         Object.extend( globals.shift.settings, data );
         data = getChangedData( globals.shift.defaultSettings, "s_", shiftFields );
         var date = new Date();
