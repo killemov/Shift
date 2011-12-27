@@ -7,10 +7,9 @@ Shift is a minimalistic approach to maximum control of your Transmission.
 
 Click on the name in a column header and the table will be sorted by that column. Click on it again and the sorting order is reversed.
 
-# Torrents:
+* Torrents:
 Click on the LED in the column header, next to the name and filtering input options are shown. By default only torrents currently downloading are shown and are sorted by percentDone in descendent order.
-
-# Files:
+* Files:
 The sorting of files contained in the torrent works similarly but with a twist or two. The first twist is that files are sorted by the given column and then the tree structure is changed to match the new sort order. The other twist is in the name column. By default it is sorted by torrent order in the exact sequence of files contained in the torrent. Click on the name column header and it is sorted by tree order, alphabetically and nested. If the files were added to the torrent in proper tree order then the view will not change.
 
 ## Improved files management.
