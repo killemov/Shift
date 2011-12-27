@@ -14,8 +14,8 @@ The sorting of files contained in the torrent works similarly but with a twist o
 
 ## Improved files management.
 
-Double-click on a torrent row or select Detail from the torrent context menu, the LED on the left*, to view the files contained in the torrent. The files are shown in a tree-like structure, with the important addition that this structure is fully functional. Change the download priority (high, normal, low, none) on a node, again from the context menu, and all subnodes are assigned the same priority. Oh, and you CAN change the priority of already downloaded files.
-<sup>* The LED also doubles as a selection indicator for batch commands, except Detail and Select.
+Double-click on a torrent row or select Detail from the torrent context menu, the LED on the left\*, to view the files contained in the torrent. The files are shown in a tree-like structure, with the important addition that this structure is fully functional. Change the download priority (high, normal, low, none) on a node, again from the context menu, and all subnodes are assigned the same priority. Oh, and you CAN change the priority of already downloaded files.
+<sup>\* The LED also doubles as a selection indicator for batch commands, except Detail and Select.</sup>
 
 ## FILES WITHIN TORRENTS ARE LINKED!
 
@@ -33,8 +33,8 @@ Why reload semi-static data each and every AJAX call? Shift tries to minimize th
 
 * "I really hate your old-skool green-on-black theme, just hate it!" No problemo, hack the css to your liking. ( Only 4 very search and replaceable colors used and 1 image. )
 * "I really need to have a column to show the eta of the torrents." Then you need to add or change the eta entry in the torrentColumns object.
-* "This functionality doesn't work on Google Chrome*." Ah, then you(!) have some 'splaining to do... and probably some work as well.
-<sup>* Swap in your favorite browser here.
+* "This functionality doesn't work on Google Chrome\*." Ah, then you(!) have some 'splaining to do... and probably some work as well.
+<sup>\* Swap in your favorite browser here.</sup>
 
 ## Interesting stuff for later.
 
