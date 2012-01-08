@@ -71,6 +71,7 @@ function newPeriodicalUpdater( method, interval, onSuccess, fields, ids ) {
     container: "torrentBody",
     frequency: interval,
     decay: 1,
+    onFailure: onFailure
   } );
 }
 

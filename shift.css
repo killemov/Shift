@@ -111,11 +111,13 @@ div#popups {
 
 div#popupAbout {
   height: 300px;
+  position: fixed;
   text-align: center;
   width: 368px;
 }
 
 div#popupAdd {
+  position: fixed;
   height: 196px;
   width: 368px;
 }
