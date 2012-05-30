@@ -20,15 +20,15 @@ Double-click on a torrent row or select Detail from the torrent context menu, th
 
 ## FILES WITHIN TORRENTS ARE LINKED!
 
-... if the file is 100% complete? No! Click on a file in a torrent and you will get a link to it. You do need to configure some base URLs first, but then the possibilities are ginormous. ( example: ftp://myname@myserver/mydownloads/... ). And even though the Transmission daemon is not meant to be used as a webserver, it IS possible to have it serve the linked file! You do need some clever file placement and/or symbolic linking for that to work.
+... If they are 100% complete? No! Click on a file in a torrent and you will get a link to it. You do need to configure some base URLs first, but then the possibilities are ginormous. ( example: ftp://myname@myserver/mydownloads/... ). And even though the Transmission daemon is not meant to be used as a webserver, it IS possible to have it serve the linked file! You do need some clever file placement and/or symbolic linking for that to work, though. I recommend using a reverse proxy for serving the files.
 
-## Improved (drag &) drop interface.
+## Improved drag & drop interface.
 
-Drop files and links on the Shift page. Currently supported are torrent files and text files containing links. (Yes, magnets are also links.) We used to use Autotrans for this.
+Drop files and links on the Shift page. Currently supported are torrent files and text files containing links. (Yes, magnets are also links.)
 
 ## Change less means more.
 
-Why reload semi-static data each and every AJAX call? Shift tries to minimize the data consumption from Transmission. This means using less bandwidth and less processing for Transmission. Because of this saving the smaller requests can be made more often. Shift also works hard to not update cell data when it doesn't need to. Select all text ( CTRL+A ) on the torrents page with a couple of torrents downloading and see what happens.
+Why reload semi-static data each and every AJAX call? Shift tries to minimize the data consumption from Transmission. This means using less bandwidth and less processing for Transmission. Because of this saving the smaller requests can be made more often. Shift also works hard to not update cell data when it doesn't need to.
 
 ## Open for mutilation.
 
@@ -41,6 +41,8 @@ Why reload semi-static data each and every AJAX call? Shift tries to minimize th
 ## Interesting stuff for later.
 
 * Blocklist
+* Peer management
 * Queue column + movement
-* Torrent stats
 * Session stats
+* Torrent stats
+* Tracker management

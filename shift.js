@@ -1,6 +1,6 @@
 /**
  * Shift: a Transmission web interface.
- * 
+ *
  * © 2011 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
@@ -42,6 +42,79 @@ catch( e ) {
     warn: ignore
   }
 }
+
+
+Object.extend( Object, {
+  isBoolean: function( value ) {
+    return typeof value === "boolean";
+  },
+  isEmpty: function( value ) {
+    for( var k in value ) {
+      if ( Object.prototype.hasOwnProperty.call( value, k ) ) {
+        return false;
+      }
+    }
+    return true;
+  }
+} );
+
+function prepare( s )
+{
+  return s ? s.toLocaleLowerCase().replace( noAlphanumeric, " " ) : s;
+}
+
+Object.extend( Array.prototype, {
+  concatUnique: function( element ) {
+    if ( Object.isArray( element ) ) {
+      var self = this;
+      element.each( function( element ) {
+        self.pushUnique( element );
+      } )
+    }
+    else {
+      this.pushUnique( element );
+    }
+    return this;
+  },
+
+  insert: function( index ) {
+    this.length = ( index > this.length ) ? index : this.length;
+    index = ( index < 0 ) ? this.length : index;
+
+    this.splice.apply( this, [index, 0].concat( Array.slice( arguments, 1 ) ) );
+    return this;
+  },
+
+  pushUnique: function( element ) {
+    if ( !this.include( element ) ) {
+      this.push( element )
+    }
+    return this;
+  },
+
+  remove: function( element ) {
+    for( var i = 0, len = this.length; i < len; ++i ) {
+      if ( this[i] == element ) {
+        this.splice( i, 1 );
+        break;
+      }
+    }
+    return this;
+  },
+
+  // Counter unstable Array.sort with additional index. ( a.i == null ? 0 : ( a.i - b.i ) )
+  sortByProperty: function( property, order, isString ) {
+    this.sort( isString ? function( a, b ) {
+      var aa = prepare( a[property] );
+      var bb = prepare( b[property] );
+      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null ? -1 : bb.localeCompare( aa ) * ( order ? -1 : 1 );
+    } : function( a, b ) {
+      var aa = a[property];
+      var bb = b[property];
+      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null || ( order ? aa < bb : bb < aa ) ? -1 : 1;
+    } );
+  }
+} );
 
 var COOKIE_KEY = "shift.settings=";
 var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
@@ -88,13 +161,13 @@ var globals = {
   columnHash: {},
   rpcUrl: "/transmission/rpc",
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
-  
+
   shift: {
-    version: "0.9.1",
-    
+    version: "0.9.2",
+
     updateTorrents: newPeriodicalUpdater( "torrent-get", 1, function( response ) {
       var arguments = getArguments( response );
-      
+
       if ( arguments.removed ) {
         arguments.removed.each( removeTorrentById );
       }
@@ -107,11 +180,11 @@ var globals = {
         }
       }
     }, updateTorrentFields, "recently-active" ),
-    
+
     updateStats: newPeriodicalUpdater( "session-stats", 5, function( response ) {
       updateFields( globals.shift.sessionStats = getArguments( response ) );
     } ),
-    
+
     updateSession: newPeriodicalUpdater( "session-get", 60, function( response ) {
       updateFields( globals.shift.session = getArguments( response ) );
     } )
@@ -135,7 +208,7 @@ var sessionFields = {
     doRequest( newRequest( "port-test", {}, function( response ) {
       updateFields( getArguments( response ) );
     } ) );
-    
+
     return true;
   } },
   "rpc-version": { readOnly: true },
@@ -236,76 +309,34 @@ var torrentFields = {
   "webseedsSendingToUs": { readOnly: true }
 };
 
-Object.extend( Object, {
-  isBoolean: function( value ) {
-    return typeof value === "boolean";
-  },
-  isEmpty: function( value ) {
-    for( var k in value ) {
-      if ( Object.prototype.hasOwnProperty.call( value, k ) ) {
-        return false;
-      }
-    }
-    return true;
-  }
-} );
+var torrentFieldKeys = Object.keys( torrentFields );
 
-function prepare( s )
-{
-  return s ? s.toLocaleLowerCase().replace( noAlphanumeric, " " ) : s;
+var torrentDetailsFieldKeys = [ "id" ];
+var torrentDetailsFieldKeysIgnore = [
+  "addedDate",
+  "comment",
+  "creator",
+  "dateCreated",
+  "hashString",
+  "isFinished",
+  "isPrivate",
+  "magnetLink",
+  "metadataPercentComplete",
+  "name",
+  "pieceCount",
+  "pieceSize",
+  "torrentFile",
+  "totalSize"
+];
+
+for ( var k in torrentFields ) {
+  if ( !torrentFields[k].ignore ) {
+    torrentDetailsFieldKeys.pushUnique( k );
+  }
 }
 
-Object.extend( Array.prototype, {
-  concatUnique: function( element ) {
-    if ( Object.isArray( element ) ) {
-      var self = this;
-      element.each( function( element ) {
-        self.pushUnique( element );
-      } )
-    }
-    else {
-      this.pushUnique( element );
-    }
-    return this;
-  },
-  
-  insert: function( index ) {
-    this.length = ( index > this.length ) ? index : this.length;
-    index = ( index < 0 ) ? this.length : index;
-
-    this.splice.apply( this, [index, 0].concat( Array.slice( arguments, 1 ) ) );
-    return this;
-  },
-
-  pushUnique: function( element ) {
-    if ( !this.include( element ) ) {
-      this.push( element )
-    }
-    return this;
-  },
-
-  remove: function( element ) {
-    for( var i = 0, len = this.length; i < len; ++i ) {
-      if ( this[i] == element ) {
-        this.splice( i, 1 );
-        break;
-      }
-    }
-    return this;
-  },
-    
-  // Counter unstable Array.sort with additional index. ( a.i == null ? 0 : ( a.i - b.i ) )
-  sortByProperty: function( property, order, isString ) {
-    this.sort( isString ? function( a, b ) {
-      var aa = prepare( a[property] );
-      var bb = prepare( b[property] );
-      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null ? -1 : bb.localeCompare( aa ) * ( order ? -1 : 1 );
-    } : function( a, b ) {
-      var aa = a[property];
-      var bb = b[property];
-      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null || ( order ? aa < bb : bb < aa ) ? -1 : 1;
-    } );    
-  }
+torrentDetailsFieldKeysIgnore.each( function( item ) {
+  torrentDetailsFieldKeys.remove( item );
 } );
 
 function done() {
@@ -372,7 +403,7 @@ var torrentColumns = {
         selected = selected.length == 0 ? [ torrent ] : selected;
 
         var selectedIds = selected.pluck("id");
-        
+
         var request = newRequest( torrentActions[ action ].method );
         request.parametersObject.arguments.ids = selectedIds;
 
@@ -415,7 +446,7 @@ var torrentColumns = {
   "rateUpload": {
     label: "Up", readOnly: true, render: renderSpeed
   },
-  
+
   "sizeWhenDone": {
     label: "Size", readOnly: true, render: renderSizeCell, filter: {
       active: true, comparator: "ge", value: 0, renderNode: renderSizeFilter, match: function( torrent ) {
@@ -443,6 +474,7 @@ var fileColumns = {
 }
 
 var peerColumns = {
+  "menu": { label: {}, render: rLed },
   "address": { label: "Peer", defaultOrder: false },
   "port": { label: "Port" },
   "rateToClient": { label: "Down", render: renderSpeed },
@@ -453,6 +485,7 @@ var peerColumns = {
 }
 
 var trackerColumns = {
+  "menu": { label: {}, render: rLed },
   "announce": { label: "Tracker", defaultOrder: false },
   "lastAnnounceTime": { label: "Last Announce", render: renderDateTime },
   "nextAnnounceTime": { label: "Next Announce", render: renderDateTime },
@@ -495,7 +528,7 @@ var Torrent = Class.create( {
       this.selected = selected;
       if ( this.renderNode ) {
         this.renderNode.down(".led").set( selected );
-      }      
+      }
     }
   },
   update: function( torrent ) {
@@ -638,7 +671,7 @@ function renderSize( size, decimals ) {
 
 function renderSizeCell( size, torrent, ignore, cell ) {
   if ( size > 1024 && cell ) {
-    cell.title = size;
+    cell.title = size + "B";
   }
   return renderSize( size );
 }
@@ -839,7 +872,7 @@ function updateFields( object ) {
     if ( object.hasOwnProperty( k ) ) {
       var o = object[k];
       var element = $( k );
-      
+
       if ( updaters[k] ) {
         return updaters[k]( element, o );
       }
@@ -925,13 +958,13 @@ function sortTorrents( property, reverse ) {
   }
 
   torrents.sortByProperty( property, torrentColumns[property].order, torrentColumns[property].isString );
-  
+
   globals.shift.newOrderIds = globals.torrents.pluck( "id" ).join( "" );
   var orderChanged = globals.shift.orderIds != globals.shift.newOrderIds;
   globals.shift.orderIds = globals.shift.newOrderIds;
   var currentNode = $("torrentBody").down();
-  
-  var process = orderChanged && currentNode;  
+
+  var process = orderChanged && currentNode;
   for ( var i = 0, len = torrents.length; i < len; ++i ) {
     var torrent = torrents[i];
     if ( process && torrent.renderNode ) {
@@ -954,7 +987,7 @@ function filterTorrents() {
 
 function renderTorrents( noRefresh ) {
   var torrentBody = $("torrentBody");
-  
+
   if ( torrentBody == null )
   {
     return;
@@ -963,7 +996,7 @@ function renderTorrents( noRefresh ) {
   var magnet = false;
   globals.torrents.each( function( torrent ) {
     var row = torrent.renderNode;
-    
+
     if ( !torrent.display || globals.removed.include( torrent.id ) ) {
       if ( row ) {
         row.hide();
@@ -1099,7 +1132,6 @@ function renderTorrentTable() {
   torrentTable.body.id = "torrentBody";
 
   torrentTable.table.observe( "click", function( event ) {
-    event.stop()
     var cell = event.target.nodeName == "TD" ? event.target : event.target.up( "td" );
     if ( cell ) {
       var row = cell.up( "tr" );
@@ -1181,7 +1213,7 @@ function fileListHandler( event ) {
   priorityPopup.observe( "click", function( event ) {
     var priority = event.target.nodeName == "LI" ? event.target.id : event.target.up("li").id;
     var torrent = globals.currentTorrent;
-    
+
     var id = row.id.split("_");
     id[1] = parseInt( id[1] );
     var selected = id[0] == "f" ? [ id[1] ] : getSelectedFiles( torrent.files, id[1], parseInt( id[2] ) );
@@ -1317,7 +1349,7 @@ function renderFiles( torrent ) {
       file.renderNode.insert(
         rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileListHandler ) ) ).insert(
         rCell( { "class": "percentDone" } , renderPercentage( file.percentDone ) ) ).insert(
-        rCell( { "class": "length", title: file.length > 1024 ? file.length + "B" : "" }, renderSize( file.length ) ) ).insert(
+        rCell( { "class": "length", title: file.length + "B" }, renderSize( file.length ) ) ).insert(
         rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName )
       );
     }
@@ -1358,7 +1390,7 @@ function renderFileTable( torrent ) {
       var property = updateOrder( fileColumns, this.id.substring( 2 ) );
       var column = fileColumns[property];
       var o = column.order;
-      
+
       if ( property == "name" ) {
         torrent.files.sortByProperty( o ? "name" : "index", true, o );
       }
@@ -1399,7 +1431,7 @@ function renderPeerTable( torrent ) {
   } );
 
   torrent.peers.sortByProperty();
-  
+
   torrent.peers.each( function( peer ) {
     var id = "p_" + peer.address;
     var row = $( id );
@@ -1446,7 +1478,7 @@ function getChangedData( elements, idPrefix, fields ) {
       var o = elements[k];
       var cell = $( idPrefix + k );
       var v = null;
-      
+
       if ( fields[k] && fields[k].values ) {
         v = cell.down( "select" ).value;
       }
@@ -1478,20 +1510,21 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
     }
     if ( elements.hasOwnProperty( k ) ) {
       var o = elements[k];
-      
+      var createInput = true;
       var row = rE( "tr" );
       var keyCell = rCell( {}, k );
       var ro = f && f.readOnly;
       var content = o;
       var valueCell = rCell( { id: idPrefix + k } );
-      
+
       if ( f && f.render ) {
-        content = ro ? f.render( o ) : rInput( f.render( o ) );
+        content = f.render( o );
       }
       else if ( f && f.values ) {
-        content = ro ? element.value : rMulti( rE( "select", { "class": "styled" } ), "option", f.values );
         if ( !ro ) {
+          content = rMulti( rE( "select", { "class": "styled" } ), "option", f.values );
           content.value = o;
+          createInput = false;
         }
       }
       else if ( Object.isBoolean( o ) ) {
@@ -1499,27 +1532,64 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
         if ( !ro ) {
           content.observe( "click", content.toggle )
         }
+        createInput = false;
       }
-      else if ( Object.isNumber( o )  ) {
-        content = ro ? o : rInput( o );
-      }
-      else if ( Object.isString( o ) ) {
-        content = ro ? o : rInput( o );
-      }
-      else {
+      else if ( !Object.isNumber( o ) && !Object.isString( o ) ) {
         return;
       }
-      
-      valueCell.insert( content );
+
       if ( ro ) {
         valueCell.writeAttribute( "readonly", "readonly" );
       }
-      
+      else if ( createInput ) {
+        content = rInput( content );
+      }
+      valueCell.insert( content );
+
       var a = f && f.action;
       if ( a == null || a( row, keyCell, valueCell, o ) ) {
         row.insert( keyCell ).insert( valueCell );
       }
       target.insert( row );
+    }
+  } );
+}
+
+function updateKeyValuePairs( elements, idPrefix, fields ) {
+  Object.keys( elements ).sort().each( function( k ) {
+    var f = fields[k];
+    if ( f && f.ignore ) {
+      return;
+    }
+    if ( elements.hasOwnProperty( k ) ) {
+      var o = elements[k];
+      var ro = f && f.readOnly;
+      var content = o;
+      var valueCell = $( idPrefix + k );
+
+      if ( f && f.render ) {
+        content = f.render( o );
+      }
+      else if ( f && f.values ) {
+        if ( !ro ) {
+          valueCell.down( "select" ).value = o;
+          return;
+        }
+      }
+      else if ( Object.isBoolean( o ) ) {
+        valueCell.down( "span.led" ).set( o );
+        return;
+      }
+      else if ( !Object.isNumber( o ) && !Object.isString( o ) ) {
+        return;
+      }
+
+      if ( ro ) {
+        valueCell.update( content );
+      }
+      else {
+        valueCell.down( "input" ).value = content;
+      }
     }
   } );
 }
@@ -1549,7 +1619,7 @@ function renderShiftTable() {
   var shiftTable = renderTable( "shiftTable", shiftColumns );
   if ( shiftTable == null ) {
     return;
-  }  
+  }
   globals.body.insert( shiftTable.table );
   renderKeyValuePairs( shiftTable.body, globals.shift.settings, "s_", shiftFields );
   shiftTable.body.insert(
@@ -1569,20 +1639,22 @@ function renderShiftTable() {
 
 function renderDetailsTable( torrent ) {
   var detailsTable = renderTable( "detailsTable", detailsColumns );
-  if ( detailsTable == null ) {
-    return;
-  }
-  globals.body.insert( detailsTable.table );
-  renderKeyValuePairs( detailsTable.body, torrent, "d_", torrentFields );
-  detailsTable.body.insert(
+  if ( detailsTable ) {
+    globals.body.insert( detailsTable.table );
+    renderKeyValuePairs( detailsTable.body, torrent, "d_", torrentFields );
+    detailsTable.body.insert(
     rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( event ) {
       wait();
       var data = getChangedData( torrent, "d_", torrentFields );
       doRequest( newRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
-        torrent.update( data );
-      } ) );      
+      torrent.update( data );
+      } ) );
     } ) ] )
-  );
+    );
+  }
+  else {
+    updateKeyValuePairs( torrent, "d_", torrentFields );
+  }
 }
 
 function activateTable( id ) {
@@ -1603,7 +1675,7 @@ function hideTable( id ) {
   }
 }
 
-function updateHandler( menu, tableId, fields, renderer ) {
+function updateHandler( menu, tableId, fields, renderer, event ) {
   if ( !menuSelect( menu ) ) {
     return;
   }
@@ -1618,21 +1690,23 @@ function updateHandler( menu, tableId, fields, renderer ) {
   } );
 }
 
-function filesClickHandler( event ) {
+function torrentClickHandler( handler, event ) {
   Object.values( menu.torrentGroupMain ).invoke( "hide" );
   Object.values( menu.torrentGroupDetails ).invoke( "show" );
-  var handler = updateHandler.curry(  "files", "fileTable",  [ "id", "fileStats", "sizeWhenDone" ], renderFileTable );
-  
   var torrent = globals.currentTorrent;
   if ( torrent.files ) {
-    handler()
+    handler( event )
   }
   else {
-    doRequest( newRequest( "torrent-get", { ids: [ torrent.id ], fields: [ "id", "files", "fileStats" ] }, function( response ) {
+    doRequest( newRequest( "torrent-get", { ids: [ torrent.id ], fields: torrentFieldKeys }, function( response ) {
       updateTorrents( response.responseJSON.arguments.torrents );
-      handler();
+      handler( event );
     } ) );
   }
+}
+
+function filesClickHandler( event ) {
+  torrentClickHandler( updateHandler.curry(  "files", "fileTable",  [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ), event );
 }
 
 function newMenu( label, click, attributes ) {
@@ -1661,7 +1735,7 @@ var menu = {
   torrentGroupMain: {
     add: newMenu( "Add", function() {
       var popup = $("popupAdd");
-      popup.observe( "click", function( event ) {        
+      popup.observe( "click", function( event ) {
         event.stop();
       } );
       showPopup( popup );
@@ -1674,10 +1748,10 @@ var menu = {
     } )
   },
   torrentGroupDetails: {
-    files: newMenu( "Files", filesClickHandler, { id: "menu_files" } ),
-    peers: newMenu( "Peers", updateHandler.curry( "peers", "peerTable", [ "id", "peers" ], renderPeerTable ), { id: "menu_peers" } ),
-    trackers: newMenu( "Trackers", updateHandler.curry( "trackers", "trackerTable",  [ "id", "trackerStats" ], renderTrackerTable ), { id: "menu_trackers" } ),
-    details: newMenu( "Details", updateHandler.curry( "details", "detailsTable", Object.keys( torrentFields ), renderDetailsTable ), { id: "menu_details" } )
+    files: newMenu( "Files", torrentClickHandler.curry( updateHandler.curry(  "files", "fileTable",  [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ) ), { id: "menu_files" } ),
+    peers: newMenu( "Peers", torrentClickHandler.curry( updateHandler.curry( "peers", "peerTable", [ "id", "peers" ], renderPeerTable ) ), { id: "menu_peers" } ),
+    trackers: newMenu( "Trackers", torrentClickHandler.curry( updateHandler.curry( "trackers", "trackerTable",  [ "id", "trackerStats" ], renderTrackerTable ) ), { id: "menu_trackers" } ),
+    details: newMenu( "Details", torrentClickHandler.curry( updateHandler.curry( "details", "detailsTable", torrentDetailsFieldKeys, renderDetailsTable ) ), { id: "menu_details" } )
   },
   session: newMenu( "Session", function( event ) {
     if ( !menuSelect( "session" ) || !activateTable( "sessionTable" ) ) {
@@ -1766,13 +1840,13 @@ function renderPage() {
   globals.uUrlLed = rLed().observe( "click", selectFileLed.curry( false ) );
   globals.uUrl = rInput( null );
   globals.uDir = rInput( globals.shift.session["download-dir"] );
-  
+
   globals.uPausedLed = rLed();
   globals.uPausedLed.observe( "click", globals.uPausedLed.toggle );
-  
+
   globals.uUpload = rInput( null, { "class": "styled upload", type: "button", value: "Upload" } );
   selectFileLed( true );
-  
+
   globals.body.insert( rE( "div", { id: "popups" } ).insert(
     rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
     .insert( rE( "h2", {}, "By Killemov" )  ).insert( "Version: " + globals.shift.version + " / " + globals.shift.session.version )
@@ -1810,14 +1884,14 @@ function renderPage() {
 
   globals.uUrl.observe( "change", selectFileLed.curry( false ) );
   globals.uUrl.observe( "keypress", selectFileLed.curry( false ) );
-  
+
   var uBrowseHandler = function( event ) {
     globals.uFile.click();
     event.stop();
   };
 
   globals.uFileName.observe( "click", uBrowseHandler );
-  globals.uBrowse.observe( "click", uBrowseHandler );  
+  globals.uBrowse.observe( "click", uBrowseHandler );
 
   globals.uUpload.observe( "click", function( event ) {
     if ( globals.uploadFile ) {
@@ -1839,14 +1913,14 @@ function renderPage() {
   } )
 
   var clazz = { "class": "label" };
-  
+
   globals.body.insert( rE( "div", { id: "stats" } )
     .insert( rSpan( clazz, "Dl/Ul: " ) ).insert( rSpan( { id: "downloadSpeed" }, "0Bs" ) ).insert( " / ")
     .insert( rSpan( { id: "uploadSpeed" }, "0Bs" ) ).insert( rE( "br" )).insert(rSpan( clazz ).insert( "Total: ") )
     .insert( rSpan( { id: "downloadedBytes" }, "0B" ) ).insert( " / ").insert( rSpan( { id: "uploadedBytes" }, "0B" ) )
     .insert( rE( "br" )).insert( rSpan( clazz, "Free: " ) ).insert( rSpan( { id: "download-dir-free-space" }, "0B" ) )
   );
-  
+
   renderers["downloadSpeed"] = renderSpeed;
   renderers["uploadSpeed"] = renderSpeed;
   renderers["downloadedBytes"] = renderSize;
@@ -1918,7 +1992,7 @@ document.observe( "dom:loaded", function() {
   globals.html = $$("html")[0];
   globals.head = globals.html.down();
   globals.body = $$("body")[0];
-  
+
   // This is the catch-all element for clicking outside popups or modal dialogs.
   globals.body.insert( rE( "div", { id: "outside" } ) );
 
@@ -1933,15 +2007,17 @@ document.observe( "dom:loaded", function() {
   globals.html.observe( "dragover", preventDefault );
   globals.html.observe( "drop", function( event ) {
     event.stop();
-
-    if ( event.dataTransfer.files && event.dataTransfer.files.length > 0 ) {
-      Object.values( event.dataTransfer.files ).each( processFile );
+    var files = event.dataTransfer.files;
+    if ( files ) {
+      for ( var i = 0, len = files.length; i < len; ++i ) {
+        processFile( files[i] )
+      }
     }
     else {
       processURL( event.dataTransfer.getData( "URL" ) )
     }
   } );
-  
+
   doRequest( { url: "shift.json", evalJSON: "force", method: "get", onSuccess: function( response ) {
     globals.shift.defaultSettings = response.responseJSON;
     var cookies = document.cookie.split( ";" );
@@ -1951,7 +2027,7 @@ document.observe( "dom:loaded", function() {
     var data = cookie == null ? {} : window.atob( cookie.substring( COOKIE_KEY.length ) ).evalJSON();
     globals.shift.settings = Object.extend( Object.extend( {}, globals.shift.defaultSettings ), data );
   } } );
-    
+
   // Get first time session data and initialize page.
   doRequest( newRequest( "session-get", {}, function( response ) {
     globals.lastResponse = response;
