@@ -1491,10 +1491,15 @@ function renderTrackerTable( torrent ) {
 function getChangedData( elements, idPrefix, fields ) {
   var data = {};
   for( var k in elements ) {
-    if ( elements.hasOwnProperty( k ) && !( fields[k] && fields[k].readOnly ) ) {
+    var f = fields[k];
+    if ( elements.hasOwnProperty( k ) && !( f && f.readOnly ) ) {
       var o = elements[k];
       var cell = $( idPrefix + k );
       var v = null;
+
+      if ( f && f.locked ) {
+        delete f.locked;
+      }
 
       if ( fields[k] && fields[k].values ) {
         v = cell.down( "select" ).value;
@@ -1519,6 +1524,11 @@ function getChangedData( elements, idPrefix, fields ) {
   return data;
 }
 
+function lock( fields, k ) {
+  fields[k] = fields[k] || {};
+  fields[k].locked = true;
+}
+
 function renderKeyValuePairs( target, elements, idPrefix, fields ) {
   Object.keys( elements ).sort().each( function( k ) {
     var f = fields[k];
@@ -1539,7 +1549,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
       }
       else if ( f && f.values ) {
         if ( !ro ) {
-          content = rMulti( rE( "select", { "class": "styled" } ), "option", f.values );
+          content = rMulti( rE( "select", { "class": "styled" } ), "option", f.values ).observe( "focus", lock.curry( fields, k ) );
           content.value = o;
           createInput = false;
         }
@@ -1547,7 +1557,10 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
       else if ( Object.isBoolean( o ) ) {
         var content = rLed( o, ro ? { readonly: "readonly" } : {} );
         if ( !ro ) {
-          content.observe( "click", content.toggle )
+          content.observe( "click", function( event ) {
+            lock( fields, k );
+            content.toggle();
+          } );
         }
         createInput = false;
       }
@@ -1559,7 +1572,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
         valueCell.writeAttribute( "readonly", "readonly" );
       }
       else if ( createInput ) {
-        content = rInput( content );
+        content = rInput( content ).observe( "focus", lock.curry( fields, k ) );
       }
       valueCell.insert( content );
 
@@ -1575,7 +1588,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
 function updateKeyValuePairs( elements, idPrefix, fields ) {
   Object.keys( elements ).sort().each( function( k ) {
     var f = fields[k];
-    if ( f && f.ignore ) {
+    if ( f && ( f.ignore || f.locked ) ) {
       return;
     }
     if ( elements.hasOwnProperty( k ) ) {
