@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2011 Killemov.
+ * © 2012 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -467,7 +467,7 @@ var torrentColumns = {
 }
 
 var fileColumns = {
-  "priority": { label: rLed().observe( "click", function( event ) { confirm( "Reset?" ) } ) },
+  "priority": { label: rLed().observe( "click", function( event ) { event.stop(); if ( confirm( "Reset all priorities to normal?" ) ) { alert( "Setting all priorities to normal." ) } } ) },
   "percentDone": { label: "Done" },
   "length": { label: "Size" },
   "name": { label: "Name", defaultOrder: false }
@@ -1205,35 +1205,52 @@ function getSelectedFiles( files, id, depth ) {
   } ).pluck( "index" );
 }
 
-function fileListHandler( event ) {
+function setFilesPriority( id, files, priority ) {
+  var request = newRequest( "torrent-set", { ids: [id] }, function( response ) {
+    if ( response.responseJSON.result == "success" ) {
+      files.each( function( fileIndex ) {
+        $( "f_" + fileIndex ).down( ".led" ).set( priority );
+      } );
+    }
+  } );
+
+  ( priority == "none" ? ["files-unwanted"] : ["files-wanted", "priority-" + priority ] ).each( function( selector ) {
+    request.parametersObject.arguments[ selector ] = files;
+  } );
+
+  doRequest( request );
+}
+
+function fileMenuClickHandler( event ) {
   var row = event.target.up("tr");
 
   var priorityPopup = $( "popupPriority" );
 
   priorityPopup.observe( "click", function( event ) {
-    var priority = event.target.nodeName == "LI" ? event.target.id : event.target.up("li").id;
     var torrent = globals.currentTorrent;
 
     var id = row.id.split("_");
     id[1] = parseInt( id[1] );
     var selected = id[0] == "f" ? [ id[1] ] : getSelectedFiles( torrent.files, id[1], parseInt( id[2] ) );
+    var priority = event.target.nodeName == "LI" ? event.target.id : event.target.up("li").id;
 
-    var request = newRequest( "torrent-set", { ids: [torrent.id] }, function( response ) {
-      if ( response.responseJSON.result == "success" ) {
-        selected.each( function( fileIndex ) {
-          $( "f_" + fileIndex ).down( ".led" ).set( priority );
-        } );
-      }
-    } );
-
-    ( priority == "none" ? ["files-unwanted"] : ["files-wanted", "priority-" + priority ] ).each( function( selector ) {
-      request.parametersObject.arguments[ selector ] = selected;
-    } );
-
-    doRequest( request );
+    setFilesPriority( torrent.id, selected, priority );
   } );
 
   showPopup( priorityPopup, event );
+}
+
+function fileClickHandler( event ) {
+  var row = event.target.up("tr");
+
+  var id = row.id.split("_");
+  id[1] = parseInt( id[1] );
+
+  var selected = id[0] == "f" ? [ id[1] ] : null;
+
+  if ( selected ) {
+    setFilesPriority( globals.currentTorrent.id, selected, row.down( ".led" ).value ? "none" : "normal" );
+  }
 }
 
 function rMulti( target, elementName, inserts, arguments ) {
@@ -1320,9 +1337,9 @@ function renderFiles( torrent ) {
       else {
         row = rE( "tr", { id: rowId } );
         row.insert(
-          rCell( {}, rLed().observe( "click", fileListHandler ) ) ).insert(
+          rCell( {}, rLed().observe( "click", fileMenuClickHandler ) ) ).insert(
           rCell( { colspan: 2 } ) ).insert(
-          rCell( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) )
+          rCell( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) ).observe( "click", fileClickHandler )
         );
       }
       folderNodes.push( row );
@@ -1347,10 +1364,10 @@ function renderFiles( torrent ) {
       file.percentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
       file.renderNode = rE( "tr", { id: "f_" + file.index } );
       file.renderNode.insert(
-        rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileListHandler ) ) ).insert(
+        rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert(
         rCell( { "class": "percentDone" } , renderPercentage( file.percentDone ) ) ).insert(
         rCell( { "class": "length", title: file.length + "B" }, renderSize( file.length ) ) ).insert(
-        rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName )
+        rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "click", fileClickHandler )
       );
     }
     currentNode.insert( { after: file.renderNode } );
@@ -2008,7 +2025,7 @@ document.observe( "dom:loaded", function() {
   globals.html.observe( "drop", function( event ) {
     event.stop();
     var files = event.dataTransfer.files;
-    if ( files ) {
+    if ( files && files.length > 0 ) {
       for ( var i = 0, len = files.length; i < len; ++i ) {
         processFile( files[i] )
       }
