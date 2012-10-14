@@ -163,7 +163,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.2",
+    version: "0.9.3",
 
     updateTorrents: newPeriodicalUpdater( "torrent-get", 1, function( response ) {
       var arguments = getArguments( response );
@@ -220,7 +220,7 @@ var torrentActions = {
   "start": { label: "Start", method: "torrent-start" },
   "stop": { label: "Stop", method: "torrent-stop" },
   "details": { label: "Details", method: "torrent-get" },
-  "announce": { label: "Peers", method: "torrent-reannounce" },
+  "announce": { label: "Announce", method: "torrent-reannounce" },
   "verify": { label: "Verify", method: "torrent-verify" },
   "trash": { label: "Trash", method: "torrent-remove" },
   "remove": { label: "Remove", method: "torrent-remove" },
@@ -402,20 +402,49 @@ var torrentColumns = {
 
         selected = selected.length == 0 ? [ torrent ] : selected;
 
-        var selectedIds = selected.pluck("id");
+        var selectedIds = [];
+        var selectedMagnetIds = [];
 
-        var request = newRequest( torrentActions[ action ].method );
-        request.parametersObject.arguments.ids = selectedIds;
+        if ( action == "trash" ) {
+          var partitioned = selected.partition( function( torrent ) {
+            return torrent.metadataPercentComplete == null || torrent.metadataPercentComplete == 1.0;
+          } );
+          selectedIds = partitioned[ 0 ].pluck( "id" );
+          selectedMagnetIds = partitioned[ 1 ].pluck( "id" );
+        }
+        else
+        {
+          selectedIds = selected.pluck( "id" );
+        }
+
+        var request = newRequest( torrentActions[ action ].method, null, action == "trash" && selectedIds.length > 0 && selectedMagnetIds.length > 0 ? function( response ) {
+          if ( selectedMagnetIds.length > 0 ) {
+            var magnetRequest = newRequest( torrentActions[ action ].method );
+            magnetRequest.parametersObject.arguments.ids = selectedMagnetIds;
+            doRequest( magnetRequest );
+            globals.removed.concatUnique( selectedMagnetIds );
+          }
+        } : null );
 
         if ( action != "trash" || confirm("Are you sure you want to trash the following torrent(s)? \n\"" + selected.pluck( "name" ).join( "\",\n\"") + "\"" ) ) {
-          if ( action == "trash") {
-            request.parametersObject.arguments["delete-local-data"] = true;
-          }
-          if ( action == "remove" || action == "trash" ) {
-            globals.removed.concatUnique( selectedIds );
+          if ( action == "trash" ) {
+            if ( selectedIds.length > 0 ) {
+              request.parametersObject.arguments["delete-local-data"] = true;
+            }
+            else
+            {
+              selectedIds = selectedMagnetIds;
+              selectedMagnetIds = [];
+            }
           }
           selected.invoke( "deselect" );
-          doRequest( request );
+          if ( selectedIds.length > 0 ) {
+            request.parametersObject.arguments.ids = selectedIds;
+            doRequest( request );
+            if ( action == "remove" || action == "trash" ) {
+              globals.removed.concatUnique( selectedIds );
+            }
+          }
         }
       } );
 
@@ -467,7 +496,13 @@ var torrentColumns = {
 }
 
 var fileColumns = {
-  "priority": { label: rLed().observe( "click", function( event ) { event.stop(); if ( confirm( "Reset all priorities to normal?" ) ) { alert( "Setting all priorities to normal." ) } } ) },
+  "priority": { label: rLed().observe( "click", function( event ) {
+    event.stop();
+    if ( confirm( "Reset all priorities to normal?" ) ) {
+      var torrent = globals.currentTorrent;
+      setFilesPriority( torrent.id, [], "normal" );
+    }
+  } ) },
   "percentDone": { label: "Done" },
   "length": { label: "Size" },
   "name": { label: "Name", defaultOrder: false }
@@ -485,7 +520,9 @@ var peerColumns = {
 }
 
 var trackerColumns = {
-  "menu": { label: {}, render: rLed },
+  "menu": { label: {}, render: function() { return rLed().observe( "click", function( event ) {
+    event.stop();
+  } ) } },
   "announce": { label: "Tracker", defaultOrder: false },
   "lastAnnounceTime": { label: "Last Announce", render: renderDateTime },
   "nextAnnounceTime": { label: "Next Announce", render: renderDateTime },
@@ -502,7 +539,9 @@ var sessionColumns = detailsColumns;
 var shiftColumns = detailsColumns;
 
 var preventDefault = function( event ) {
-  event.stop();
+  if ( event ) {
+    event.stop();
+  }
 }
 
 var Torrent = Class.create( {
@@ -599,9 +638,7 @@ function showPopup( popup, event, keepOpen ) {
   var outside = $("outside");
 
   popups.close = function( event ) {
-    if ( event ) {
-      event.stop();
-    }
+    preventDefault( event );
     [ outside, popups, popup ].invoke( "hide" ).invoke( "stopObserving", "click" );
     delete this.close;
   };
@@ -1339,7 +1376,7 @@ function renderFiles( torrent ) {
         row.insert(
           rCell( {}, rLed().observe( "click", fileMenuClickHandler ) ) ).insert(
           rCell( { colspan: 2 } ) ).insert(
-          rCell( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) ).observe( "click", fileClickHandler )
+          rCell( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) ).observe( "dblclick", fileClickHandler )
         );
       }
       folderNodes.push( row );
@@ -1367,7 +1404,7 @@ function renderFiles( torrent ) {
         rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert(
         rCell( { "class": "percentDone" } , renderPercentage( file.percentDone ) ) ).insert(
         rCell( { "class": "length", title: file.length + "B" }, renderSize( file.length ) ) ).insert(
-        rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "click", fileClickHandler )
+        rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
       );
     }
     currentNode.insert( { after: file.renderNode } );
@@ -1677,7 +1714,7 @@ function renderDetailsTable( torrent ) {
       wait();
       var data = getChangedData( torrent, "d_", torrentFields );
       doRequest( newRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
-      torrent.update( data );
+        torrent.update( data );
       } ) );
     } ) ] )
     );
@@ -1765,9 +1802,7 @@ var menu = {
   torrentGroupMain: {
     add: newMenu( "Add", function() {
       var popup = $("popupAdd");
-      popup.observe( "click", function( event ) {
-        event.stop();
-      } );
+      popup.observe( "click", preventDefault );
       showPopup( popup );
     } ),
     startAll: newMenu( "Start all", function() {
@@ -1890,7 +1925,7 @@ function renderPage() {
     } ) ) )
   ).insert(
     rE( "div", { id: "popupStatus", "class": "popup" } ).hide().insert( rE( "ul")
-    .insert( ["Details", "Start", "Stop", "Select", "Verify", "Remove", "Trash"].collect( function( item ) {
+    .insert( ["Select", "Details", "Start", "Stop", "Announce", "Verify", "Remove", "Trash"].collect( function( item ) {
       return rE( "li", { id: item.toLowerCase() } ).insert( item );
     } ) ) )
   ).insert(
