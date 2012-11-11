@@ -412,12 +412,12 @@ var torrentColumns = {
           selectedIds = partitioned[ 0 ].pluck( "id" );
           selectedMagnetIds = partitioned[ 1 ].pluck( "id" );
         }
-        else
-        {
+        else {
           selectedIds = selected.pluck( "id" );
         }
 
         var request = newRequest( torrentActions[ action ].method, null, action == "trash" && selectedIds.length > 0 && selectedMagnetIds.length > 0 ? function( response ) {
+          // If the array of ids is empty, Transmission assumes ALL.
           if ( selectedMagnetIds.length > 0 ) {
             var magnetRequest = newRequest( torrentActions[ action ].method );
             magnetRequest.parametersObject.arguments.ids = selectedMagnetIds;
@@ -431,13 +431,13 @@ var torrentColumns = {
             if ( selectedIds.length > 0 ) {
               request.parametersObject.arguments["delete-local-data"] = true;
             }
-            else
-            {
+            else {
               selectedIds = selectedMagnetIds;
               selectedMagnetIds = [];
             }
           }
           selected.invoke( "deselect" );
+          // If the array of ids is empty, Transmission assumes ALL.
           if ( selectedIds.length > 0 ) {
             request.parametersObject.arguments.ids = selectedIds;
             doRequest( request );
@@ -1135,7 +1135,8 @@ function renderRow( object, columnDefinitions, row )
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
     if ( render == null || render != false ) {
-      var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), render == null || render == true ? object[k] : render( object[k], object, k, cell ) );
+      var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
+      updateElement( cell, render == null || render == true ? object[k] : render( object[k], object, k, cell ) );
       row.insert( cell );
     }
   }
