@@ -32,8 +32,21 @@ Why reload semi-static data each and every AJAX call? Shift tries to minimize th
 
 ## Open for mutilation.
 
-* "I really hate your old-skool green-on-black theme, just hate it!" No problemo, hack the css to your liking. ( Only 4 very search and replaceable colors used and 1 image. )
+* "I really loved your old-skool green-on-black theme, just loved it!" No problemo, it is still around but has been renamed to terminal.css.
 * "I really need to have a column to show the eta of the torrents." Then you need to add or change the eta entry in the torrentColumns object.
+<code>
+var updateTorrentFields = [... , "doneDate", ...];
+
+var torrentColumns = {
+...
+  "doneDate": {
+    label: "Finished", readOnly: true, render: function( date ) {
+       return date ? renderDateTime( date ) : "";
+    }
+  },
+...
+}
+</code>
 * "This functionality doesn't work on Google Chrome\*." Ah, then you(!) have some 'splaining to do... and probably some work as well.
 
 <sup>\* Swap in your favorite browser here.</sup>
