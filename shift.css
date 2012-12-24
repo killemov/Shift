@@ -1,0 +1,397 @@
+/**
+ * Shift: a Transmission web interface.
+ *
+ * © 2011 Killemov.
+ *
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
+ * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ */
+
+
+* {
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+}
+
+body {
+  background-color: #EFEFFF;
+  color: #333333;
+  padding: 0;
+  margin: 8px;
+}
+
+h1 {
+  font-size: 28pt;
+  text-align: center;
+}
+
+ul#menu {
+  background-attachment: scroll;
+  background-clip: border-box;
+  background-color: #8EA7BC;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAABACAMAAAAH+FZxAAAAwFBMVEVqjauHoriwwc+Io7lvkKxsjqx6lq6htsd9mK94la5uj6yywtBrjatsjquou8t7l698l69zkq1rjqutvs2ascN0k62Sqr6vwM6PqL2uv86Op7yxwc+fs8WluMlwkKxxkaxykq13la6qvMyZr8KRqb2wwM95lq6Nprumucl1k62XrsF2lK6dssSxwdCLpbt7l65yka2Tq7+nusqRqr6svcyqvMujt8h1lK12lK2Jo7lwkayWrcCVrMCftMZ3lK6Kpbrgo3SxAAAAiUlEQVQI1zXG2QqCABQA0THFMk3NBZSScDdRsXypcPn/v4oLNZyHoSzZ7eh7TJPLRT6Ohe+TZdg2zydNQ5Kw37MsXK90HUFAntO2zDOPB9NEURBF1DXDwLbxfqOqKIo4HITr4jhC10VVYRikKevK68X9ThhyPotx5Hbj80HTxPH4czrhecKy+PcFU7AMvzNwDIEAAAAASUVORK5CYII=");
+  background-origin: padding-box;
+  background-position: 0 0;
+  background-repeat: repeat-x;
+  background-size: 100% 100%;
+  border-radius: 8px;
+  display: block;
+  font-weight: bold;
+  margin: 0 0 8px;
+  padding: 8px;
+}
+
+ul#menu li {
+  background-color: rgba( 255, 255, 255, 0.2 );
+  border-color: #ECF3F7 #333333 #333333 #ECF3F7;
+  border-style: solid;
+  border-radius: 4px;
+  border-width: 1px;
+  color: #000000;
+  display: inline-block;
+  margin-right: 2px;
+  padding: 0.5em 1em;
+  text-align: center;
+}
+
+ul#menu li:hover {
+  cursor: pointer;
+}
+
+ul#menu li.selected {
+  background-color: rgba( 63, 63, 63, 0.2 );
+  border-color: #333333 #ECF3F7 #ECF3F7 #333333;
+  border-radius: 4px;
+  color: #ECF3F7;
+}
+
+ul#menu li.sub {
+  padding: 0.2em 1em;
+  vertical-align: bottom;
+}
+
+div.filter {
+  margin: 1px 0 1px 0;
+}
+
+div.name {
+  width: 100px;
+}
+
+div#outside {
+  background-color: transparent;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+div#popups {
+  background-color: transparent;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.popup {
+  background-color: #CADCEB;
+  border-color: #ECF3F7 #9DB2C4 #9DB2C4 #ECF3F7;
+  border-style: solid;
+  border-width: 2px;
+  display: none;
+  position: absolute;
+}
+
+.popup:hover {
+  cursor: pointer;
+}
+
+.popup ul {
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+.popup ul li {
+  border: 1px solid #9DB2C4;
+  display: block;
+  font-weight: bold;
+  padding-left: 4px;
+  padding-right: 4px;
+  margin: 0;
+}
+
+div#popupAbout {
+  height: 300px;
+  position: fixed;
+  text-align: center;
+  width: 368px;
+}
+
+div#popupAdd {
+  position: fixed;
+  height: 196px;
+  width: 368px;
+}
+
+span#labelDir {
+  padding-left: 21px;
+}
+
+#popupPriority ul li {
+  display: inline-block;
+  padding: 0;
+}
+
+a {
+  color: #778C9E;
+}
+
+.styled {
+  border: 1px solid #9DB2C4;
+}
+
+input.styled {
+  background: inherit;
+  border-color: #9DB2C4 #9DB2C4 #9DB2C4 #9DB2C4;
+}
+
+input.styled.number {
+  text-align: right;
+  width: 6em;
+}
+
+input.styled[type=button] {
+  background-color: #9DB2C4;
+  border-color: #ECF3F7 #333333 #333333 #ECF3F7;
+  border-radius: 4px;
+  border-style: solid;
+  border-width: 1px;
+  color: #000000;
+  margin-right: 2px;
+  padding: 0.2em 1em;
+  font-weight: bold;
+  width: 6em;
+}
+
+div.popup div {
+  display: block;
+  position: relative;
+}
+
+input.styled[type=button].upload {
+  position: absolute;
+  right: 4px;
+}
+
+select.styled {
+  background: inherit;
+  height: 1.6em;
+}
+
+select.styled option {
+  border: 1px solid #9DB2C4;
+}
+
+
+span.led {
+  background-color: #F7F7FF;
+  border: 1px solid #9DB2C4;
+  border-radius: 8px;
+  color: #333333;
+  display: inline-block;
+  font-size: 1.1em;
+  font-weight: 900;
+  height: 12px;
+  margin: 2px;
+  overflow: hidden;
+  vertical-align: text-bottom;
+  width: 12px;
+}
+
+span.led:hover {
+  cursor: pointer;
+}
+
+span.led[readonly]:hover {
+  cursor: auto;
+}
+
+span.led.high {
+  color: #778C9E;
+  line-height: 12px;
+  text-align: center;
+}
+
+span.led.low {
+  color: #778C9E;
+  line-height: 10px;
+  padding-left: 3px;
+  text-align: left;
+  width: 9px;
+}
+
+span.led.none {
+  background-color: #778c9e;
+}
+
+span.upload {
+  display: inline-block;
+  width: 30px;
+}
+
+table {
+  background-color: #CADCEB;
+  border: 0;
+  border-collapse: collapse;
+  border-radius: 8px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+table thead tr th {
+  padding: 0 4px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+table tbody tr td {
+  padding: 0 4px;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #E1EBF2;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #ECF3F7;
+}
+
+col.address {
+  width: 128px;
+}
+
+col.key {
+  width: 256px;
+}
+
+col.port {
+  width: 56px;
+}
+
+col.progress, col.rateDownload, col.rateToClient, col.rateToPeer, col.rateUpload {
+  width: 72px;
+}
+
+col.flagStr {
+  width: 64px;
+}
+
+col.percentDone {
+  width: 60px;
+}
+
+col.menu, col.priority {
+  width: 20px;
+}
+
+col.length, col.sizeWhenDone {
+  width: 76px;
+}
+
+col.status {
+  width: 100px;
+}
+
+col.announce, col.clientName, col.name, col.value {
+  width: auto;
+}
+
+col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+  width: 152px;
+}
+
+td[readonly] {
+  color: #333333;
+}
+
+td.announce, td.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+td.length, td.percentDone, td.port, td.progress, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
+  text-align: right;
+}
+
+table#detailsTable input {
+  border-width: 0;
+  width: 100%;
+}
+
+table#detailsTable input[type=button] {
+  border-width: 1px;
+  width: 6em;
+}
+
+table#sessionTable input {
+  border-width: 0;
+  width: 100%;
+}
+
+table#sessionTable input[type=button] {
+  border-width: 1px;
+  width: 6em;
+}
+
+table#shiftTable input {
+  border-width: 0;
+  width: 100%;
+}
+
+table#shiftTable input[type=button] {
+  border-width: 1px;
+  width: 6em;
+}
+
+div#stats {
+  background-color: rgba( 63, 63, 63, 0.2 );
+  border-color: #333333 #ECF3F7 #ECF3F7 #333333;
+  border-radius: 4px;
+  border-style: solid;
+  border-width: 1px;
+  color: #EFEFFF;
+  float: right;
+  font-weight: bold;
+  font-size: 8pt;
+  padding: 0 4px;
+  margin-top: 4px;
+  margin-right: 9px;
+  width: 15em;
+}
+
+div#stats span {
+  display: inline-block;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+div#stats span.label {
+  width: 3.5em;
+}
+
+span.drop {
+  display: block;
+}
+
+td#d_errorString {
+  font-weight: bold;
+}
+
