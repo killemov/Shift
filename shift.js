@@ -163,7 +163,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.3",
+    version: "0.9.4",
 
     updateTorrents: newPeriodicalUpdater( "torrent-get", 1, function( response ) {
       var arguments = getArguments( response );
@@ -1917,7 +1917,7 @@ function renderPage() {
     rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
     .insert( rE( "h2", {}, "By Killemov" )  ).insert( "Version: " + globals.shift.version + " / " + globals.shift.session.version )
     .insert( rE( "p", {}, "Shift is a minimalistic approach to maximum control of your Transmission." ) ).insert( rE( "p", {},
-    "Shift is currently targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.<br>Shift was built on prototype.js. ( V1.7 - Hacked! )" )
+    "Shift is currently targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.<br>Shift was built on prototype.js. ( V1.7.1 - Hacked! )" )
     )
   ).insert(
     rE( "div", { id: "popupGeneral", "class": "popup" } ).hide().insert( rE( "ul")
