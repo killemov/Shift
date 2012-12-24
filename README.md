@@ -34,9 +34,9 @@ Why reload semi-static data each and every AJAX call? Shift tries to minimize th
 
 * "I really loved your old-skool green-on-black theme, just loved it!" No problemo, it is still around but has been renamed to terminal.css.
 * "I really need to have a column to show the eta of the torrents." Then you need to add or change the eta entry in the torrentColumns object.
+
 <code>
 var updateTorrentFields = [... , "doneDate", ...];
-
 var torrentColumns = {
 ...
   "doneDate": {
