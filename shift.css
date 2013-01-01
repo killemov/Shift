@@ -8,22 +8,34 @@
  * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
-
-* {
-  font-family: Arial, sans-serif;
-  font-size: 11pt;
+ a {
+  color: #778C9E;
 }
 
 body {
   background-color: #EFEFFF;
   color: #333333;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
   padding: 0;
   margin: 8px;
+}
+
+input {
+  color: #333333;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
 }
 
 h1 {
   font-size: 28pt;
   text-align: center;
+}
+
+select {
+  color: #333333;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
 }
 
 ul#menu {
@@ -149,10 +161,6 @@ span#labelDir {
   padding: 0;
 }
 
-a {
-  color: #778C9E;
-}
-
 .styled {
   border: 1px solid #9DB2C4;
 }
@@ -198,7 +206,6 @@ select.styled {
 select.styled option {
   border: 1px solid #9DB2C4;
 }
-
 
 span.led {
   background-color: #F7F7FF;
@@ -263,6 +270,14 @@ table thead tr th {
 
 table tbody tr td {
   padding: 0 4px;
+}
+
+table#fileTable tbody tr td {
+  white-space: nowrap;
+}
+
+table#torrentTable tbody tr td {
+  white-space: nowrap;
 }
 
 tbody tr:nth-child(even) {
@@ -394,4 +409,3 @@ span.drop {
 td#d_errorString {
   font-weight: bold;
 }
-

@@ -8,21 +8,32 @@
  * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
-* {
+a {
+  color: inherit;
+}
+
+body {
   background-color: #000000;
   color: #00F000;
   font-family: wellbutrin;
   font-size: 9pt;
-}
-
-body {
   padding: 0;
   margin: 0;
+}
+
+input {
+  color: #00FF00;
+  font-family: wellbutrin;
 }
 
 h1 {
   font-size: 28pt;
   text-align: center;
+}
+
+select {
+  color: #00FF00;
+  font-family: wellbutrin;
 }
 
 ul#menu {
@@ -89,6 +100,7 @@ div#popups {
 }
 
 .popup {
+  background-color: #000000;
   display: none;
   border-color: #00A000 #004000 #004000 #00A000;
   border-style: solid;
@@ -119,7 +131,7 @@ div#popupAbout {
   height: 300px;
   position: fixed;
   text-align: center;
-  width: 368px;
+  width: 424px;
 }
 
 div#popupAdd {
@@ -182,7 +194,6 @@ select.styled {
 select.styled option {
   border: 1px solid #004000;
 }
-
 
 span.led {
   background-color: #00F000;
@@ -247,6 +258,14 @@ table tbody tr td {
   padding: 0;
 }
 
+table#fileTable tbody tr td {
+  white-space: nowrap;
+}
+
+table#torrentTable tbody tr td {
+  white-space: nowrap;
+}
+
 col.address {
   width: 128px;
 }
@@ -276,7 +295,7 @@ col.menu, col.priority {
 }
 
 col.length, col.sizeWhenDone {
-  width: 76px;
+  width: 84px;
 }
 
 col.status {
@@ -367,4 +386,3 @@ td#d_errorString {
   font-weight: normal;
   font-style: normal;
 }
-

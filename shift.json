@@ -7,6 +7,9 @@
   "incompleteFileLinkEnabled": false,
   "incompleteFolderLink": "http://localhost/downloads/incomplete/",
   "incompleteFolderLinkEnabled": false,
+  "showSpeedTitle": false,
+  "soundEnabled": false,
+  "soundDone": "",
   "torrentLink": "http://localhost/torrents/",
   "torrentLinkEnabled": false
 }

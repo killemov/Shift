@@ -43,7 +43,6 @@ catch( e ) {
   }
 }
 
-
 Object.extend( Object, {
   isBoolean: function( value ) {
     return typeof value === "boolean";
@@ -116,6 +115,117 @@ Object.extend( Array.prototype, {
   }
 } );
 
+// riffwave by Pedro Ladaria <pedro.ladaria at Gmail dot com>
+var FastBase64 = {
+
+  chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+  encLookup: [],
+
+  init: function() {
+    for ( var i = 0; i < 4096; ++i ) {
+      this.encLookup[i] = this.chars[i >> 6] + this.chars[i & 0x3F];
+    }
+  },
+
+  encode: function(src) {
+    var len = src.length;
+    var dst = '';
+    var i = 0;
+    while ( len > 2 ) {
+      n = (src[i] << 16) | (src[i+1]<<8) | src[i+2];
+      dst+= this.encLookup[n >> 12] + this.encLookup[n & 0xFFF];
+      len-= 3;
+      i+= 3;
+    }
+    if (len > 0) {
+      var n1= (src[i] & 0xFC) >> 2;
+      var n2= (src[i] & 0x03) << 4;
+      if (len > 1) n2 |= (src[++i] & 0xF0) >> 4;
+      dst+= this.chars[n1];
+      dst+= this.chars[n2];
+      if (len == 2) {
+        var n3= (src[i++] & 0x0F) << 2;
+        n3 |= (src[i] & 0xC0) >> 6;
+        dst+= this.chars[n3];
+      }
+      if (len == 1) dst+= '=';
+      dst+= '=';
+    }
+    return dst;
+  } // end Encode
+
+}
+
+FastBase64.init();
+
+var riffwave = function(data) {
+
+  this.data = [];    // Array containing audio samples
+  this.wav = [];     // Array containing the generated wave file
+  this.dataURI = "";   // http://en.wikipedia.org/wiki/Data_URI_scheme
+
+  this.header = {             // OFFS SIZE NOTES
+    chunkId    : [0x52,0x49,0x46,0x46], // 0  4  "RIFF" = 0x52494646
+    chunkSize  : 0,           // 4  4  36+SubChunk2Size = 4+(8+SubChunk1Size)+(8+SubChunk2Size)
+    format     : [0x57,0x41,0x56,0x45], // 8  4  "WAVE" = 0x57415645
+    subChunk1Id  : [0x66,0x6d,0x74,0x20], // 12   4  "fmt " = 0x666d7420
+    subChunk1Size: 16,          // 16   4  16 for PCM
+    audioFormat  : 1,           // 20   2  PCM = 1
+    numChannels  : 1,           // 22   2  Mono = 1, Stereo = 2...
+    sampleRate   : 8000,          // 24   4  8000, 44100...
+    byteRate   : 0,           // 28   4  SampleRate*NumChannels*BitsPerSample/8
+    blockAlign   : 0,           // 32   2  NumChannels*BitsPerSample/8
+    bitsPerSample: 8,           // 34   2  8 bits = 8, 16 bits = 16
+    subChunk2Id  : [0x64,0x61,0x74,0x61], // 36   4  "data" = 0x64617461
+    subChunk2Size: 0            // 40   4  data size = NumSamples*NumChannels*BitsPerSample/8
+  };
+
+  function u32ToArray( i ) {
+    return [ i & 0xFF, ( i >> 8 ) & 0xFF, ( i >> 16 ) & 0xFF, ( i >> 24 ) & 0xFF ];
+  }
+
+  function u16ToArray( i ) {
+    return [ i & 0xFF, ( i >> 8 ) & 0xFF ];
+  }
+
+  function split16bitArray( data ) {
+    var r = [];
+    var j = 0;
+    for ( var i = 0, len = data.length; i < len; ++i ) {
+      r[j++] = data[i] & 0xFF;
+      r[j++] = ( data[i] >> 8 ) & 0xFF;
+    }
+    return r;
+  }
+
+  this.make = function(data) {
+    if (data instanceof Array) this.data = data;
+    this.header.blockAlign = (this.header.numChannels * this.header.bitsPerSample) >> 3;
+    this.header.byteRate = this.header.blockAlign * this.sampleRate;
+    this.header.subChunk2Size = this.data.length * (this.header.bitsPerSample >> 3);
+    this.header.chunkSize = 36 + this.header.subChunk2Size;
+
+    this.wav = this.header.chunkId.concat(
+      u32ToArray(this.header.chunkSize),
+      this.header.format,
+      this.header.subChunk1Id,
+      u32ToArray(this.header.subChunk1Size),
+      u16ToArray(this.header.audioFormat),
+      u16ToArray(this.header.numChannels),
+      u32ToArray(this.header.sampleRate),
+      u32ToArray(this.header.byteRate),
+      u16ToArray(this.header.blockAlign),
+      u16ToArray(this.header.bitsPerSample),
+      this.header.subChunk2Id,
+      u32ToArray(this.header.subChunk2Size),
+      (this.header.bitsPerSample == 16) ? split16bitArray(this.data) : this.data
+    );
+    this.dataURI = "data:audio/wav;base64," + FastBase64.encode(this.wav);
+  };
+
+  if (data instanceof Array) this.make( data );
+};
+
 var COOKIE_KEY = "shift.settings=";
 var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
 
@@ -183,6 +293,7 @@ var globals = {
 
     updateStats: newPeriodicalUpdater( "session-stats", 5, function( response ) {
       updateFields( globals.shift.sessionStats = getArguments( response ) );
+      renderTitle();
     } ),
 
     updateSession: newPeriodicalUpdater( "session-get", 60, function( response ) {
@@ -216,97 +327,92 @@ var sessionFields = {
   "version": { readOnly: true }
 }
 
-var torrentActions = {
-  "start": { label: "Start", method: "torrent-start" },
-  "stop": { label: "Stop", method: "torrent-stop" },
-  "details": { label: "Details", method: "torrent-get" },
-  "announce": { label: "Announce", method: "torrent-reannounce" },
-  "verify": { label: "Verify", method: "torrent-verify" },
-  "trash": { label: "Trash", method: "torrent-remove" },
-  "remove": { label: "Remove", method: "torrent-remove" },
-  "add": { label: "Add", method: "torrent-add" },
-  "get": { label: "Get", method: "torrent-get" },
-  "set": { label: "Set", method: "torrent-set" }
-}
+var torrentActionLabels = ["Details", "Start", "Stop", "Announce", "Check", "Remove", "Trash"];
+var torrentActions = {};
+torrentActionLabels.concat( ["add", "get", "set"] ).invoke( "toLowerCase" ).each( function( action ) {
+  torrentActions[action] = { method: "torrent-" + ( action == "check" ? "verify" : action ) };
+} );
+torrentActions["trash"].method = torrentActions["remove"].method;
+torrentActionLabels = ["Select"].concat( torrentActionLabels );
 
 var torrentFields = {
-  "activityDate": { readOnly: true, render: renderDateTime },
-  "addedDate": { readOnly: true, render: renderDateTime },
-  "bandwidthPriority": {},
-  "comment": { readOnly: true },
-  "corruptEver": { readOnly: true, render: renderSize },
-  "creator": { readOnly: true },
-  "display": { ignore: true, readOnly: true },
-  "dateCreated": { readOnly: true, render: renderDateTime },
-  "desiredAvailable": { readOnly: true, render: renderSize },
-  "doneDate": { readOnly: true, render: renderDateTime },
-  "downloadDir": { readOnly: true },
-  "downloadedEver": { readOnly: true, render: renderSize },
-  "downloadLimit": {},
-  "downloadLimited": {},
-  "error": { readOnly: true },
-  "errorString": { readOnly: true },
-  "eta": { readOnly: true },
-  "files": { ignore: true, readOnly: true },
-  "fileStats": { ignore: true, readOnly: true },
-  "hashString": { readOnly: true },
-  "haveUnchecked": { readOnly: true, render: renderSize },
-  "haveValid": { readOnly: true, render: renderSize },
-  "honorsSessionLimits": {},
-  "id": { ignore: true, readOnly: true },
-  "index": { ignore: true, readOnly: true },
-  "isFinished": { readOnly: true },
-  "isPrivate": { readOnly: true },
-  "isStalled": { readOnly: true },
-  "leftUntilDone": { readOnly: true, render: renderSize },
-  "location": {},
-  "magnetLink": { readOnly: true, render: rLink },
-  "manualAnnounceTime": { readOnly: true },
-  "maxConnectedPeers": { readOnly: true },
-  "metadataPercentComplete": { readOnly: true, render: renderPercentage },
-  "name": { readOnly: true },
-  "peer-limit": {},
-  "peers": { ignore: true, readOnly: true },
-  "peersConnected": { readOnly: true },
-  "peersFrom": { ignore: true, readOnly: true },
-  "peersGettingFromUs": { readOnly: true },
-  "peersSendingToUs": { readOnly: true },
-  "percentDone": { readOnly: true, render: renderPercentage },
-  "pieces": { ignore: true, readOnly: true },
-  "pieceCount": { readOnly: true },
-  "pieceSize": { readOnly: true, render: renderSize },
-  "priorities": { ignore: true, readOnly: true },
-  "queuePosition": {},
-  "rateDownload": { readOnly: true, render: renderSpeed },
-  "rateUpload": { readOnly: true, render: renderSpeed },
-  "recheckProgress": { readOnly: true, render: renderPercentage },
-  "secondsDownloading": { readOnly: true },
-  "secondsSeeding": { readOnly: true },
-  "seedIdleLimit": {},
-  "seedIdleMode": {},
-  "seedRatioLimit": {},
-  "seedRatioMode": {},
-  "selected": { ignore: true, readOnly: true },
-  "sizeWhenDone": { readOnly: true, render: renderSize },
-  "startDate": { readOnly: true, render: renderDateTime },
-  "status": { readOnly: true, render: renderStatus },
-  "trackers": { ignore: true, readOnly: true },
-  "trackerAdd": { ignore: true },
-  "trackerRemove": { ignore: true },
-  "trackerReplace": { ignore: true },
-  "trackerStats": { ignore: true, readOnly: true },
-  "totalSize": { readOnly: true, render: renderSize },
-  "torrentFile": { readOnly: true, render: function( file ) {
+  "activityDate": { render: renderDateTime },
+  "addedDate": { render: renderDateTime },
+  "bandwidthPriority": { edit: true },
+  "comment": {},
+  "corruptEver": { render: renderSize },
+  "creator": {},
+  "display": { ignore: true },
+  "dateCreated": { render: renderDateTime },
+  "desiredAvailable": { render: renderSize },
+  "doneDate": { render: renderDateTime },
+  "downloadDir": {},
+  "downloadedEver": { render: renderSize },
+  "downloadLimit": { edit: true },
+  "downloadLimited": { edit: true },
+  "error": {},
+  "errorString": {},
+  "eta": {},
+  "files": { ignore: true },
+  "fileStats": { ignore: true },
+  "hashString": {},
+  "haveUnchecked": { render: renderSize },
+  "haveValid": { render: renderSize },
+  "honorsSessionLimits": { edit: true },
+  "id": { ignore: true },
+  "index": { ignore: true },
+  "isFinished": {},
+  "isPrivate": {},
+  "isStalled": {},
+  "leftUntilDone": { render: renderSize },
+  "location": { edit: true },
+  "magnetLink": { render: rLink },
+  "manualAnnounceTime": {},
+  "maxConnectedPeers": {},
+  "metadataPercentComplete": { render: renderPercentage },
+  "name": {},
+  "peer-limit": { edit: true },
+  "peers": { ignore: true },
+  "peersConnected": {},
+  "peersFrom": { ignore: true },
+  "peersGettingFromUs": {},
+  "peersSendingToUs": {},
+  "percentDone": { render: renderPercentage },
+  "pieces": { ignore: true },
+  "pieceCount": {},
+  "pieceSize": { render: renderSize },
+  "priorities": { ignore: true },
+  "queuePosition": { edit: true },
+  "rateDownload": { render: renderSpeed },
+  "rateUpload": { render: renderSpeed },
+  "recheckProgress": { render: renderPercentage },
+  "secondsDownloading": {},
+  "secondsSeeding": {},
+  "seedIdleLimit": { edit: true },
+  "seedIdleMode": { edit: true },
+  "seedRatioLimit": { edit: true },
+  "seedRatioMode": { edit: true },
+  "selected": { ignore: true },
+  "sizeWhenDone": { render: renderSize },
+  "startDate": { render: renderDateTime },
+  "status": { render: renderStatus },
+  "trackers": { ignore: true },
+  "trackerAdd": { ignore: true, edit: true },
+  "trackerRemove": { ignore: true, edit: true },
+  "trackerReplace": { ignore: true, edit: true },
+  "trackerStats": { ignore: true },
+  "totalSize": { render: renderSize },
+  "torrentFile": { render: function( file ) {
     file = file.substring( file.lastIndexOf( "/" ) + 1 );
     return globals.shift.settings.torrentLinkEnabled ? rLink( globals.shift.settings.torrentLink + file , file ) : file;
   } },
-  "uploadedEver": { readOnly: true, render: renderSize },
-  "uploadLimit": {},
-  "uploadLimited": {},
-  "uploadRatio": { readOnly: true, render: renderPercentage },
-  "wanted": { ignore: true, readOnly: true },
-  "webseeds": { ignore: true, readOnly: true },
-  "webseedsSendingToUs": { readOnly: true }
+  "uploadedEver": { render: renderSize },
+  "uploadLimit": { edit: true },
+  "uploadLimited": { edit: true },
+  "uploadRatio": { render: renderPercentage },
+  "wanted": { ignore: true },
+  "webseeds": { ignore: true },
+  "webseedsSendingToUs": {}
 };
 
 var torrentFieldKeys = Object.keys( torrentFields );
@@ -330,6 +436,10 @@ var torrentDetailsFieldKeysIgnore = [
 ];
 
 for ( var k in torrentFields ) {
+  if ( !torrentFields[k].edit ) {
+    torrentFields[k].readOnly = true;
+  }
+
   if ( !torrentFields[k].ignore ) {
     torrentDetailsFieldKeys.pushUnique( k );
   }
@@ -574,11 +684,19 @@ var Torrent = Class.create( {
     this.dirty = this.dirty || [];
     for ( t in torrent ) {
       if ( this[t] != torrent[t] ) {
+        if ( t == "status" && getTorrentActivity()[torrent[t]] == "Seeding" && getTorrentActivity()[this[t]] == "Downloading" ) {
+          this.done();
+        }
         this[t] = torrent[t];
         if ( t != "id" ) {
           this.dirty.pushUnique( t == "hashString" ? "name" : t );
         }
       }
+    }
+  },
+  done: function() {
+    if ( globals.shift.settings.soundEnabled ) {
+      globals.shift.doneSound.play();
     }
   }
 } );
@@ -700,15 +818,15 @@ function renderPercentage( percentage, decimals ) {
 
 function renderSize( size, decimals ) {
   decimals = decimals == undefined ? 2 : decimals;
-  return size < 1024 ? size + "B" :
-  size < 1048576 ? ( size / 1024 ).toFixed( decimals ) + "KB" :
-  size < 1073741824 ? ( size / 1048576 ).toFixed( decimals ) + "MB" :
-  ( size / 1073741824 ).toFixed( decimals ) + "GB"
+  return size < 1024 ? size + " B" :
+  size < 1048576 ? ( size / 1024 ).toFixed( decimals ) + " KB" :
+  size < 1073741824 ? ( size / 1048576 ).toFixed( decimals ) + " MB" :
+  ( size / 1073741824 ).toFixed( decimals ) + " GB"
 }
 
 function renderSizeCell( size, torrent, ignore, cell ) {
   if ( size > 1024 && cell ) {
-    cell.title = size + "B";
+    cell.title = size + " B";
   }
   return renderSize( size );
 }
@@ -745,21 +863,21 @@ function renderSelect( options ) {
 
 function getTorrentActivity() {
   return globals.tr_torrent_activity ? globals.tr_torrent_activity : ( globals.tr_torrent_activity = parseFloat( globals.shift.session.version ) < 2.4 ? {
-    "-1": "ALL",
-    1: "CHECK_WAIT",   // Waiting in queue to check files
-    2: "CHECK",        // Checking files
-    4: "DOWNLOAD",     // Downloading
-    8: "SEED",         // Seeding
-    16: "STOPPED"      // Torrent is stopped
+    "-1": "All",
+    1: "Check waiting",
+    2: "Checking",
+    4: "Downloading",
+    8: "Seeding",
+    16: "Stopped"
   } : {
-    "-1": "ALL",
-    0: "STOPPED",       // Torrent is stopped
-    1: "CHECK_WAIT",    // Queued to check files
-    2: "CHECK",         // Checking files
-    3: "DOWNLOAD_WAIT", // Queued to download
-    4: "DOWNLOAD",      // Downloading
-    5: "SEED_WAIT",     // Queued to seed
-    6: "SEED"           // Seeding
+    "-1": "All",
+    0: "Stopped",
+    1: "Check waiting",
+    2: "Checking",
+    3: "Download waiting",
+    4: "Downloading",
+    5: "Seed waiting",
+    6: "Seeding"
   } )
 }
 
@@ -850,7 +968,14 @@ function compareValue( value, comparator, filterValue ) {
     comparator == "ge" && value >= filterValue
 }
 
-var renderers = {}
+var renderers = {
+  "downloadSpeed": renderSpeed,
+  "uploadSpeed": renderSpeed,
+  "downloadedBytes": renderSize,
+  "uploadedBytes": renderSize,
+  "download-dir-free-space": renderSize
+}
+
 var updaters = {
   "port-is-open": function( element, value ) {
     element.set( value ).writeAttribute( "title", value ? "Open" : "Closed" )
@@ -1700,6 +1825,7 @@ function renderShiftTable() {
         var date = new Date();
         date.setTime( date.getTime() + ( 365 * 24 * 60 * 60 * 1000 ) );
         document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date;
+        renderDoneSound();
       }
     } ) ] )
   );
@@ -1917,7 +2043,7 @@ function renderPage() {
     rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
     .insert( rE( "h2", {}, "By Killemov" )  ).insert( "Version: " + globals.shift.version + " / " + globals.shift.session.version )
     .insert( rE( "p", {}, "Shift is a minimalistic approach to maximum control of your Transmission." ) ).insert( rE( "p", {},
-    "Shift is currently targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.<br>Shift was built on prototype.js. ( V1.7.1 - Hacked! )" )
+    "Shift is currently targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.<br>Shift is built on prototype.js. ( V1.7.1 - Hacked! )" )
     )
   ).insert(
     rE( "div", { id: "popupGeneral", "class": "popup" } ).hide().insert( rE( "ul")
@@ -1926,7 +2052,7 @@ function renderPage() {
     } ) ) )
   ).insert(
     rE( "div", { id: "popupStatus", "class": "popup" } ).hide().insert( rE( "ul")
-    .insert( ["Select", "Details", "Start", "Stop", "Announce", "Verify", "Remove", "Trash"].collect( function( item ) {
+    .insert( torrentActionLabels.collect( function( item ) {
       return rE( "li", { id: item.toLowerCase() } ).insert( item );
     } ) ) )
   ).insert(
@@ -1986,12 +2112,6 @@ function renderPage() {
     .insert( rSpan( { id: "downloadedBytes" }, "0B" ) ).insert( " / ").insert( rSpan( { id: "uploadedBytes" }, "0B" ) )
     .insert( rE( "br" )).insert( rSpan( clazz, "Free: " ) ).insert( rSpan( { id: "download-dir-free-space" }, "0B" ) )
   );
-
-  renderers["downloadSpeed"] = renderSpeed;
-  renderers["uploadSpeed"] = renderSpeed;
-  renderers["downloadedBytes"] = renderSize;
-  renderers["uploadedBytes"] = renderSize;
-  renderers["download-dir-free-space"] = renderSize;
 
   var menulist = rE( "ul", { id: "menu" } )
     .insert( menu.torrent ).insert( group( menu.torrentGroupMain ) )
@@ -2054,6 +2174,28 @@ function processURL( url, target, paused ) {
   } ) );
 }
 
+function renderDoneSound() {
+  var soundDone = globals.shift.settings.soundDone;
+  if ( !soundDone || soundDone.length == 0 ) {
+    var audioWave = [];
+    for ( var i = 0; i < 1024; i++ )
+    {
+      audioWave[i] = 128 + Math.round( 127 * Math.sin( i / 1.8 ) );
+    }
+    soundDone = new riffwave( audioWave ).dataURI;
+  }
+  globals.shift.doneSound = new Audio( soundDone );
+}
+
+function renderTitle() {
+  if ( globals.shift.settings.showSpeedTitle && globals.shift.sessionStats ) {
+    document.title = "Down: " + renderers["downloadSpeed"]( globals.shift.sessionStats.downloadSpeed ) + " / Up: " + renderers["uploadSpeed"]( globals.shift.sessionStats.uploadSpeed );
+  }
+  else {
+    document.title = "Shift " + globals.shift.version + " / Transmission " + globals.shift.session.version;
+  }
+}
+
 document.observe( "dom:loaded", function() {
   globals.html = $$("html")[0];
   globals.head = globals.html.down();
@@ -2092,13 +2234,14 @@ document.observe( "dom:loaded", function() {
     } );
     var data = cookie == null ? {} : window.atob( cookie.substring( COOKIE_KEY.length ) ).evalJSON();
     globals.shift.settings = Object.extend( Object.extend( {}, globals.shift.defaultSettings ), data );
+    renderDoneSound();
   } } );
 
   // Get first time session data and initialize page.
   doRequest( newRequest( "session-get", {}, function( response ) {
     globals.lastResponse = response;
     globals.shift.session = response.responseJSON.arguments;
-    document.title = "Shift " + globals.shift.version + " / Transmission " + globals.shift.session.version;
+    renderTitle();
     renderPage();
     updateFields( globals.shift.session );
 
