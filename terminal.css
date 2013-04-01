@@ -39,8 +39,8 @@ select {
 ul#menu {
   display: block;
   font-weight: bold;
-  padding: 0;
   margin: 4px 2px;
+  padding: 0;
 }
 
 ul#menu li {
@@ -99,6 +99,11 @@ div#popups {
   width: 100%;
 }
 
+div.popup div {
+  display: block;
+  position: relative;
+}
+
 .popup {
   background-color: #000000;
   display: none;
@@ -153,7 +158,7 @@ span#labelDir {
   border: 1px solid #004000;
 }
 
-input.styled {
+input.styled, textarea.styled {
   background: inherit;
   border: 1px solid #004000;
   border-color: #004000 #004000 #004000 #004000;
@@ -176,11 +181,6 @@ input.styled[type=button] {
   width: 6em;
 }
 
-div.popup div {
-  display: block;
-  position: relative;
-}
-
 input.styled[type=button].upload {
   position: absolute;
   right: 4px;
@@ -193,6 +193,15 @@ select.styled {
 
 select.styled option {
   border: 1px solid #004000;
+}
+
+textarea.styled {
+  border: 1px solid #004000;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  resize: none;
+  width: 100%;
 }
 
 span.led {
@@ -219,7 +228,7 @@ span.led[readonly]:hover {
 }
 
 span.led.high {
-  line-height: 14px;
+  line-height: 11px;
   text-align: center;
 }
 
@@ -271,7 +280,7 @@ col.address {
 }
 
 col.key {
-  width: 256px;
+  width: 320px;
 }
 
 col.port {
@@ -287,7 +296,7 @@ col.flagStr {
 }
 
 col.percentDone {
-  width: 60px;
+  width: 66px;
 }
 
 col.menu, col.priority {
@@ -354,6 +363,11 @@ table#shiftTable input[type=button] {
   width: 6em;
 }
 
+table#shiftTable input[type=button]#tracker {
+  margin-left: 20px;
+  width: auto;
+}
+
 div#stats {
   float: right;
   font-weight: bold;
@@ -369,6 +383,10 @@ div#stats span {
 
 div#stats span.label {
   width: 3.5em;
+}
+
+table#trackerTable tfoot tr td {
+  padding: 0 4px;
 }
 
 span.drop {

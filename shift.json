@@ -11,5 +11,6 @@
   "soundEnabled": false,
   "soundDone": "",
   "torrentLink": "http://localhost/torrents/",
-  "torrentLinkEnabled": false
+  "torrentLinkEnabled": false,
+  "trackers": ""
 }

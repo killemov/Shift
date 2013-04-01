@@ -8,7 +8,7 @@
  * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
  */
 
- a {
+a {
   color: #778C9E;
 }
 
@@ -111,6 +111,11 @@ div#popups {
   width: 100%;
 }
 
+div.popup div {
+  display: block;
+  position: relative;
+}
+
 .popup {
   background-color: #CADCEB;
   border-color: #ECF3F7 #9DB2C4 #9DB2C4 #ECF3F7;
@@ -165,7 +170,7 @@ span#labelDir {
   border: 1px solid #9DB2C4;
 }
 
-input.styled {
+input.styled, textarea.styled {
   background: inherit;
   border-color: #9DB2C4 #9DB2C4 #9DB2C4 #9DB2C4;
 }
@@ -188,11 +193,6 @@ input.styled[type=button] {
   width: 6em;
 }
 
-div.popup div {
-  display: block;
-  position: relative;
-}
-
 input.styled[type=button].upload {
   position: absolute;
   right: 4px;
@@ -205,6 +205,15 @@ select.styled {
 
 select.styled option {
   border: 1px solid #9DB2C4;
+}
+
+textarea.styled {
+  border-width: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  resize: none;
+  width: 100%;
 }
 
 span.led {
@@ -309,7 +318,7 @@ col.flagStr {
 }
 
 col.percentDone {
-  width: 60px;
+  width: 66px;
 }
 
 col.menu, col.priority {
@@ -317,7 +326,7 @@ col.menu, col.priority {
 }
 
 col.length, col.sizeWhenDone {
-  width: 76px;
+  width: 84px;
 }
 
 col.status {
@@ -376,6 +385,11 @@ table#shiftTable input[type=button] {
   width: 6em;
 }
 
+table#shiftTable input[type=button]#tracker {
+  margin-left: 20px;
+  width: auto;
+}
+
 div#stats {
   background-color: rgba( 63, 63, 63, 0.2 );
   border-color: #333333 #ECF3F7 #ECF3F7 #333333;
@@ -400,6 +414,15 @@ div#stats span {
 
 div#stats span.label {
   width: 3.5em;
+}
+
+table#trackerTable tfoot tr td {
+  padding: 0 4px;
+}
+
+table#trackerTable textarea.styled {
+  background-color: #ECF3F7;
+  border: 1px solid #9DB2C4;
 }
 
 span.drop {
