@@ -1415,6 +1415,7 @@ function fileMenuClickHandler( event ) {
   priorityPopup.observe( "click", function( event ) {
     var torrent = globals.currentTorrent;
     var priority = event.target.nodeName == "LI" ? event.target.id : event.target.up( "li" ).id;
+    var selected = "f" == id[0] ? [ id[1] ] : getSelectedFiles( torrent.files, id[1], parseInt( id[2] ) );
     setFilesPriority( torrent.id, selected, priority );
   } );
 
