@@ -41,7 +41,7 @@ Object.extend( Object, {
 
 function prepare( s )
 {
-  return s ? s.toLocaleLowerCase().replace( noAlphanumeric, " " ) : s;
+  return s ? s.toLowerCase().replace( nowordRegexp, " " ) : s;
 }
 
 Object.extend( Array.prototype, {
@@ -109,39 +109,37 @@ var FastBase64 = {
     }
   },
 
-  encode: function(src) {
+  encode: function( src ) {
     var len = src.length;
     var dst = '';
     var i = 0;
     while ( len > 2 ) {
-      n = (src[i] << 16) | (src[i+1]<<8) | src[i+2];
+      n = src[i] << 16 | src[i + 1] << 8 | src[i + 2];
       dst+= this.encLookup[n >> 12] + this.encLookup[n & 0xFFF];
       len-= 3;
       i+= 3;
     }
-    if (len > 0) {
-      var n1= (src[i] & 0xFC) >> 2;
-      var n2= (src[i] & 0x03) << 4;
-      if (len > 1) n2 |= (src[++i] & 0xF0) >> 4;
+    if ( len > 0 ) {
+      var n1= ( src[i] & 0xFC ) >> 2;
+      var n2= ( src[i] & 0x03 ) << 4;
+      if ( len > 1 ) n2 |= ( src[++i] & 0xF0 ) >> 4;
       dst+= this.chars[n1];
       dst+= this.chars[n2];
-      if (len == 2) {
-        var n3= (src[i++] & 0x0F) << 2;
-        n3 |= (src[i] & 0xC0) >> 6;
+      if ( len == 2 ) {
+        var n3= ( src[i++] & 0x0F ) << 2;
+        n3 |= ( src[i] & 0xC0 ) >> 6;
         dst+= this.chars[n3];
       }
-      if (len == 1) dst+= '=';
+      if ( len == 1 ) dst+= '=';
       dst+= '=';
     }
     return dst;
   } // end Encode
-
 }
 
 FastBase64.init();
 
-var riffwave = function(data) {
-
+var riffwave = function( data ) {
   this.data = [];    // Array containing audio samples
   this.wav = [];     // Array containing the generated wave file
   this.dataURI = "";   // http://en.wikipedia.org/wiki/Data_URI_scheme
@@ -163,11 +161,11 @@ var riffwave = function(data) {
   };
 
   function u32ToArray( i ) {
-    return [ i & 0xFF, ( i >> 8 ) & 0xFF, ( i >> 16 ) & 0xFF, ( i >> 24 ) & 0xFF ];
+    return [ i & 0xFF, i >> 8 & 0xFF, i >> 16 & 0xFF, i >> 24 & 0xFF ];
   }
 
   function u16ToArray( i ) {
-    return [ i & 0xFF, ( i >> 8 ) & 0xFF ];
+    return [ i & 0xFF, i >> 8 & 0xFF ];
   }
 
   function split16bitArray( data ) {
@@ -175,43 +173,43 @@ var riffwave = function(data) {
     var j = 0;
     for ( var i = 0, len = data.length; i < len; ++i ) {
       r[j++] = data[i] & 0xFF;
-      r[j++] = ( data[i] >> 8 ) & 0xFF;
+      r[j++] = data[i] >> 8 & 0xFF;
     }
     return r;
   }
 
-  this.make = function(data) {
-    if (data instanceof Array) this.data = data;
-    this.header.blockAlign = (this.header.numChannels * this.header.bitsPerSample) >> 3;
+  this.make = function( data ) {
+    if ( data instanceof Array ) this.data = data;
+    this.header.blockAlign = this.header.numChannels * this.header.bitsPerSample >> 3;
     this.header.byteRate = this.header.blockAlign * this.sampleRate;
-    this.header.subChunk2Size = this.data.length * (this.header.bitsPerSample >> 3);
+    this.header.subChunk2Size = this.data.length * ( this.header.bitsPerSample >> 3 );
     this.header.chunkSize = 36 + this.header.subChunk2Size;
 
     this.wav = this.header.chunkId.concat(
-      u32ToArray(this.header.chunkSize),
+      u32ToArray( this.header.chunkSize ),
       this.header.format,
       this.header.subChunk1Id,
-      u32ToArray(this.header.subChunk1Size),
-      u16ToArray(this.header.audioFormat),
-      u16ToArray(this.header.numChannels),
-      u32ToArray(this.header.sampleRate),
-      u32ToArray(this.header.byteRate),
-      u16ToArray(this.header.blockAlign),
-      u16ToArray(this.header.bitsPerSample),
+      u32ToArray( this.header.subChunk1Size ),
+      u16ToArray( this.header.audioFormat ),
+      u16ToArray( this.header.numChannels ),
+      u32ToArray( this.header.sampleRate ),
+      u32ToArray( this.header.byteRate ),
+      u16ToArray( this.header.blockAlign ),
+      u16ToArray( this.header.bitsPerSample ),
       this.header.subChunk2Id,
-      u32ToArray(this.header.subChunk2Size),
-      (this.header.bitsPerSample == 16) ? split16bitArray(this.data) : this.data
+      u32ToArray( this.header.subChunk2Size ),
+      ( this.header.bitsPerSample == 16 ) ? split16bitArray( this.data ) : this.data
     );
-    this.dataURI = "data:audio/wav;base64," + FastBase64.encode(this.wav);
+    this.dataURI = "data:audio/wav;base64," + FastBase64.encode( this.wav );
   };
 
-  if (data instanceof Array) this.make( data );
+  if ( data instanceof Array ) this.make( data );
 };
 
 var COOKIE_KEY = "shift.settings=";
 var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
 
-var updateTorrentFields = ["eta", "id", "percentDone", "rateDownload", "rateUpload", "status"];
+var updateTorrentFields = ["eta", "id", "percentDone", "queuePosition", "rateDownload", "rateUpload", "status"];
 
 function newRequest( method, arguments, onSuccess, properties ) {
   var request = {
@@ -246,6 +244,16 @@ function getArguments( response ) {
 }
 
 var globals = {
+  torrentStatus: {
+    "-1": "All",
+    0: "Stopped",
+    1: "Check waiting",
+    2: "Checking",
+    3: "Download waiting",
+    4: "Downloading",
+    5: "Seed waiting",
+    6: "Seeding"
+  },
   magnets: [],
   torrents: [],
   removed: [],
@@ -254,8 +262,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.4",
-
+    version: "0.9.5",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
@@ -285,7 +292,7 @@ var globals = {
 
 var filePriority = { "high": { label: "+" } , "normal": { label: " " }, "low": { label: "-" }, "none": { label: "" } };
 var filePriorityKeys = Object.keys( filePriority );
-var noAlphanumeric = new RegExp( "\\W", "g" );
+var nowordRegexp = /\\W/ig;
 var torrentRegexp = /(\b(https?|ftp|magnet):\/?\/?[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
 var trackerRegexp = /(\b(https?|udp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
 
@@ -463,6 +470,16 @@ var torrentColumns = {
               // TODO: Set every filter to default settings
             }
             break;
+          case "store selection":
+            globals.selectedIds = globals.torrents.select( function( torrent ) {
+              return torrent.isSelected();
+            } ).pluck( "id" );
+            break;
+          case "restore selection":
+            globals.torrents.each( function( torrent ) {
+              torrent.set( globals.selectedIds.include( torrent.id ) );
+            } );
+            break;
         }
       } );
       showPopup( popup, event );
@@ -545,6 +562,24 @@ var torrentColumns = {
     }
   },
 
+  "queuePosition": {
+    label: "Q",
+    listHandler: function( event, torrent ) {
+      globals.currentTorrent = torrent;
+      var popup = $( "popupQueue" );
+      popup.observe( "click", function( event ) {
+        var action = event.target.id;
+        var selected = globals.torrents.collect( function( torrent ) {
+          return torrent.display && torrent.isSelected() ? ( torrent ) : null;
+        } ).compact();
+        selected = selected.length == 0 ? [ torrent ] : selected;
+        doRequest( newRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) } ) );
+      } );
+      showPopup( popup, event );
+    },
+    render: true
+  },
+
   "status": {
     label: "Status", render: renderStatus, filter: {
       active: true, value: 4, renderNode: renderStatusFilter, match: function( torrent ) {
@@ -619,8 +654,8 @@ var peerColumns = {
 var trackerColumns = {
   "menu": {
     label: rLed(),
-	render: function() { return rLed() },
-	listHandler: function( event, tracker ) {
+    render: function() { return rLed() },
+    listHandler: function( event, tracker ) {
       globals.currentTracker = tracker;
 
       var popup = $( "popupTracker" );
@@ -693,7 +728,7 @@ var Torrent = Class.create( {
     this.dirty = this.dirty || [];
     for ( t in torrent ) {
       if ( this[t] != torrent[t] ) {
-        if ( t == "status" && getTorrentActivity()[torrent[t]] == "Seeding" && getTorrentActivity()[this[t]] == "Downloading" ) {
+        if ( t == "status" && globals.torrentStatus[torrent[t]] == "Seeding" && globals.torrentStatus[this[t]] == "Downloading" ) {
           this.done();
         }
         this[t] = torrent[t];
@@ -844,7 +879,7 @@ function renderSpeed( size ) {
 }
 
 function renderStatus( status ) {
-  return globals.tr_torrent_activity[status];
+  return globals.torrentStatus[status];
 }
 
 function normalizeOptions( options ) {
@@ -855,7 +890,7 @@ function normalizeOptions( options ) {
   return normalized;
 }
 
-var defaultOptions = normalizeOptions( { le: "<=", eq: "==", ge: ">=" } );
+var defaultOptions = normalizeOptions( { lt : "<", le: "<=", eq: "==", ge: ">=", gt: ">" } );
 
 function renderSelect( options ) {
   var select = rE( "select", options.select );
@@ -869,29 +904,9 @@ function renderSelect( options ) {
   return select;
 }
 
-function getTorrentActivity() {
-  return globals.tr_torrent_activity ? globals.tr_torrent_activity : ( globals.tr_torrent_activity = parseFloat( globals.shift.session.version ) < 2.4 ? {
-    "-1": "All",
-    1: "Check waiting",
-    2: "Checking",
-    4: "Downloading",
-    8: "Seeding",
-    16: "Stopped"
-  } : {
-    "-1": "All",
-    0: "Stopped",
-    1: "Check waiting",
-    2: "Checking",
-    3: "Download waiting",
-    4: "Downloading",
-    5: "Seed waiting",
-    6: "Seeding"
-  } )
-}
-
 function renderStatusFilter() {
   return rE( "div", { "class": "filter"} ).hide().insert( "Status: " ).insert(
-    renderSelect( { select: { id: "statusSelect", value: 4, "class": "styled" }, options: normalizeOptions( getTorrentActivity() ) } ).observe( "change", function( event ) {
+    renderSelect( { select: { id: "statusSelect", value: 4, "class": "styled" }, options: normalizeOptions( globals.torrentStatus ) } ).observe( "change", function( event ) {
       torrentColumns.status.filter.value = this.value;
       filterTorrents();
     } )
@@ -973,7 +988,9 @@ function compareValue( value, comparator, filterValue ) {
   return value == null ||
     comparator == "eq" && value == filterValue ||
     comparator == "le" && value <= filterValue ||
-    comparator == "ge" && value >= filterValue
+    comparator == "ge" && value >= filterValue ||
+    comparator == "lt" && value < filterValue ||
+    comparator == "gt" && value > filterValue;
 }
 
 function removeTorrentById( id ) {
@@ -1178,9 +1195,9 @@ function renderTorrents( noRefresh ) {
       if ( row ) {
         for ( var k in torrentColumns ) {
           var render = torrentColumns[k].render;
-          if ( render && torrent.dirty.include( k ) ) {
+          if ( ( render === undefined || render !== false ) && torrent.dirty.include( k ) ) {
             var cell = row.down( "." + k );
-            updateElement( cell, render == true ? torrent[k] : render( torrent[k], torrent, k, cell ) );
+            updateElement( cell, render === undefined || render === true ? torrent[k] : render( torrent[k], torrent, k, cell ) );
           }
           torrent.dirty.remove( k );
         }
@@ -1267,9 +1284,9 @@ function renderRow( object, columnDefinitions, row )
 
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
-    if ( render == null || render != false ) {
+    if ( render === undefined || render !== false ) {
       var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
-      updateElement( cell, render == null || render == true ? object[k] : render( object[k], object, k, cell ) );
+      updateElement( cell, render === undefined || render === true ? object[k] : render( object[k], object, k, cell ) );
       row.insert( cell );
     }
   }
@@ -1286,9 +1303,9 @@ function updateRow( object, columnDefinitions, row )
 {
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
-    if ( render == null || render != false ) {
+    if ( render === undefined || render !== false ) {
       var cell = row.down( "." + k );
-      updateElement( cell, render == null || render == true ? object[k] : render( object[k], object, k, cell ) );
+      updateElement( cell, render === undefined || render === true ? object[k] : render( object[k], object, k, cell ) );
     }
   }
   return row;
@@ -1390,17 +1407,14 @@ function setFilesPriority( id, files, priority ) {
 
 function fileMenuClickHandler( event ) {
   var row = event.target.up( "tr" );
+  var id = row.id.split( "_" );
+  id[1] = parseInt( id[1] );
 
   var priorityPopup = $( "popupPriority" );
 
   priorityPopup.observe( "click", function( event ) {
     var torrent = globals.currentTorrent;
-
-    var id = row.id.split( "_" );
-    id[1] = parseInt( id[1] );
-    var selected = id[0] == "f" ? [ id[1] ] : getSelectedFiles( torrent.files, id[1], parseInt( id[2] ) );
     var priority = event.target.nodeName == "LI" ? event.target.id : event.target.up( "li" ).id;
-
     setFilesPriority( torrent.id, selected, priority );
   } );
 
@@ -1409,7 +1423,6 @@ function fileMenuClickHandler( event ) {
 
 function fileClickHandler( event ) {
   var row = event.target.up( "tr" );
-
   var id = row.id.split( "_" );
   id[1] = parseInt( id[1] );
 
@@ -2093,10 +2106,12 @@ function selectFileLed( file ) {
   globals.uUrlLed.set( !file );
 }
 
+function renderMenuItem( render, item ) {
+  return rE( "li", { id: item.toLowerCase() } ).insert( render ? render( item ) : item );
+}
+
 function renderMenuPopup( id, items, render ) {
-  return rE( "div", { id: id, "class": "popup" } ).insert( rE( "ul" ).insert( items.collect( function( item ) {
-    return rE( "li", { id: item.toLowerCase() } ).insert( render ? render( item ) : item );
-  } ) ) ).hide();
+  return rE( "div", { id: id, "class": "popup" } ).insert( rE( "ul" ).insert( items.collect( renderMenuItem.curry( render ) ) ) ).hide();
 }
 
 function renderPage() {
@@ -2128,13 +2143,15 @@ function renderPage() {
       rE( "div" ).insert( [ rSpan( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
       rE( "div" ).insert( [ globals.uPausedLed, rSpan( { id: "labelPaused" }, "Add paused" ), globals.uUpload ] ) )
   ).insert(
-    renderMenuPopup( "popupGeneral", ["Select Visible", "Deselect Visible", "Select All", "Deselect All", "Reset"] )
+    renderMenuPopup( "popupGeneral", ["Select Visible", "Deselect Visible", "Select All", "Deselect All", "Store Selection", "Restore Selection", "Reset"] )
   ).insert(
     renderMenuPopup( "popupTorrent", torrentActionLabels )
   ).insert(
     renderMenuPopup( "popupPriority", filePriorityKeys, function( item ) {
       return rLed( item );
     } )
+  ).insert(
+    renderMenuPopup( "popupQueue", [ "Top", "Up", "Down", "Bottom" ] )
   ).insert(
     renderMenuPopup( "popupTracker", ["Remove"] )
   ).insert(
@@ -2313,6 +2330,19 @@ document.observe( "dom:loaded", function() {
   doRequest( newRequest( "session-get", {}, function( response ) {
     globals.lastResponse = response;
     globals.shift.session = response.responseJSON.arguments;
+    globals.version = parseFloat( globals.shift.session.version );
+    if ( globals.version < 2.4 ) {
+      globals.torrentStatus =  {
+        "-1": "All",
+        1: "Check waiting",
+        2: "Checking",
+        4: "Downloading",
+        8: "Seeding",
+        16: "Stopped"
+      };
+      delete torrentColumns.queuePosition;
+      updateTorrentFields.remove( "queuePosition" );
+    }
     renderTitle();
     renderPage();
     updateFields( globals.shift.session );
