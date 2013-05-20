@@ -161,7 +161,7 @@ span#labelDir {
   padding-left: 21px;
 }
 
-#popupPriority ul li {
+li#high, li#normal, li#low, li#none {
   display: inline-block;
   padding: 0;
 }
@@ -301,8 +301,32 @@ col.address {
   width: 128px;
 }
 
+col.announce, col.clientName, col.name, col.value {
+  width: auto;
+}
+
+col.flagStr {
+  width: 64px;
+}
+
 col.key {
   width: 256px;
+}
+
+col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+  width: 152px;
+}
+
+col.length, col.sizeWhenDone {
+  width: 84px;
+}
+
+col.menu, col.priority {
+  width: 20px;
+}
+
+col.percentDone {
+  width: 66px;
 }
 
 col.port {
@@ -313,32 +337,12 @@ col.progress, col.rateDownload, col.rateToClient, col.rateToPeer, col.rateUpload
   width: 72px;
 }
 
-col.flagStr {
-  width: 64px;
-}
-
-col.percentDone {
-  width: 66px;
-}
-
-col.menu, col.priority {
-  width: 20px;
-}
-
-col.length, col.sizeWhenDone {
-  width: 84px;
+col.queuePosition {
+  width: 56px;
 }
 
 col.status {
-  width: 100px;
-}
-
-col.announce, col.clientName, col.name, col.value {
-  width: auto;
-}
-
-col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
-  width: 152px;
+  width: 120px;
 }
 
 td[readonly] {
@@ -351,7 +355,7 @@ td.announce, td.name {
   white-space: nowrap;
 }
 
-td.length, td.percentDone, td.port, td.progress, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
+td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
   text-align: right;
 }
 
