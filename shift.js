@@ -2116,7 +2116,7 @@ function renderMenuPopup( id, items, render ) {
 }
 
 function renderPage() {
-  globals.uFile = rInput( null, { type: "file", style: "display: none" } );
+  globals.uFile = rInput( null, { type: "file", style: "display: none", multiple: "multiple" } );
   globals.uFileLed = rLed().observe( "click", selectFileLed.curry( true ) );
   globals.uFileName = rInput( null, { readonly: "readonly" } );
   globals.uBrowse = rInput( null, { "class": "styled upload", type: "button", value: "Browse" } );
@@ -2138,7 +2138,7 @@ function renderPage() {
     )
   ).insert(
     rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
-      rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", style: "display: none" } ) ).insert(
+      rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", style: "display: none", multiple: "multiple" } ) ).insert(
       rE( "div" ).insert( [ globals.uFileLed, rSpan( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ) ).insert(
       rE( "div" ).insert( [ globals.uUrlLed, rSpan( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
       rE( "div" ).insert( [ rSpan( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
@@ -2160,7 +2160,7 @@ function renderPage() {
   ) );
 
   globals.uFile.observe( "change", function( event ) {
-    globals.uFileName.value = event.originalTarget.files[0].name;
+    globals.uFileName.value = $A( event.originalTarget.files ).pluck( "name" ).join( ";" );
     selectFileLed( true );
   } );
 
@@ -2179,7 +2179,9 @@ function renderPage() {
     if ( globals.uploadFile ) {
       if ( globals.uFileName.value.length > 0 ) {
         wait();
-        processFile( globals.uFile.files[0], globals.uDir.value, globals.uPausedLed.value );
+        for ( var i = 0, len = globals.uFile.files.length; i < len; ++i ) {
+          processFile( globals.uFile.files[i], globals.uDir.value, globals.uPausedLed.value );
+        }
         $( "popups" ).close();
         globals.uFileName.value = "";
       }
