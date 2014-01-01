@@ -10,6 +10,7 @@
   "showSpeedTitle": false,
   "soundEnabled": false,
   "soundDone": "",
+  "soundVolume": "0.1",
   "torrentLink": "http://localhost/torrents/",
   "torrentLinkEnabled": false,
   "trackers": ""

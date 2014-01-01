@@ -27,7 +27,7 @@ catch( e ) {
 
 Object.extend( Object, {
   isBoolean: function( value ) {
-    return typeof value === "boolean";
+    return "boolean" === typeof value;
   },
   isEmpty: function( value ) {
     for( var k in value ) {
@@ -88,11 +88,11 @@ Object.extend( Array.prototype, {
     this.sort( isString ? function( a, b ) {
       var aa = prepare( a[property] );
       var bb = prepare( b[property] );
-      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null ? -1 : bb.localeCompare( aa ) * ( order ? -1 : 1 );
+      return aa == bb ? ( null == a.i ? 0 : ( a.i - b.i ) ) : null == bb ? -1 : bb.localeCompare( aa ) * ( order ? -1 : 1 );
     } : function( a, b ) {
       var aa = a[property];
       var bb = b[property];
-      return aa == bb ? ( a.i == null ? 0 : ( a.i - b.i ) ) : bb == null || ( order ? aa < bb : bb < aa ) ? -1 : 1;
+      return aa == bb ? ( null == a.i ? 0 : ( a.i - b.i ) ) : null == bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
     } );
   }
 } );
@@ -120,18 +120,20 @@ var FastBase64 = {
       i+= 3;
     }
     if ( len > 0 ) {
-      var n1= ( src[i] & 0xFC ) >> 2;
-      var n2= ( src[i] & 0x03 ) << 4;
+      var n1 = ( src[i] & 0xFC ) >> 2;
+      var n2 = ( src[i] & 0x03 ) << 4;
       if ( len > 1 ) n2 |= ( src[++i] & 0xF0 ) >> 4;
-      dst+= this.chars[n1];
-      dst+= this.chars[n2];
-      if ( len == 2 ) {
-        var n3= ( src[i++] & 0x0F ) << 2;
+      dst += this.chars[n1];
+      dst += this.chars[n2];
+      if ( 2 == len ) {
+        var n3 = ( src[i++] & 0x0F ) << 2;
         n3 |= ( src[i] & 0xC0 ) >> 6;
-        dst+= this.chars[n3];
+        dst += this.chars[n3];
       }
-      if ( len == 1 ) dst+= '=';
-      dst+= '=';
+      if ( 1 == len ) {
+        dst += '=';
+      }
+      dst += '=';
     }
     return dst;
   } // end Encode
@@ -198,7 +200,7 @@ var riffwave = function( data ) {
       u16ToArray( this.header.bitsPerSample ),
       this.header.subChunk2Id,
       u32ToArray( this.header.subChunk2Size ),
-      ( this.header.bitsPerSample == 16 ) ? split16bitArray( this.data ) : this.data
+      ( 16 == this.header.bitsPerSample ) ? split16bitArray( this.data ) : this.data
     );
     this.dataURI = "data:audio/wav;base64," + FastBase64.encode( this.wav );
   };
@@ -262,7 +264,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.5",
+    version: "0.9.6",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
@@ -272,7 +274,7 @@ var globals = {
       if ( arguments.torrents ) {
         updateTorrents( arguments.torrents );
         filterTorrents();
-        if ( globals.activeTableId == "torrentTable" ) {
+        if ( "torrentTable" == globals.activeTableId ) {
           sortTorrents();
           renderTorrents();
         }
@@ -320,7 +322,7 @@ var sessionFields = {
 var torrentActionLabels = ["Details", "Start", "Stop", "Announce", "Check", "Remove", "Trash"];
 var torrentActions = {};
 torrentActionLabels.concat( ["add", "get", "set"] ).invoke( "toLowerCase" ).each( function( action ) {
-  torrentActions[action] = { method: "torrent-" + ( action == "check" ? "verify" : action ) };
+  torrentActions[action] = { method: "torrent-" + ( "check" == action ? "verify" : action ) };
 } );
 torrentActions["trash"].method = torrentActions["remove"].method;
 torrentActionLabels = ["Select"].concat( torrentActionLabels );
@@ -455,8 +457,8 @@ var torrentColumns = {
       var popup = $( "popupGeneral" );
       popup.observe( "click", function( event ) {
         var action = event.target.id;
-        var select = action == "select visible" || action == "select all";
-        var visible = action == "select visible" || action == "deselect visible";
+        var select = "select visible" == action || "select all" == action;
+        var visible = "select visible" == action || "deselect visible" == action;
         switch( action ) {
           case "select all":
           case "deselect all":
@@ -466,7 +468,7 @@ var torrentColumns = {
             globals.torrents.each( function( torrent ) {
               torrent.set( !visible || visible && torrent.display ? select : torrent.selected );
             } );
-            if ( action == "reset " ) {
+            if ( "reset" == action ) {
               // TODO: Set every filter to default settings
             }
             break;
@@ -501,7 +503,7 @@ var torrentColumns = {
 
         wait();
 
-        if ( action == "details" ) {
+        if ( "details" == action ) {
           filesClickHandler( event );
           return;
         }
@@ -510,14 +512,14 @@ var torrentColumns = {
           return torrent.display && torrent.isSelected() ? ( torrent ) : null;
         } ).compact();
 
-        selected = selected.length == 0 ? [ torrent ] : selected;
+        selected = 0 == selected.length ? [ torrent ] : selected;
 
         var selectedIds = [];
         var selectedMagnetIds = [];
 
-        if ( action == "trash" ) {
+        if ( "trash" == action ) {
           var partitioned = selected.partition( function( torrent ) {
-            return torrent.metadataPercentComplete == null || torrent.metadataPercentComplete == 1.0;
+            return null == torrent.metadataPercentComplete || 1.0 == torrent.metadataPercentComplete;
           } );
           selectedIds = partitioned[ 0 ].pluck( "id" );
           selectedMagnetIds = partitioned[ 1 ].pluck( "id" );
@@ -526,7 +528,7 @@ var torrentColumns = {
           selectedIds = selected.pluck( "id" );
         }
 
-        var request = newRequest( torrentActions[ action ].method, null, action == "trash" && selectedIds.length > 0 && selectedMagnetIds.length > 0 ? function( response ) {
+        var request = newRequest( torrentActions[ action ].method, null, "trash" == action && selectedIds.length > 0 && selectedMagnetIds.length > 0 ? function( response ) {
           // If the array of ids is empty, Transmission assumes ALL.
           if ( selectedMagnetIds.length > 0 ) {
             var magnetRequest = newRequest( torrentActions[ action ].method );
@@ -536,8 +538,8 @@ var torrentColumns = {
           }
         } : null );
 
-        if ( action != "trash" || confirm( "Are you sure you want to trash the following torrent(s)? \n\"" + selected.pluck( "name" ).join( "\",\n\"" ) + "\"" ) ) {
-          if ( action == "trash" ) {
+        if ( "trash" != action || confirm( "Are you sure you want to trash the following torrent(s)? \n\"" + selected.pluck( "name" ).join( "\",\n\"" ) + "\"" ) ) {
+          if ( "trash" == action ) {
             if ( selectedIds.length > 0 ) {
               request.parametersObject.arguments["delete-local-data"] = true;
             }
@@ -551,7 +553,7 @@ var torrentColumns = {
           if ( selectedIds.length > 0 ) {
             request.parametersObject.arguments.ids = selectedIds;
             doRequest( request );
-            if ( action == "remove" || action == "trash" ) {
+            if ( "remove" == action || "trash" == action ) {
               globals.removed.concatUnique( selectedIds );
             }
           }
@@ -572,10 +574,12 @@ var torrentColumns = {
         var selected = globals.torrents.collect( function( torrent ) {
           return torrent.display && torrent.isSelected() ? ( torrent ) : null;
         } ).compact();
-        selected = selected.length == 0 ? [ torrent ] : selected;
+        selected = 0 == selected.length ? [ torrent ] : selected;
         doRequest( newRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) } ) );
       } );
-      showPopup( popup, event );
+      showPopup( popup, event, function( popup, event ) {
+        return event.shiftKey;
+      } );
     },
     render: true
   },
@@ -583,7 +587,7 @@ var torrentColumns = {
   "status": {
     label: "Status", render: renderStatus, filter: {
       active: true, value: 4, renderNode: renderStatusFilter, match: function( torrent ) {
-        return torrent.status == null || this.value == -1 || this.value == torrent.status
+        return null == torrent.status || -1 == this.value || this.value == torrent.status
       }
     }
   },
@@ -615,7 +619,7 @@ var torrentColumns = {
   "name": {
     label: "Name", readOnly: true, render: renderName, isString: true, filter: {
       active: true, value: "", renderNode: renderNameFilter, match: function( torrent ) {
-        return torrent.name == null || torrent.name.toLowerCase().include( this.value )
+        return null == torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().include( this.value ) );
       }
     }
   },
@@ -661,9 +665,9 @@ var trackerColumns = {
       var popup = $( "popupTracker" );
       popup.observe( "click", function( event ) {
         var action = event.target.id;
-        if ( action == "remove" ) {
+        if ( "remove" == action ) {
           var request = newRequest( "torrent-set", { ids: [globals.currentTorrent.id], trackerRemove: [globals.currentTracker] }, function( response ) {
-            if ( response.responseJSON.result == "success" ) {
+            if ( "success" == response.responseJSON.result ) {
             }
           } );
 
@@ -728,20 +732,18 @@ var Torrent = Class.create( {
     this.dirty = this.dirty || [];
     for ( t in torrent ) {
       if ( this[t] != torrent[t] ) {
-        if ( t == "status" && globals.torrentStatus[torrent[t]] == "Seeding" && globals.torrentStatus[this[t]] == "Downloading" ) {
+        if ( "status" == t && "Seeding" == globals.torrentStatus[torrent[t]] && "Downloading" == globals.torrentStatus[this[t]] ) {
           this.done();
         }
         this[t] = torrent[t];
-        if ( t != "id" ) {
-          this.dirty.pushUnique( t == "hashString" ? "name" : t );
+        if ( "id" != t ) {
+          this.dirty.pushUnique( "hashString" == t ? "name" : t );
         }
       }
     }
   },
   done: function() {
-    if ( globals.shift.settings.soundEnabled ) {
-      globals.shift.doneSound.play();
-    }
+    playDoneSound();
   }
 } );
 
@@ -800,14 +802,15 @@ function showPopup( popup, event, keepOpen ) {
 
   popups.close = function( event ) {
     preventDefault( event );
+    if ( keepOpen && keepOpen( popup, event ) ) {
+      return;
+    }
     [ outside, popups, popup ].invoke( "hide" ).invoke( "stopObserving", "click" );
     delete this.close;
   };
 
-  if ( !keepOpen ) {
-    outside.observe( "click", popups.close );
-    popups.observe( "click", popups.close );
-  }
+  outside.observe( "click", popups.close );
+  popups.observe( "click", popups.close );
 
   popup.style.display = "block";
   popups.style.display = "block";
@@ -966,12 +969,24 @@ function renderSizeFilter() {
   return rE( "div", { "class": "filter"} ).hide().insert( "Size: " ).insert( select ).insert( input ).insert( apply );
 }
 
+var noMatchRegExp = new RegExp( "\0" );
+
 function renderNameFilter() {
   var filter = torrentColumns.name.filter;
   var input = rInput( filter.value, { id: "doneInput" } );
+  var regExpLed = rLed();
+  regExpLed.observe( "click", regExpLed.toggle );
 
   var handler = function( event ) {
-    filter.value =  input.value.toLowerCase();
+    filter.value = input.value.toLowerCase();
+    if ( filter.isRegExp = regExpLed.value ) {
+      try {
+        filter.value = new RegExp( input.value, "i" );
+      }
+      catch( e ) {
+        filter.value = noMatchRegExp;
+      }
+    }
     filterTorrents();
   };
 
@@ -981,7 +996,7 @@ function renderNameFilter() {
   input.observe( "blur", handler );
   apply.observe( "click", handler );
 
-  return rE( "div", { "class": "filter"} ).hide().insert( "Name: " ).insert( input ).insert( apply );
+  return rE( "div", { "class": "filter"} ).hide().insert( "Name: " ).insert( input ).insert( " RegExp: " ).insert( regExpLed ).insert( apply );
 }
 
 function compareValue( value, comparator, filterValue ) {
@@ -1195,9 +1210,9 @@ function renderTorrents( noRefresh ) {
       if ( row ) {
         for ( var k in torrentColumns ) {
           var render = torrentColumns[k].render;
-          if ( ( render === undefined || render !== false ) && torrent.dirty.include( k ) ) {
+          if ( ( undefined === render || false !== render ) && torrent.dirty.include( k ) ) {
             var cell = row.down( "." + k );
-            updateElement( cell, render === undefined || render === true ? torrent[k] : render( torrent[k], torrent, k, cell ) );
+            updateElement( cell, undefined === render || true === render ? torrent[k] : render( torrent[k], torrent, k, cell ) );
           }
           torrent.dirty.remove( k );
         }
@@ -1284,9 +1299,9 @@ function renderRow( object, columnDefinitions, row )
 
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
-    if ( render === undefined || render !== false ) {
+    if ( undefined === render || false !== render ) {
       var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
-      updateElement( cell, render === undefined || render === true ? object[k] : render( object[k], object, k, cell ) );
+      updateElement( cell, undefined === render || true === render ? object[k] : render( object[k], object, k, cell ) );
       row.insert( cell );
     }
   }
@@ -1303,9 +1318,9 @@ function updateRow( object, columnDefinitions, row )
 {
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
-    if ( render === undefined || render !== false ) {
+    if ( undefined === render || false !== render ) {
       var cell = row.down( "." + k );
-      updateElement( cell, render === undefined || render === true ? object[k] : render( object[k], object, k, cell ) );
+      updateElement( cell, undefined === render || true === render ? object[k] : render( object[k], object, k, cell ) );
     }
   }
   return row;
@@ -1391,14 +1406,14 @@ function getSelectedFiles( files, id, depth ) {
 
 function setFilesPriority( id, files, priority ) {
   var request = newRequest( "torrent-set", { ids: [id] }, function( response ) {
-    if ( response.responseJSON.result == "success" ) {
+    if ( "success" == response.responseJSON.result ) {
       files.each( function( fileIndex ) {
         $( "f_" + fileIndex ).down( ".led" ).set( priority );
       } );
     }
   } );
 
-  ( priority == "none" ? ["files-unwanted"] : ["files-wanted", "priority-" + priority ] ).each( function( selector ) {
+  ( "none" == priority ? ["files-unwanted"] : ["files-wanted", "priority-" + priority ] ).each( function( selector ) {
     request.parametersObject.arguments[ selector ] = files;
   } );
 
@@ -1424,10 +1439,11 @@ function fileMenuClickHandler( event ) {
 
 function fileClickHandler( event ) {
   var row = event.target.up( "tr" );
+
   var id = row.id.split( "_" );
   id[1] = parseInt( id[1] );
 
-  var selected = id[0] == "f" ? [ id[1] ] : null;
+  var selected = "f" == id[0] ? [ id[1] ] : null;
 
   if ( selected ) {
     setFilesPriority( globals.currentTorrent.id, selected, row.down( ".led" ).value ? "none" : "normal" );
@@ -1461,6 +1477,13 @@ function changeRequest( request, method, arguments, onSuccess ) {
   }
 }
 
+function playDoneSound() {
+  if ( globals.shift.settings.soundEnabled ) {
+    globals.shift.doneSound.volume = globals.shift.settings.soundVolume;
+    globals.shift.doneSound.play();
+  }
+}
+
 function rCell( attributes, content ) {
   return rE( "td", attributes, content );
 }
@@ -1477,7 +1500,7 @@ function rFolder( base, fileParts, filePartIndex ) {
 }
 
 function renderFiles( torrent ) {
-  var torrentDone = torrent.percentDone == 1;
+  var torrentDone = 1 == torrent.percentDone;
 
   var folderLink = globals.shift.settings.folderLinkEnabled ? globals.shift.settings.folderLink : null;
   if ( !torrentDone && globals.shift.session["incomplete-dir-enabled"] ) {
@@ -1910,6 +1933,7 @@ function renderShiftTable() {
         document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date;
         renderDoneSound();
       }
+      playDoneSound();
     } ) ] )
   );
 }
