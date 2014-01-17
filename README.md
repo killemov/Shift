@@ -3,6 +3,8 @@ Shift is a minimalistic approach to maximum control of your Transmission.
 
 *Shift is targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.*
 
+![shift_torrents](https://f.cloud.github.com/assets/128298/1134763/2dd28c28-1bfa-11e3-9bd9-79a3c3902443.png)
+![shift_session](https://f.cloud.github.com/assets/128298/1134770/564ab734-1bfa-11e3-9e52-0eb93697d9bd.png)
 ## Column based sorting and filtering.
 
 Click on the name in a column header and the table will be sorted by that column. Click on it again and the sorting order is reversed.
