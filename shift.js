@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2013 Killemov.
+ * © 2014 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -211,7 +211,7 @@ var riffwave = function( data ) {
 var COOKIE_KEY = "shift.settings=";
 var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
 
-var updateTorrentFields = ["eta", "id", "percentDone", "queuePosition", "rateDownload", "rateUpload", "status"];
+var updateTorrentFields = [ "eta", "id", "percentDone", "queuePosition", "rateDownload", "rateUpload", "status", "uploadedEver" ];
 
 function newRequest( method, arguments, onSuccess, properties ) {
   var request = {
@@ -264,7 +264,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.6",
+    version: "0.9.7",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
@@ -486,7 +486,9 @@ var torrentColumns = {
       } );
       showPopup( popup, event );
     } ),
-    render: function() { return rLed() },
+    render: function() {
+      return rLed()
+    },
     listHandler: function( event, torrent ) {
       globals.currentTorrent = torrent;
       var popup = $( "popupTorrent" );
@@ -498,7 +500,7 @@ var torrentColumns = {
         }
 
         if ( !torrentActions[ action ] ) {
-          return
+          return;
         }
 
         wait();
@@ -593,8 +595,8 @@ var torrentColumns = {
   },
 
   "percentDone": {
-    label: "Done", render: renderDone, defaultOrder: false, filter: {
-      active: true, comparator: "le", value: 1.0, renderNode: renderDoneFilter, match: function( torrent ) {
+    label: "Done", render: renderPercentDone, defaultOrder: false, filter: {
+      active: true, comparator: "le", value: 1.0, renderNode: renderPercentDoneFilter, match: function( torrent ) {
         return compareValue( torrent.percentDone, this.comparator, this.value );
       }
     }
@@ -605,7 +607,7 @@ var torrentColumns = {
   },
 
   "rateUpload": {
-    label: "Up", readOnly: true, render: renderSpeed
+    label: "Up", readOnly: true, render: renderRateUpload
   },
 
   "sizeWhenDone": {
@@ -759,15 +761,17 @@ function rLed( k, attributes ) {
   return Object.extend( rSpan( Object.extend( { "class": "led" }, attributes ) ), {
     value: false,
     set: function( k ) {
+      var found = false;
       if ( Object.isBoolean( k ) ) {
         k = k ? "normal" : "none";
       }
       k = k ? k : "none";
       this.value = k != "none";
       for ( p in filePriority ) {
-        k == p ? this.addClassName( p ) : this.removeClassName( p )
+        k == p ? this.addClassName( p ) : this.removeClassName( p );
+        found |= k == p;
       }
-      return this.update( filePriority[ k ].label );
+      return found ? this.update( filePriority[ k ].label ) : this.update( k );
     },
     toggle: function() {
       this.set( !this.value );
@@ -835,7 +839,7 @@ function renderDateTime( seconds ) {
   return seconds == 0 ? "-" : new Date( 1000 * seconds ).toJSON().substr( 0, 19 ).replace( "T", " " );
 }
 
-function renderDone( percentage, torrent, ignore, cell ) {
+function renderPercentDone( percentage, torrent, ignore, cell ) {
   if ( cell && torrent.eta > -1 ) {
     cell.title = renderInterval( torrent.eta );
   }
@@ -860,6 +864,13 @@ function renderName( name, torrent, ignore, cell ) {
 
 function renderPercentage( percentage, decimals ) {
   return ( percentage * 100.0 ).toFixed( decimals == undefined ? 2 : decimals ) + "%";
+}
+
+function renderRateUpload( rateUpload, torrent, ignore, cell ) {
+  if ( cell ) {
+    cell.title = renderSize( torrent.uploadedEver );
+  }
+  return isNaN( rateUpload ) ? "" : renderSpeed( rateUpload );
 }
 
 function renderSize( size, decimals ) {
@@ -895,6 +906,14 @@ function normalizeOptions( options ) {
 
 var defaultOptions = normalizeOptions( { lt : "<", le: "<=", eq: "==", ge: ">=", gt: ">" } );
 
+function renderFilter( label, handler ) {
+  var f = rE( "div", { "class": "filter"} ).hide();
+  f.insert( rSpan( { "class" : "filterLabel" }, label + ":" ) );
+  f.insert( rSpan( { "class" : "filterInput" } ) );
+  f.insert( handler ? rButton().observe( "click", handler ) : null );
+  return f;
+}
+
 function renderSelect( options ) {
   var select = rE( "select", options.select );
   if ( options.options ) {
@@ -908,12 +927,14 @@ function renderSelect( options ) {
 }
 
 function renderStatusFilter() {
-  return rE( "div", { "class": "filter"} ).hide().insert( "Status: " ).insert(
+  var f = renderFilter( "Status" );
+  f.down( "span.filterInput" ).insert(
     renderSelect( { select: { id: "statusSelect", value: 4, "class": "styled" }, options: normalizeOptions( globals.torrentStatus ) } ).observe( "change", function( event ) {
       torrentColumns.status.filter.value = this.value;
       filterTorrents();
     } )
   );
+  return f;
 }
 
 function normalizePercentage( value ) {
@@ -926,7 +947,7 @@ function normalizeInteger( value ) {
   return isNaN( value ) || value < 0 ? 0 : value;
 }
 
-function renderDoneFilter() {
+function renderPercentDoneFilter() {
   var filter = torrentColumns.percentDone.filter;
   var select = renderSelect( { select: { "class": "styled", value: filter.comparator }, options: defaultOptions } );
   var input = rInput( renderPercentage( filter.value ), { "class": "styled number" } );
@@ -938,14 +959,13 @@ function renderDoneFilter() {
     filterTorrents();
   };
 
-  var apply = rButton();
-
   select.observe( "change", handler );
   input.observe( "change", handler );
   input.observe( "blur", handler );
-  apply.observe( "click", handler );
 
-  return rE( "div", { "class": "filter"} ).hide().insert( "Done: " ).insert( select ).insert( input ).insert( apply );
+  var f = renderFilter( "Done", handler );
+  f.down( "span.filterInput" ).insert( select ).insert( input );
+  return f;
 }
 
 function renderSizeFilter() {
@@ -959,14 +979,13 @@ function renderSizeFilter() {
     filterTorrents();
   };
 
-  var apply = rButton();
-
   select.observe( "change", handler );
   input.observe( "change", handler );
   input.observe( "blur", handler );
-  apply.observe( "click", handler );
 
-  return rE( "div", { "class": "filter"} ).hide().insert( "Size: " ).insert( select ).insert( input ).insert( apply );
+  var f = renderFilter( "Size", handler );
+  f.down( "span.filterInput" ).insert( select ).insert( input );
+  return f;
 }
 
 var noMatchRegExp = new RegExp( "\0" );
@@ -990,13 +1009,12 @@ function renderNameFilter() {
     filterTorrents();
   };
 
-  var apply = rButton();
-
   input.observe( "change", handler );
   input.observe( "blur", handler );
-  apply.observe( "click", handler );
 
-  return rE( "div", { "class": "filter"} ).hide().insert( "Name: " ).insert( input ).insert( " RegExp: " ).insert( regExpLed ).insert( apply );
+  var f = renderFilter( "Name", handler );
+  f.down( "span.filterInput" ).insert( input ).insert( " RegExp: " ).insert( regExpLed );
+  return f;
 }
 
 function compareValue( value, comparator, filterValue ) {
@@ -1352,9 +1370,10 @@ function renderTorrentTable() {
   var row = rE( "tr" );
   torrentTable.header.insert( row );
 
-  // th#filter is a single cell containing all column filters input elements.
-  var f = rE( "th", { id: "filter" } );
-  torrentTable.header.insert( rE( "tr" ).insert( f ) );
+  var f = rE( "div", { id: "filterContainer" } ).hide();
+  f.visibleFilters = 0;
+  var h = rE( "th" ).insert( f );
+  torrentTable.header.insert( rE( "tr" ).insert( h ) );
 
   for ( var k in torrentColumns ) {
     var column = torrentColumns[k];
@@ -1374,6 +1393,8 @@ function renderTorrentTable() {
         var column = torrentColumns[ this.up().id.substring( 2 ) ];
         this.set( column.filtered = !column.filtered );
         column.filtered ? column.filter.node.show() : column.filter.node.hide();
+        f.visibleFilters += column.filtered ? 1 : -1;
+        f.visibleFilters ? f.show() : f.hide();
         event.stop();
       } );
 
@@ -1385,7 +1406,7 @@ function renderTorrentTable() {
       }
     }
   }
-  f.writeAttribute( "colSpan", globals.torrentColumnHash.length );
+  h.writeAttribute( "colSpan", globals.torrentColumnHash.length );
 }
 
 function getFolderName( fileName, depth ) {
@@ -1931,7 +1952,7 @@ function renderShiftTable() {
         var date = new Date();
         date.setTime( date.getTime() + ( 365 * 24 * 60 * 60 * 1000 ) );
         document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date;
-        renderDoneSound();
+        renderPercentDoneSound();
       }
       playDoneSound();
     } ) ] )
@@ -2158,7 +2179,9 @@ function renderPage() {
     rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
     .insert( rE( "h2", {}, "By Killemov" )  ).insert( "Version: " + globals.shift.version + " / " + globals.shift.session.version )
     .insert( rE( "p", {}, "Shift is a minimalistic approach to maximum control of your Transmission." ) ).insert( rE( "p", {},
-    "Shift is currently targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.<br>Shift is built on prototype.js. ( V1.7.1 - Hacked! )" )
+      "Shift is currently targeted at Mozilla Firefox 4+<br>" +
+      "with degraded and untested functionality for other or older browsers.<br>" +
+      "Shift is built on prototype.js. ( V1.7.2 - Hacked! )" )
     )
   ).insert(
     rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
@@ -2290,7 +2313,7 @@ function processURL( url, target, paused ) {
   } ) );
 }
 
-function renderDoneSound() {
+function renderPercentDoneSound() {
   var soundDone = globals.shift.settings.soundDone;
   if ( !soundDone || soundDone.length == 0 ) {
     var audioWave = [];
@@ -2350,7 +2373,7 @@ document.observe( "dom:loaded", function() {
     } );
     var data = cookie == null ? {} : window.atob( cookie.substring( COOKIE_KEY.length ) ).evalJSON();
     globals.shift.settings = Object.extend( Object.extend( {}, globals.shift.defaultSettings ), data );
-    renderDoneSound();
+    renderPercentDoneSound();
   } } );
 
   // Get first time session data and initialize page.
@@ -2386,7 +2409,7 @@ document.observe( "dom:loaded", function() {
         globals.activeTableId = "torrentTable";
         renderTorrentTable();
         sortTorrents();
-        renderTorrents();
+        renderTorrents( true );
 
         globals.shift.torrentUpdater = doRequest( globals.shift.updateTorrents );
         globals.shift.statsUpdater = doRequest( globals.shift.updateStats );

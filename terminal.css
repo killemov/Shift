@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2013 Killemov.
+ * © 2014 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -71,8 +71,22 @@ ul#menu li.sub {
   vertical-align: bottom;
 }
 
+div#filterContainer {
+  margin: 0 4px 4px;
+}
+
 div.filter {
-  margin: 1px 0 1px 0;
+  margin: 2px 8px;
+}
+
+span.filterInput {
+  width: 256px;
+  display: inline-block;
+}
+
+span.filterLabel {
+  width: 64px;
+  display: inline-block;
 }
 
 div.name {
@@ -106,10 +120,10 @@ div.popup div {
 
 .popup {
   background-color: #000000;
-  display: none;
   border-color: #00A000 #004000 #004000 #00A000;
   border-style: solid;
   border-width: 2px;
+  display: none;
   position: absolute;
 }
 
@@ -133,6 +147,7 @@ div.popup div {
 }
 
 div#popupAbout {
+  background-color: #008000;
   height: 300px;
   position: fixed;
   text-align: center;
@@ -149,7 +164,7 @@ span#labelDir {
   padding-left: 21px;
 }
 
-#popupPriority ul li {
+li#high, li#normal, li#low, li#none {
   display: inline-block;
   padding: 0;
 }
@@ -275,12 +290,44 @@ table#torrentTable tbody tr td {
   white-space: nowrap;
 }
 
+tbody tr:nth-child( even ) {}
+
+tbody tr:nth-child( odd ) {}
+
 col.address {
   width: 128px;
 }
 
+col.announce {
+  width: 384px;
+}
+
+col.clientName, col.name, col.value {
+  width: auto;
+}
+
+col.flagStr {
+  width: 64px;
+}
+
 col.key {
   width: 320px;
+}
+
+col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+  width: 152px;
+}
+
+col.length, col.sizeWhenDone {
+  width: 84px;
+}
+
+col.menu, col.priority {
+  width: 20px;
+}
+
+col.percentDone {
+  width: 66px;
 }
 
 col.port {
@@ -291,32 +338,12 @@ col.progress, col.rateDownload, col.rateToClient, col.rateToPeer, col.rateUpload
   width: 72px;
 }
 
-col.flagStr {
-  width: 64px;
-}
-
-col.percentDone {
-  width: 66px;
-}
-
-col.menu, col.priority {
-  width: 20px;
-}
-
-col.length, col.sizeWhenDone {
-  width: 84px;
+col.queuePosition {
+  width: 56px;
 }
 
 col.status {
-  width: 100px;
-}
-
-col.announce, col.clientName, col.name, col.value {
-  width: auto;
-}
-
-col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
-  width: 152px;
+  width: 120px;
 }
 
 td[readonly] {
@@ -329,7 +356,8 @@ td.announce, td.name {
   white-space: nowrap;
 }
 
-td.length, td.percentDone, td.port, td.progress, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
+td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
+  padding-right: 4px;
   text-align: right;
 }
 
@@ -386,7 +414,12 @@ div#stats span.label {
 }
 
 table#trackerTable tfoot tr td {
-  padding: 0 4px;
+}
+
+table#trackerTable textarea.styled {
+  background-color: #004000;
+  border-color: #004000 #00F000 #00F000 #004000;
+  color: #00F000;
 }
 
 span.drop {

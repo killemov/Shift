@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2013 Killemov.
+ * © 2014 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -29,6 +29,7 @@ input {
 
 h1 {
   font-size: 28pt;
+  margin: 8px 0;
   text-align: center;
 }
 
@@ -47,7 +48,7 @@ ul#menu {
   background-position: 0 0;
   background-repeat: repeat-x;
   background-size: 100% 100%;
-  border-radius: 8px;
+  border-radius: 4px;
   display: block;
   font-weight: bold;
   margin: 0 0 8px;
@@ -56,7 +57,7 @@ ul#menu {
 
 ul#menu li {
   background-color: rgba( 255, 255, 255, 0.2 );
-  border-color: #ECF3F7 #333333 #333333 #ECF3F7;
+  border-color: #ECF3F7 #758A9C #758A9C #ECF3F7;
   border-style: solid;
   border-radius: 4px;
   border-width: 1px;
@@ -73,7 +74,7 @@ ul#menu li:hover {
 
 ul#menu li.selected {
   background-color: rgba( 63, 63, 63, 0.2 );
-  border-color: #333333 #ECF3F7 #ECF3F7 #333333;
+  border-color: #758A9C #ECF3F7 #ECF3F7 #758A9C;
   border-radius: 4px;
   color: #ECF3F7;
 }
@@ -83,8 +84,27 @@ ul#menu li.sub {
   vertical-align: bottom;
 }
 
+div#filterContainer {
+  background-color: #95AABC;
+  border-color: #758A9C #ECF3F7 #ECF3F7 #758A9C;
+  border-radius: 4px;
+  border-style: solid;
+  border-width: 1px;
+  margin: 0 4px 4px;
+}
+
 div.filter {
-  margin: 1px 0 1px 0;
+  margin: 2px 8px;
+}
+
+span.filterInput {
+  width: 256px;
+  display: inline-block;
+}
+
+span.filterLabel {
+  width: 64px;
+  display: inline-block;
 }
 
 div.name {
@@ -146,6 +166,7 @@ div.popup div {
 
 div#popupAbout {
   height: 300px;
+  padding: 8px;
   position: fixed;
   text-align: center;
   width: 368px;
@@ -182,7 +203,7 @@ input.styled.number {
 
 input.styled[type=button] {
   background-color: #9DB2C4;
-  border-color: #ECF3F7 #333333 #333333 #ECF3F7;
+  border-color: #ECF3F7 #758A9C #758A9C #ECF3F7;
   border-radius: 4px;
   border-style: solid;
   border-width: 1px;
@@ -266,13 +287,13 @@ table {
   background-color: #CADCEB;
   border: 0;
   border-collapse: collapse;
-  border-radius: 8px;
+  border-radius: 4px;
   table-layout: fixed;
   width: 100%;
 }
 
 table thead tr th {
-  padding: 0 4px;
+  padding: 2px;
   text-align: left;
   white-space: nowrap;
 }
@@ -289,11 +310,11 @@ table#torrentTable tbody tr td {
   white-space: nowrap;
 }
 
-tbody tr:nth-child(even) {
+tbody tr:nth-child( even ) {
   background-color: #E1EBF2;
 }
 
-tbody tr:nth-child(odd) {
+tbody tr:nth-child( odd ) {
   background-color: #ECF3F7;
 }
 
@@ -313,11 +334,11 @@ col.key {
   width: 256px;
 }
 
-col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+col.doneDate, col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
   width: 152px;
 }
 
-col.length, col.sizeWhenDone {
+col.length, col.sizeWhenDone, col.uploadedEver {
   width: 84px;
 }
 
@@ -355,7 +376,7 @@ td.announce, td.name {
   white-space: nowrap;
 }
 
-td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
+td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone, td.uploadedEver {
   text-align: right;
 }
 
@@ -396,7 +417,7 @@ table#shiftTable input[type=button]#tracker {
 
 div#stats {
   background-color: rgba( 63, 63, 63, 0.2 );
-  border-color: #333333 #ECF3F7 #ECF3F7 #333333;
+  border-color: #758A9C #ECF3F7 #ECF3F7 #758A9C;
   border-radius: 4px;
   border-style: solid;
   border-width: 1px;
