@@ -39,8 +39,7 @@ Object.extend( Object, {
   }
 } );
 
-function prepare( s )
-{
+function prepare( s ) {
   return s ? s.toLowerCase().replace( nowordRegexp, " " ) : s;
 }
 
@@ -208,10 +207,9 @@ var riffwave = function( data ) {
   if ( data instanceof Array ) this.make( data );
 };
 
+
 var COOKIE_KEY = "shift.settings=";
 var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
-
-var updateTorrentFields = [ "eta", "id", "percentDone", "queuePosition", "rateDownload", "rateUpload", "status", "uploadedEver" ];
 
 function newRequest( method, arguments, onSuccess, properties ) {
   var request = {
@@ -247,15 +245,48 @@ function getArguments( response ) {
 
 var globals = {
   torrentStatus: {
-    "-1": "All",
-    0: "Stopped",
-    1: "Check waiting",
-    2: "Checking",
-    3: "Download waiting",
-    4: "Downloading",
-    5: "Seed waiting",
-    6: "Seeding"
+    "-1": {
+      label: "All",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "error", "eta", "uploadedEver" ]
+    },
+    0: {
+      label: "Stopped",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
+      fields: [ "id", "status" ]
+    },
+    1: {
+      label: "Check waiting",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone", "corruptEver", "error" ]
+    },
+    2: {
+      label: "Checking",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver", "error" ]
+    },
+    3: {
+      label: "Download waiting",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone", "error" ]
+    },
+    4: {
+      label: "Downloading",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "uploadedEver", "eta" ]
+    },
+    5: {
+      label: "Seed waiting",
+      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "percentDone" ]
+    },
+    6: {
+      label: "Seeding",
+      columns: [ "menu", "queuePosition", "status", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "rateUpload", "uploadedEver", "uploadRatio" ]
+    }
   },
+  torrentStatusDefault: 4,
   magnets: [],
   torrents: [],
   removed: [],
@@ -264,22 +295,25 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.7",
+    version: "0.9.8",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
       if ( arguments.removed ) {
-        arguments.removed.each( removeTorrentById );
+        getQueuePositions( arguments.removed );
       }
       if ( arguments.torrents ) {
         updateTorrents( arguments.torrents );
         filterTorrents();
         if ( "torrentTable" == globals.activeTableId ) {
+          if ( globals.torrentStatusChanged ) {
+            setTorrentsColumnsVisible( globals.torrentStatus[ globals.torrentStatusCurrent ].columns );
+          }
           sortTorrents();
           renderTorrents();
         }
       }
-    }, updateTorrentFields, "recently-active" ),
+    }, {}, "recently-active" ),
 
     updateStats: newPeriodicalUpdater( "session-stats", 5, function( response ) {
       updateFields( globals.shift.sessionStats = getArguments( response ) );
@@ -289,8 +323,11 @@ var globals = {
     updateSession: newPeriodicalUpdater( "session-get", 60, function( response ) {
       updateFields( globals.shift.session = getArguments( response ) );
     } )
-  }
+  },
+  staticFields: [ "name", "percentDone", "queuePosition", "sizeWhenDone" ]
 }
+globals.torrentStatusCurrent = globals.torrentStatusDefault;
+globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
 
 var filePriority = { "high": { label: "+" } , "normal": { label: " " }, "low": { label: "-" }, "none": { label: "" } };
 var filePriorityKeys = Object.keys( filePriority );
@@ -449,9 +486,25 @@ function wait() {
   globals.html.style.cursor = "progress";
 }
 
-var torrentColumns = {
-  "id": { render: false },
+function getQueuePositions( removed ) {
+  if ( globals.version < 2.4 ) {
+    if ( removed ) {
+      removed.each( removeTorrentById );
+    }
+    return;
+  }
+  doRequest( newRequest( "torrent-get", { fields: [ "id", "queuePosition" ] }, function( response ) {
+    if ( removed ) {
+      removed.each( removeTorrentById );
+    }
+    updateTorrents( response.responseJSON.arguments.torrents );
+    filterTorrents();
+    sortTorrents();
+    renderTorrents( false );
+  } ) );
+}
 
+var torrentColumns = {
   "menu": {
     label: rLed().observe( "click", function( event ) {
       var popup = $( "popupGeneral" );
@@ -487,7 +540,7 @@ var torrentColumns = {
       showPopup( popup, event );
     } ),
     render: function() {
-      return rLed()
+      return rLed();
     },
     listHandler: function( event, torrent ) {
       globals.currentTorrent = torrent;
@@ -577,21 +630,28 @@ var torrentColumns = {
           return torrent.display && torrent.isSelected() ? ( torrent ) : null;
         } ).compact();
         selected = 0 == selected.length ? [ torrent ] : selected;
-        doRequest( newRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) } ) );
+        doRequest( newRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) }, getQueuePositions ) );
       } );
       showPopup( popup, event, function( popup, event ) {
         return event.shiftKey;
       } );
-    },
-    render: true
+    }
   },
 
   "status": {
-    label: "Status", render: renderStatus, filter: {
-      active: true, value: 4, renderNode: renderStatusFilter, match: function( torrent ) {
+    label: "Status", filter: {
+      active: true, visible: true, value: globals.torrentStatusCurrent, renderNode: renderStatusFilter, match: function( torrent ) {
         return null == torrent.status || -1 == this.value || this.value == torrent.status
       }
     }
+  },
+
+  "recheckProgress": {
+    label: "Checked"
+  },
+
+  "corruptEver": {
+    label: "Corrupt"
   },
 
   "percentDone": {
@@ -603,11 +663,19 @@ var torrentColumns = {
   },
 
   "rateDownload": {
-    label: "Down", readOnly: true, render: renderSpeed
+    label: "Down", readOnly: true
   },
 
   "rateUpload": {
     label: "Up", readOnly: true, render: renderRateUpload
+  },
+
+  "uploadedEver": {
+    label: "Uploaded", render: renderSizeCell
+  },
+
+  "uploadRatio": {
+    label: "Karma"
   },
 
   "sizeWhenDone": {
@@ -624,14 +692,10 @@ var torrentColumns = {
         return null == torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().include( this.value ) );
       }
     }
-  },
-
-  "eta": { render: false }
+  }
 }
 
-globals.torrentColumnHash = Object.values( torrentColumns ).select( function( column ) {
-  return column.render;
-} );
+globals.torrentColumnHash = Object.values( torrentColumns );
 
 var fileColumns = {
   "priority": { label: rLed().observe( "click", function( event ) {
@@ -893,7 +957,7 @@ function renderSpeed( size ) {
 }
 
 function renderStatus( status ) {
-  return globals.torrentStatus[status];
+  return globals.torrentStatus[status].label;
 }
 
 function normalizeOptions( options ) {
@@ -929,9 +993,21 @@ function renderSelect( options ) {
 function renderStatusFilter() {
   var f = renderFilter( "Status" );
   f.down( "span.filterInput" ).insert(
-    renderSelect( { select: { id: "statusSelect", value: 4, "class": "styled" }, options: normalizeOptions( globals.torrentStatus ) } ).observe( "change", function( event ) {
+    renderSelect( { select: { id: "statusSelect", value: globals.torrentStatusCurrent, "class": "styled" },
+    options: Object.keys( globals.torrentStatus ).collect( function( k ) {
+      return { value: k, text: globals.torrentStatus[k].label };
+    } ) } ).observe( "change", function( event ) {
       torrentColumns.status.filter.value = this.value;
       filterTorrents();
+      globals.torrentStatusChanged = true;
+      globals.torrentStatusCurrent = this.value;
+      globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
+      if ( globals.torrentStatus[ globals.torrentStatusCurrent ].onChange ) {
+        globals.torrentStatus[ globals.torrentStatusCurrent ].onChange();
+      }
+      else {
+        setDefaultTorrentRequest();
+      }
     } )
   );
   return f;
@@ -1200,9 +1276,13 @@ function sortTorrents( property, reverse ) {
 var filters = Object.values( torrentColumns ).pluck( "filter" ).compact();
 
 function filterTorrents() {
-  globals.torrents.each( function ( torrent ) {
-    torrent.display = filters.all( function( filter ) { return !filter.active || filter.match( this ) }, torrent );
+  return globals.torrents.select( function ( torrent ) {
+    return torrent.display = filters.all( function( filter ) { return !filter.active || filter.match( this ) }, torrent );
   } );
+}
+
+function getVisibleTorrentIds() {
+  return globals.torrents.select( function( torrent ) { return torrent.display } ).pluck( "id" );
 }
 
 function renderTorrents( noRefresh ) {
@@ -1227,8 +1307,12 @@ function renderTorrents( noRefresh ) {
     if ( torrent.dirty.length > 0 ) {
       if ( row ) {
         for ( var k in torrentColumns ) {
+          if ( !torrent.dirty.include( k ) ) {
+            continue;
+          }
           var render = torrentColumns[k].render;
-          if ( ( undefined === render || false !== render ) && torrent.dirty.include( k ) ) {
+          render = undefined === render ? torrentFields[k].render : render;
+          if ( false !== render ) {
             var cell = row.down( "." + k );
             updateElement( cell, undefined === render || true === render ? torrent[k] : render( torrent[k], torrent, k, cell ) );
           }
@@ -1273,7 +1357,7 @@ function renderTorrents( noRefresh ) {
   } );
 
   if ( !noRefresh && newRows.length > 0 ) {
-    doRequest( newRequest( "torrent-get", { fields: Object.keys( torrentColumns ), ids: newRows }, function( response ) {
+    doRequest( newRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: newRows }, function( response ) {
       globals.lastResponse = response;
       updateTorrents( response.responseJSON.arguments.torrents );
       filterTorrents();
@@ -1311,8 +1395,7 @@ function renderTable( id, columnDefinitions, click ) {
   return table;
 }
 
-function renderRow( object, columnDefinitions, row )
-{
+function renderRow( object, columnDefinitions, row ) {
   row = row || rE( "tr" );
 
   for ( var k in columnDefinitions ) {
@@ -1332,8 +1415,7 @@ function updateElement( element, content ) {
   }
 }
 
-function updateRow( object, columnDefinitions, row )
-{
+function updateRow( object, columnDefinitions, row ) {
   for ( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
     if ( undefined === render || false !== render ) {
@@ -1352,6 +1434,17 @@ function renderTorrentTable() {
   globals.body.insert( torrentTable.table );
   torrentTable.body.id = "torrentBody";
 
+  Object.keys( torrentColumns ).each( function( k ) {
+     var style = $S( "." + k );
+     if ( !style ) {
+       var sheet = document.styleSheets[0];
+       sheet.insertRule( "." + k + " {}", 0 );
+       var rules = sheet.rules || sheet.cssRules;
+       style = rules[0].style;
+     }
+     torrentColumns[k].style = style;
+  } );
+
   torrentTable.table.observe( "click", function( event ) {
     var cell = event.target.nodeName == "TD" ? event.target : event.target.up( "td" );
     if ( cell ) {
@@ -1367,11 +1460,30 @@ function renderTorrentTable() {
     }
   } );
 
+  torrentTable.table.observe( "mousedown", function( event ) {
+     torrentTable.mousedown = true;
+  } );
+
+  torrentTable.table.observe( "mousemove", function( event ) {
+    if ( torrentTable.mousedown ) {
+      var cell = event.target.nodeName == "TD" ? event.target : event.target.up( "td" );
+      if ( cell ) {
+        var row = cell.up( "tr" );
+        var column = globals.torrentColumnHash[row.childElements().indexOf( cell )];
+        var torrent = globals.torrentHash[row.id];
+        torrent.select();
+      }
+    }
+  } );
+
+  torrentTable.table.observe( "mouseup", function( event ) {
+     torrentTable.mousedown = false;
+  } );
+
   var row = rE( "tr" );
   torrentTable.header.insert( row );
 
   var f = rE( "div", { id: "filterContainer" } ).hide();
-  f.visibleFilters = 0;
   var h = rE( "th" ).insert( f );
   torrentTable.header.insert( rE( "tr" ).insert( h ) );
 
@@ -1389,24 +1501,30 @@ function renderTorrentTable() {
         continue;
       }
 
-      var l = rLed().observe( "click", function( event ) {
+      var l = rLed( column.filter.visible ).observe( "click", function( event ) {
         var column = torrentColumns[ this.up().id.substring( 2 ) ];
-        this.set( column.filtered = !column.filtered );
-        column.filtered ? column.filter.node.show() : column.filter.node.hide();
-        f.visibleFilters += column.filtered ? 1 : -1;
-        f.visibleFilters ? f.show() : f.hide();
+        this.set( column.filter.visible = !column.filter.visible );
+        column.filter.visible ? column.filter.node.show() : column.filter.node.hide();
+        $A( f.children ).select( Element.visible ).length ? f.show() : f.hide();
         event.stop();
       } );
 
-      if ( column.render ) {
-        $( "h_" + k ).insert( l );
+      if ( column.filter.visible ) {
+        column.filter.node.show();
       }
-      else {
-        // Put this filter led somewhere else
-      }
+
+      $( "h_" + k ).insert( l );
     }
   }
   h.writeAttribute( "colSpan", globals.torrentColumnHash.length );
+  $A( f.children ).select( Element.visible ).length ? f.show() : f.hide();
+}
+
+function setTorrentsColumnsVisible( columns ) {
+  for ( var c in torrentColumns ) {
+    torrentColumns[ c ].style[ "display" ] = columns.include( c ) ? "" : "none";
+  }
+  $( "filterContainer" ).up( "th" ).colSpan = columns.length;
 }
 
 function getFolderName( fileName, depth ) {
@@ -1496,6 +1614,13 @@ function changeRequest( request, method, arguments, onSuccess ) {
   if ( onSuccess ) {
     options.onSuccess = onSuccess;
   }
+}
+
+function setDefaultTorrentRequest() {
+  changeRequest( globals.shift.torrentUpdater, "torrent-get", {
+    fields: globals.updateFields,
+    ids: "recently-active"
+  }, globals.shift.updateTorrents.onSuccess );
 }
 
 function playDoneSound() {
@@ -2041,10 +2166,7 @@ var menu = {
       return;
     }
 
-    changeRequest( globals.shift.torrentUpdater, "torrent-get", {
-      fields: updateTorrentFields,
-      ids: "recently-active"
-    }, globals.shift.updateTorrents.onSuccess );
+    setDefaultTorrentRequest();
 
     hideTable( globals.oldTableId );
     $( "torrentTable" ).show();
@@ -2241,7 +2363,7 @@ function renderPage() {
         globals.uUrl.value = "";
       }
     }
-  } )
+  } );
 
   var clazz = { "class": "label" };
 
@@ -2269,7 +2391,9 @@ function processFile( file, target, paused ) {
   }
 
   var dropId = "drop" + dropCount++;
-  $( "filter" ).insert( rSpan( { id: dropId, "class": "drop" }, "Uploading " + file.name  ) );
+  var f = $( "filterContainer" );
+  f.insert( rSpan( { id: dropId, "class": "drop" }, "Uploading " + file.name  ) );
+  f.show();
 
   // Upload the file first to see if Transmission can handle it.
   var torrentReader = new FileReader();
@@ -2281,6 +2405,8 @@ function processFile( file, target, paused ) {
       var result = event.target.result.substring( index + search.length );
       doRequest( newRequest( "torrent-add", { "download-dir": target, "paused": paused, "metainfo": result }, function( response ) {
         $( dropId ).remove();
+        $A( f.children ).select( Element.visible ).length ? f.show() : f.hide();
+
         // Transmisssion could not handle the file. Parse it for URL extraction.
         if ( response.responseJSON.result != "success" ) {
           var textReader = new FileReader();
@@ -2382,16 +2508,19 @@ document.observe( "dom:loaded", function() {
     globals.shift.session = response.responseJSON.arguments;
     globals.version = parseFloat( globals.shift.session.version );
     if ( globals.version < 2.4 ) {
-      globals.torrentStatus =  {
-        "-1": "All",
-        1: "Check waiting",
-        2: "Checking",
-        4: "Downloading",
-        8: "Seeding",
-        16: "Stopped"
-      };
+      globals.torrentStatus = {
+        "-1": globals.torrentStatus["-1"],
+        1: globals.torrentStatus[1],
+        2: globals.torrentStatus[2],
+        4: globals.torrentStatus[4],
+        8: globals.torrentStatus[6],
+        16: globals.torrentStatus[0]
+      }
       delete torrentColumns.queuePosition;
-      updateTorrentFields.remove( "queuePosition" );
+      Object.values( globals.torrentStatus ).pluck( "columns" ).each( function( columns ) {
+        columns.remove( "queuePosition" );
+      } );
+      globals.staticFields.remove( "queuePosition" );
     }
     renderTitle();
     renderPage();
@@ -2403,14 +2532,16 @@ document.observe( "dom:loaded", function() {
       filterTorrents();
 
       // Get full update for visible torrents and start periodical updaters.
-      doRequest( newRequest( "torrent-get", { fields: Object.keys( torrentColumns ), ids: globals.torrents.select( function( torrent ) { return torrent.display } ).pluck( "id" ) }, function( response ) {
+      doRequest( newRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: getVisibleTorrentIds() }, function( response ) {
         updateTorrents( response.responseJSON.arguments.torrents );
         filterTorrents();
         globals.activeTableId = "torrentTable";
         renderTorrentTable();
+        setTorrentsColumnsVisible( globals.torrentStatus[ globals.torrentStatusCurrent ].columns );
         sortTorrents();
         renderTorrents( true );
 
+        globals.shift.updateTorrents.parametersObject.arguments.fields = globals.updateFields;
         globals.shift.torrentUpdater = doRequest( globals.shift.updateTorrents );
         globals.shift.statsUpdater = doRequest( globals.shift.updateStats );
         globals.shift.sessionUpdater = doRequest( globals.shift.updateSession );

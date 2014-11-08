@@ -279,7 +279,7 @@ table thead tr th {
 
 table tbody tr td {
   border: 1px solid #004000;
-  padding: 0;
+  padding: 0 4px;
 }
 
 table#fileTable tbody tr td {
@@ -287,12 +287,17 @@ table#fileTable tbody tr td {
 }
 
 table#torrentTable tbody tr td {
+  text-align: right;
   white-space: nowrap;
 }
 
 tbody tr:nth-child( even ) {}
 
 tbody tr:nth-child( odd ) {}
+
+col {
+  width: 66px;
+}
 
 col.address {
   width: 128px;
@@ -302,7 +307,7 @@ col.announce {
   width: 384px;
 }
 
-col.clientName, col.name, col.value {
+ccol.announce, col.clientName, col.name, col.value {
   width: auto;
 }
 
@@ -314,11 +319,11 @@ col.key {
   width: 320px;
 }
 
-col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+col.doneDate, col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
   width: 152px;
 }
 
-col.length, col.sizeWhenDone {
+col.length, col.sizeWhenDone, col.uploadedEver {
   width: 84px;
 }
 
@@ -350,15 +355,14 @@ td[readonly] {
   color: #008000;
 }
 
-td.announce, td.name {
+td.announce, td.name, td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone {
-  padding-right: 4px;
-  text-align: right;
+table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
+  text-align: left;
 }
 
 table#detailsTable input {

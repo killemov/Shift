@@ -293,7 +293,7 @@ table {
 }
 
 table thead tr th {
-  padding: 2px;
+  padding: 1px 4px;
   text-align: left;
   white-space: nowrap;
 }
@@ -307,6 +307,7 @@ table#fileTable tbody tr td {
 }
 
 table#torrentTable tbody tr td {
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -316,6 +317,10 @@ tbody tr:nth-child( even ) {
 
 tbody tr:nth-child( odd ) {
   background-color: #ECF3F7;
+}
+
+col {
+  width: 66px;
 }
 
 col.address {
@@ -370,14 +375,14 @@ td[readonly] {
   color: #333333;
 }
 
-td.announce, td.name {
+td.announce, td.name, td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-td.length, td.percentDone, td.port, td.progress, td.queuePosition, td.rateDownload, td.rateToClient, td.rateToPeer, td.rateUpload, td.sizeWhenDone, td.uploadedEver {
-  text-align: right;
+table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
+  text-align: left;
 }
 
 table#detailsTable input {
