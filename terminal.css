@@ -283,6 +283,12 @@ table tbody tr td {
 }
 
 table#fileTable tbody tr td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table#peerTable tbody tr td {
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -296,7 +302,7 @@ tbody tr:nth-child( even ) {}
 tbody tr:nth-child( odd ) {}
 
 col {
-  width: 66px;
+  width: 72px;
 }
 
 col.address {
@@ -307,12 +313,8 @@ col.announce {
   width: 384px;
 }
 
-ccol.announce, col.clientName, col.name, col.value {
+col.announce, col.clientName, col.name, col.value {
   width: auto;
-}
-
-col.flagStr {
-  width: 64px;
 }
 
 col.key {
@@ -324,27 +326,23 @@ col.doneDate, col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, co
 }
 
 col.length, col.sizeWhenDone, col.uploadedEver {
-  width: 84px;
+  width: 96px;
 }
 
 col.menu, col.priority {
   width: 20px;
 }
 
-col.percentDone {
-  width: 66px;
-}
-
 col.port {
   width: 56px;
 }
 
-col.progress, col.rateDownload, col.rateToClient, col.rateToPeer, col.rateUpload {
-  width: 72px;
+col.progress {
+  width: 48px;
 }
 
 col.queuePosition {
-  width: 56px;
+  width: 48px;
 }
 
 col.status {
@@ -361,6 +359,10 @@ td.announce, td.name, td.status {
   white-space: nowrap;
 }
 
+table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
+  text-align: left;
+}
+
 table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
   text-align: left;
 }
@@ -373,6 +375,10 @@ table#detailsTable input {
 table#detailsTable input[type=button] {
   border-width: 1px;
   width: 6em;
+}
+
+table#fileTable tbody tr td.name {
+  text-align: left;
 }
 
 table#sessionTable input {

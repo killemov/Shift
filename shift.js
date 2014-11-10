@@ -705,7 +705,7 @@ var fileColumns = {
       setFilesPriority( torrent.id, [], "normal" );
     }
   } ) },
-  "percentDone": { label: "Done" },
+  "filePercentDone": { label: "Done" },
   "length": { label: "Size" },
   "name": { label: "Name", defaultOrder: false }
 }
@@ -1461,23 +1461,26 @@ function renderTorrentTable() {
   } );
 
   torrentTable.table.observe( "mousedown", function( event ) {
-     torrentTable.mousedown = true;
+     torrentTable.mousedown = 1;
   } );
 
   torrentTable.table.observe( "mousemove", function( event ) {
     if ( torrentTable.mousedown ) {
-      var cell = event.target.nodeName == "TD" ? event.target : event.target.up( "td" );
-      if ( cell ) {
-        var row = cell.up( "tr" );
-        var column = globals.torrentColumnHash[row.childElements().indexOf( cell )];
-        var torrent = globals.torrentHash[row.id];
-        torrent.select();
+      if ( torrentTable.mousedown > 3 ) {
+        var cell = event.target.nodeName == "TD" ? event.target : event.target.up( "td" );
+        if ( cell ) {
+          var row = cell.up( "tr" );
+          var column = globals.torrentColumnHash[row.childElements().indexOf( cell )];
+          var torrent = globals.torrentHash[row.id];
+          torrent.select();
+        }
       }
+      torrentTable.mousedown++;
     }
   } );
 
   torrentTable.table.observe( "mouseup", function( event ) {
-     torrentTable.mousedown = false;
+     torrentTable.mousedown = 0;
   } );
 
   var row = rE( "tr" );
@@ -1715,7 +1718,7 @@ function renderFiles( torrent ) {
       file.renderNode = rE( "tr", { id: "f_" + file.index } );
       file.renderNode.insert(
         rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert(
-        rCell( { "class": "percentDone" } , renderPercentage( file.percentDone ) ) ).insert(
+        rCell( { "class": "filePercentDone" } , renderPercentage( file.percentDone ) ) ).insert(
         rCell( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) ).insert(
         rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
       );
