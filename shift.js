@@ -663,11 +663,11 @@ var torrentColumns = {
   },
 
   "rateDownload": {
-    label: "Down", readOnly: true
+    label: "Down"
   },
 
   "rateUpload": {
-    label: "Up", readOnly: true, render: renderRateUpload
+    label: "Up", render: renderRateUpload
   },
 
   "uploadedEver": {
@@ -679,7 +679,7 @@ var torrentColumns = {
   },
 
   "sizeWhenDone": {
-    label: "Size", readOnly: true, render: renderSizeCell, filter: {
+    label: "Size", render: renderSizeCell, filter: {
       active: true, comparator: "ge", value: 0, renderNode: renderSizeFilter, match: function( torrent ) {
         return compareValue( torrent.sizeWhenDone, this.comparator, this.value );
       }
@@ -687,7 +687,7 @@ var torrentColumns = {
   },
 
   "name": {
-    label: "Name", readOnly: true, render: renderName, isString: true, filter: {
+    label: "Name", render: renderName, isString: true, filter: {
       active: true, value: "", renderNode: renderNameFilter, match: function( torrent ) {
         return null == torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().include( this.value ) );
       }
