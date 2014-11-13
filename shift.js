@@ -299,7 +299,7 @@ var globals = {
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
-      if ( arguments.removed ) {
+      if ( arguments.removed && arguments.removed.length > 0 ) {
         getQueuePositions( arguments.removed );
       }
       if ( arguments.torrents ) {
