@@ -241,7 +241,6 @@ span.led:hover {
 span.led[readonly]:hover {
   cursor: auto;
 }
-
 span.led.high {
   line-height: 11px;
   text-align: center;
@@ -317,6 +316,10 @@ col.announce, col.clientName, col.name, col.value {
   width: auto;
 }
 
+col.errorString {
+  width: 128px;
+}
+
 col.key {
   width: 320px;
 }
@@ -353,7 +356,7 @@ td[readonly] {
   color: #008000;
 }
 
-td.announce, td.name, td.status {
+td.announce, td.errorString, td.name, td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

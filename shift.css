@@ -341,6 +341,10 @@ col.announce, col.clientName, col.name, col.value {
   width: auto;
 }
 
+col.errorString {
+  width: 128px;
+}
+
 col.key {
   width: 256px;
 }
@@ -377,7 +381,7 @@ td[readonly] {
   color: #333333;
 }
 
-td.announce, td.name, td.status {
+td.announce, td.errorString, td.name, td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

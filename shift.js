@@ -248,27 +248,37 @@ var globals = {
     "-1": {
       label: "All",
       columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "error", "eta", "uploadedEver" ]
+      fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "eta", "uploadedEver" ]
     },
     0: {
       label: "Stopped",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
-      fields: [ "id", "status" ]
+      columns: [ "menu", "queuePosition", "status", "errorString", "percentDone", "sizeWhenDone", "name" ],
+      fields: [ "id", "status", "error" ],
+      onChange: function() {
+        changeRequest( globals.shift.torrentUpdater, "torrent-get", {
+          ids: globals.torrents.select( function( torrent ) {
+              return torrent.status == globals.torrentStatusCurrent;
+            } ).pluck( "id" )
+        }, function( response ) {
+          setDefaultTorrentRequest();
+          globals.shift.updateTorrents.onSuccess( response );
+        } )
+      }
     },
     1: {
       label: "Check waiting",
       columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "corruptEver", "error" ]
+      fields: [ "id", "status", "percentDone", "corruptEver" ]
     },
     2: {
       label: "Checking",
       columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver", "error" ]
+      fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver" ]
     },
     3: {
       label: "Download waiting",
       columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "error" ]
+      fields: [ "id", "status", "percentDone" ]
     },
     4: {
       label: "Downloading",
@@ -345,9 +355,9 @@ var sessionFields = {
   "peer-port": { action: function( row, keyCell, valueCell, o ) {
     var l = rLed( false, { id: "port-is-open", style: "float: right", title: "Checking", readonly: true } );
     keyCell.insert( l );
-    doRequest( newRequest( "port-test", {}, function( response ) {
+    doRequest( "port-test", {}, function( response ) {
       updateFields( getArguments( response ) );
-    } ) );
+    } );
 
     return true;
   } },
@@ -493,7 +503,7 @@ function getQueuePositions( removed ) {
     }
     return;
   }
-  doRequest( newRequest( "torrent-get", { fields: [ "id", "queuePosition" ] }, function( response ) {
+  doRequest( "torrent-get", { fields: [ "id", "queuePosition" ] }, function( response ) {
     if ( removed ) {
       removed.each( removeTorrentById );
     }
@@ -501,7 +511,7 @@ function getQueuePositions( removed ) {
     filterTorrents();
     sortTorrents();
     renderTorrents( false );
-  } ) );
+  } );
 }
 
 var torrentColumns = {
@@ -630,7 +640,7 @@ var torrentColumns = {
           return torrent.display && torrent.isSelected() ? ( torrent ) : null;
         } ).compact();
         selected = 0 == selected.length ? [ torrent ] : selected;
-        doRequest( newRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) }, getQueuePositions ) );
+        doRequest( "queue-move-" + event.target.id, { ids: selected.pluck( "id" ) }, getQueuePositions.curry( null ) );
       } );
       showPopup( popup, event, function( popup, event ) {
         return event.shiftKey;
@@ -644,6 +654,10 @@ var torrentColumns = {
         return null == torrent.status || -1 == this.value || this.value == torrent.status
       }
     }
+  },
+
+  "errorString": {
+    label: "Error"
   },
 
   "recheckProgress": {
@@ -1121,8 +1135,9 @@ function onFailure( response ) {
   }
 }
 
-function doRequest( requestBase ) {
+function doRequest( method, arguments, onSuccess, properties ) {
   wait();
+  var requestBase = Object.isString( method ) ? newRequest( method, arguments, onSuccess, properties ) :  method;
   requestBase.parameters = requestBase.parameters ? requestBase.parameters : Object.toJSON( requestBase.parametersObject );
 
   var request = Object.extend( {
@@ -1288,10 +1303,10 @@ function getVisibleTorrentIds() {
 function renderTorrents( noRefresh ) {
   var torrentBody = $( "torrentBody" );
 
-  if ( torrentBody == null )
-  {
+  if ( torrentBody == null ) {
     return;
   }
+  var errorRows = [];
   var newRows = [];
   var magnet = false;
   globals.torrents.each( function( torrent ) {
@@ -1302,6 +1317,10 @@ function renderTorrents( noRefresh ) {
         row.hide();
       }
       return;
+    }
+
+    if ( torrent.error > 0 && ( null == torrent.errorString || torrent.errorString.length ) ) {
+      errorRows.push( torrent.id );
     }
 
     if ( torrent.dirty.length > 0 ) {
@@ -1328,14 +1347,14 @@ function renderTorrents( noRefresh ) {
         else {
           // This may indicate an incomplete magnet.
           if ( torrent.eta == -2 && torrent.sizeWhenDone == 0 ) {
-            doRequest( newRequest( "torrent-get", { fields: ["id","hashString","metadataPercentComplete"], ids: [torrent.id] }, function( response ) {
+            doRequest( "torrent-get", { fields: [ "id", "hashString", "metadataPercentComplete" ], ids: [ torrent.id ] }, function( response ) {
               updateTorrents( response.responseJSON.arguments.torrents );
               var meta = torrent["metadataPercentComplete"];
               // This confirms an incomplete magnet.
               if ( meta != null && meta < 1 ) {
                 globals.magnets.push( torrent.id )
               }
-            } ) );
+            } );
           }
         }
       }
@@ -1356,12 +1375,24 @@ function renderTorrents( noRefresh ) {
     }
   } );
 
-  if ( !noRefresh && newRows.length > 0 ) {
-    doRequest( newRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: newRows }, function( response ) {
+  if ( noRefresh ) {
+    return;
+  }
+
+  if ( newRows.length > 0 ) {
+    doRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: newRows }, function( response ) {
       globals.lastResponse = response;
       updateTorrents( response.responseJSON.arguments.torrents );
       filterTorrents();
-    } ) );
+    } );
+  }
+
+  if ( errorRows.length > 0 ) {
+    doRequest( "torrent-get", { fields: [ "id", "errorString" ], ids: errorRows }, function( response ) {
+      globals.lastResponse = response;
+      updateTorrents( response.responseJSON.arguments.torrents );
+      filterTorrents();
+    } );
   }
 }
 
@@ -1555,7 +1586,7 @@ function setFilesPriority( id, files, priority ) {
     }
   } );
 
-  ( "none" == priority ? ["files-unwanted"] : ["files-wanted", "priority-" + priority ] ).each( function( selector ) {
+  ( "none" == priority ? [ "files-unwanted" ] : [ "files-wanted", "priority-" + priority ] ).each( function( selector ) {
     request.parametersObject.arguments[ selector ] = files;
   } );
 
@@ -2021,7 +2052,7 @@ function renderSessionTable() {
       var data = getChangedData( globals.shift.session, "s_", sessionFields );
       if ( !Object.isEmpty( data ) ) {
         Object.extend( globals.shift.session, data );
-        doRequest( newRequest( "session-set", data ) );
+        doRequest( "session-set", data );
       }
     } ) ] )
   );
@@ -2096,9 +2127,9 @@ function renderDetailsTable( torrent ) {
     rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( event ) {
       wait();
       var data = getChangedData( torrent, "d_", torrentFields );
-      doRequest( newRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
+      doRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
         torrent.update( data );
-      } ) );
+      } );
     } ) ] )
     );
   }
@@ -2148,10 +2179,10 @@ function torrentClickHandler( handler, event ) {
     handler( event )
   }
   else {
-    doRequest( newRequest( "torrent-get", { ids: [ torrent.id ], fields: torrentFieldKeys }, function( response ) {
+    doRequest( "torrent-get", { ids: [ torrent.id ], fields: torrentFieldKeys }, function( response ) {
       updateTorrents( response.responseJSON.arguments.torrents );
       handler( event );
-    } ) );
+    } );
   }
 }
 
@@ -2186,10 +2217,10 @@ var menu = {
       showPopup( popup );
     } ),
     startAll: newMenu( "Start all", function() {
-      doRequest( newRequest( "torrent-start", {} ) );
+      doRequest( "torrent-start", {} );
     } ),
     stopAll: newMenu( "Stop All", function() {
-      doRequest( newRequest( "torrent-stop", {} ) );
+      doRequest( "torrent-stop", {} );
     } )
   },
   torrentGroupDetails: {
@@ -2202,11 +2233,11 @@ var menu = {
     if ( !menuSelect( "session" ) || !activateTable( "sessionTable" ) ) {
       return;
     }
-    doRequest( newRequest( "session-get", {}, function( response ) {
+    doRequest( "session-get", {}, function( response ) {
       globals.shift.session = response.responseJSON.arguments;
       hideTable( globals.oldTableId );
       renderSessionTable();
-    } ) )
+    } );
     Object.values( menu.torrentGroupMain ).invoke( "hide" );
     Object.values( menu.torrentGroupDetails ).invoke( "hide" );
     Object.values( menu.sessionGroupMain ).invoke( "show" );
@@ -2220,11 +2251,11 @@ var menu = {
       renderShiftTable();
     }, { id: "menu_shift" } ),
     blockList: newMenu( "Blocklist", function() {
-      doRequest( newRequest( "blocklist-update" ) );
+      doRequest( "blocklist-update" );
     } ),
     shutDown: newMenu( "Shut Down", function() {
       if ( confirm( "Are you sure you want to shut down Transmission?" ) ) {
-        doRequest( newRequest( "session-close" ) )
+        doRequest( "session-close" );
       }
     } )
   },
@@ -2406,7 +2437,7 @@ function processFile( file, target, paused ) {
     var index = event.target.result.indexOf( search );
     if ( index > -1 ) {
       var result = event.target.result.substring( index + search.length );
-      doRequest( newRequest( "torrent-add", { "download-dir": target, "paused": paused, "metainfo": result }, function( response ) {
+      doRequest( "torrent-add", { "download-dir": target, "paused": paused, "metainfo": result }, function( response ) {
         $( dropId ).remove();
         $A( f.children ).select( Element.visible ).length ? f.show() : f.hide();
 
@@ -2421,7 +2452,7 @@ function processFile( file, target, paused ) {
           } );
           textReader.readAsText( file );
         }
-      } ) );
+      } );
     }
   } );
   torrentReader.readAsDataURL( file );
@@ -2432,14 +2463,14 @@ function processURL( url, target, paused ) {
     return
   }
 
-  doRequest( newRequest( "torrent-add", { "download-dir": target, "paused": paused, "filename": url }, function( response ) {
+  doRequest( "torrent-add", { "download-dir": target, "paused": paused, "filename": url }, function( response ) {
     if ( response.responseJSON.result == "success" ) {
       if ( url.startsWith( "magnet:" ) ) {
         globals.magnets.push( response.responseJSON.arguments["torrent-added"].id );
       }
       updateTorrents( [ response.responseJSON.arguments["torrent-added"] ] );
     }
-  } ) );
+  } );
 }
 
 function renderPercentDoneSound() {
@@ -2506,7 +2537,7 @@ document.observe( "dom:loaded", function() {
   } } );
 
   // Get first time session data and initialize page.
-  doRequest( newRequest( "session-get", {}, function( response ) {
+  doRequest( "session-get", {}, function( response ) {
     globals.lastResponse = response;
     globals.shift.session = response.responseJSON.arguments;
     globals.version = parseFloat( globals.shift.session.version );
@@ -2530,12 +2561,12 @@ document.observe( "dom:loaded", function() {
     updateFields( globals.shift.session );
 
     // Get id and status for ALL torrents.
-    doRequest( newRequest( "torrent-get", { fields: ["id","status"] }, function( response ) {
+    doRequest( "torrent-get", { fields: ["id","status"] }, function( response ) {
       updateTorrents( response.responseJSON.arguments.torrents );
       filterTorrents();
 
       // Get full update for visible torrents and start periodical updaters.
-      doRequest( newRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: getVisibleTorrentIds() }, function( response ) {
+      doRequest( "torrent-get", { fields: globals.staticFields.concat( globals.updateFields ), ids: getVisibleTorrentIds() }, function( response ) {
         updateTorrents( response.responseJSON.arguments.torrents );
         filterTorrents();
         globals.activeTableId = "torrentTable";
@@ -2548,7 +2579,7 @@ document.observe( "dom:loaded", function() {
         globals.shift.torrentUpdater = doRequest( globals.shift.updateTorrents );
         globals.shift.statsUpdater = doRequest( globals.shift.updateStats );
         globals.shift.sessionUpdater = doRequest( globals.shift.updateSession );
-      } ) );
-    } ) );
-  } ) );
+      } );
+    } );
+  } );
 } );
