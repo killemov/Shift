@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2014 Killemov.
+ * © 2015 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -497,7 +497,7 @@ function wait() {
 }
 
 function getQueuePositions( removed ) {
-  if ( globals.version < 2.4 ) {
+  if ( !globals.hasQ ) {
     if ( removed ) {
       removed.each( removeTorrentById );
     }
@@ -2087,6 +2087,52 @@ function addTrackersToTorrents( ids, trackers ) {
   doRequest( request );
 }
 
+function queueTorrentsByDate() {
+  if ( globals.torrents.length < 2 ) {
+    return;
+  }
+
+  wait();
+  doRequest( "torrent-get", { fields: [ "id", "addedDate" ] }, function( response ) {
+    updateTorrents( response.responseJSON.arguments.torrents );
+    globals.torrents.sortByProperty( "addedDate" );
+    if ( undefined === globals.torrents[0].queuePosition ) {
+      globals.torrents[0].queuePosition = 0;
+    }
+    var minQueuePosition = globals.torrents[0].queuePosition;
+    var batchIds = [];
+    var ids = [ globals.torrents[0].id ];
+    for( var i = 1, len = globals.torrents.length; i < len; ++i ) {
+      if ( minQueuePosition < globals.torrents[i].queuePosition ) {
+        batchIds.push( ids );
+        ids = [];
+      }
+      minQueuePosition = globals.torrents[i].queuePosition;
+      ids.push( globals.torrents[i].id );
+    }
+    batchIds.push( ids );
+
+    var _setTopQueuePosition = function( ids ) {
+      doRequest( "queue-move-top", { ids: ids }, function( response ) {
+        if ( batchIds.length > 0 ) {
+          _setTopQueuePosition( batchIds.shift() );
+        }
+        else {
+          getQueuePositions( null );
+          done();
+        }
+      } );
+    }
+
+    if ( batchIds.length > 0 ) {
+      _setTopQueuePosition( batchIds.shift() );
+    }
+    else {
+      done();
+    }
+  } );
+}
+
 function renderShiftTable() {
   var shiftTable = renderTable( "shiftTable", shiftColumns );
   if ( shiftTable == null ) {
@@ -2097,10 +2143,15 @@ function renderShiftTable() {
   var trackerButton = rButton( { value: "Add to all torrents", id: "tracker" } );
   trackerButton.observe( "click", function( event ) {
     trackerButton.disable();
-    var trackers = shiftTable.table.down( "td#s_trackers" ).down( "textarea" ).value.match( trackerRegexp );
+    var trackers = shiftTable.body.down( "td#s_trackers" ).down( "textarea" ).value.match( trackerRegexp );
     addTrackersToTorrents( globals.torrents.pluck( "id" ), trackers );
   } );
-  shiftTable.table.down( "td#s_trackers" ).previous( "td" ).insert( trackerButton );
+  shiftTable.body.down( "td#s_trackers" ).previous( "td" ).insert( trackerButton );
+  if ( globals.hasQ ) {
+    shiftTable.body.insert( rE( "tr" ).insert( rE( "td" ).insert( "Set queue positions" ) ).insert( rE( "td" ).insert(
+      rButton( { value: "Date" } ).observe( "click", queueTorrentsByDate )
+    ) ) );
+  }
   shiftTable.body.insert(
     rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( event ) {
       var data = getChangedData( globals.shift.settings, "s_", shiftFields );
@@ -2541,7 +2592,8 @@ document.observe( "dom:loaded", function() {
     globals.lastResponse = response;
     globals.shift.session = response.responseJSON.arguments;
     globals.version = parseFloat( globals.shift.session.version );
-    if ( globals.version < 2.4 ) {
+    globals.hasQ = globals.version >= 2.4;
+    if ( !globals.hasQ ) {
       globals.torrentStatus = {
         "-1": globals.torrentStatus["-1"],
         1: globals.torrentStatus[1],
