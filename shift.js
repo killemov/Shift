@@ -1745,11 +1745,11 @@ function renderFiles( torrent ) {
     }
     else {
       Object.extend( file, torrent.fileStats[file.index] );
-      file.percentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
+      file.filePercentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
       file.renderNode = rE( "tr", { id: "f_" + file.index } );
       file.renderNode.insert(
         rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert(
-        rCell( { "class": "filePercentDone" } , renderPercentage( file.percentDone ) ) ).insert(
+        rCell( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) ) ).insert(
         rCell( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) ).insert(
         rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
       );
@@ -1773,8 +1773,8 @@ function renderFileTable( torrent ) {
       var fileStat = torrent.fileStats[ index ];
 
       if ( fileStat.bytesCompleted != file.bytesCompleted ) {
-        file.percentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
-        updateElement( row.down( "td.percentDone" ), renderPercentage( file.percentDone ) );
+        file.filePercentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
+        updateElement( row.down( "td.filePercentDone" ), renderPercentage( file.filePercentDone ) );
       }
       if ( fileStat.wanted != file.wanted || fileStat.priority != file.priority ) {
         row.down( ".led" ).set( filePriorityKeys[ fileStat.wanted ? ( 1 - fileStat.priority ) : 3 ] );
