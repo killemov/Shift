@@ -69,6 +69,7 @@ var torrentColumns = {
 ## Keyboard navigation.
 
 * General:
+
 | Key                        | Action                    |
 | -------------------------: | :------------------------ |
 | <kbd>**Up**</kbd>          | Activate row up           |
@@ -78,6 +79,7 @@ var torrentColumns = {
 | <kbd>**?**</kbd>           | About                     |
 
 * Torrent view:
+
 | Key                        | Action                    |
 | -------------------------: | :------------------------ |
 | <kbd>**a**</kbd>           | Show all torrents         |
