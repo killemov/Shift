@@ -7,7 +7,7 @@ Shift is a minimalistic approach to maximum control of your Transmission.
 ![shift_session](https://f.cloud.github.com/assets/128298/1134770/564ab734-1bfa-11e3-9e52-0eb93697d9bd.png)
 ## Column based sorting and filtering.
 
-* General: 
+* General:
 Click on the name in a column header and the table will be sorted by that column. Click on it again and the sorting order is reversed.
 
 * Torrents:
@@ -65,3 +65,25 @@ var torrentColumns = {
 * "This functionality doesn't work on Google Chrome\*." Ah, then you(!) have some 'splaining to do... and probably some work as well.
 
 <sup>\* Swap in your favorite browser here.</sup>
+
+## Keyboard navigation.
+
+* General:
+| Key                        | Action                    |
+| -------------------------: | :------------------------ |
+| <kbd>**Up**</kbd>          | Activate row up           |
+| <kbd>**Down**</kbd>        | Activate row down         |
+| <kbd>**Esc**</kbd>         | Close popup / dialog      |
+| <kbd>**Space**</kbd>       | Select / Deselect         |
+| <kbd>**?**</kbd>           | About                     |
+
+* Torrent view:
+| Key                        | Action                    |
+| -------------------------: | :------------------------ |
+| <kbd>**a**</kbd>           | Show all torrents         |
+| <kbd>**c**</kbd>           | Show checking torrent     |
+| <kbd>**d**</kbd>           | Show downloading torrents |
+| <kbd>**s**</kbd>           | Show stopped torrents     |
+| <kbd>**u**</kbd>           | Show uploading torrents   |
+| <kbd>**Del**</kbd>         | Remove torrent            |
+| <kbd>**Shift + Del**</kbd> | Trash torrent             |
