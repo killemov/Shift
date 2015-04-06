@@ -12,12 +12,12 @@ try {
   console.assert( 1 );
 }
 catch( ex ) {
-  var alertFunction = function( msg ) {
+  var _alert = function( msg ) {
     alert( msg );
   }
   console = {
-    "error": alertFunction,
-    "exception": alertFunction
+    "error": _alert,
+    "exception": _alert
   }
   [ "assert", "clear", "count", "debug", "dir", "dirxml", "group", "groupCollapsed", "groupEnd", "info", "log", "memoryProfile",
     "memoryProfileEnd", "profile", "profileEnd", "table", "time", "timeEnd", "timeStamp", "trace", "warn"].each( function( key ){
@@ -44,10 +44,6 @@ Object.extend( Number.prototype, {
      return Math.min( Math.max( min, this ), max );
   }
 } );
-
-function prepare( s ) {
-  return s ? s.toLowerCase().replace( nowordRegexp, " " ) : s;
-}
 
 Object.extend( Array.prototype, {
   concatUnique: function( element ) {
@@ -88,16 +84,20 @@ Object.extend( Array.prototype, {
     return this;
   },
 
-  // Counter unstable Array.sort with additional index. ( a.i == null ? 0 : ( a.i - b.i ) )
   sortByProperty: function( property, order, isString ) {
+    var _prepare = function( s ) {
+      return s ? s.replace( nowordRegexp, " " ) : s;
+    }
+
+    // Counter unstable Array.sort with additional index. ( a.i == null ? 0 : a.i - b.i )
     this.sort( isString ? function( a, b ) {
-      var aa = prepare( a[property] );
-      var bb = prepare( b[property] );
-      return aa == bb ? ( null == a.i ? 0 : ( a.i - b.i ) ) : null == bb ? -1 : bb.localeCompare( aa ) * ( order ? -1 : 1 );
+      var aa = _prepare( a[property] );
+      var bb = _prepare( b[property] );
+      return aa == bb ? ( null == a.i ? 0 : a.i - b.i ) : null == bb ? -1 : bb.localeCompare( aa, { sensitivity: "base" } ) * ( order ? -1 : 1 );
     } : function( a, b ) {
       var aa = a[property];
       var bb = b[property];
-      return aa == bb ? ( null == a.i ? 0 : ( a.i - b.i ) ) : null == bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
+      return aa == bb ? ( null == a.i ? 0 : a.i - b.i ) : null == bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
     } );
   }
 } );
@@ -146,7 +146,7 @@ var FastBase64 = {
 
 FastBase64.init();
 
-var riffwave = function( data ) {
+function riffwave( data ) {
   this.data = [];    // Array containing audio samples
   this.wav = [];     // Array containing the generated wave file
   this.dataURI = "";   // http://en.wikipedia.org/wiki/Data_URI_scheme
@@ -789,7 +789,13 @@ var detailsColumns = {
 var sessionColumns = detailsColumns;
 var shiftColumns = detailsColumns;
 
-var preventDefault = function( e ) {
+function preventBubbling( e ) {
+  if ( e ) {
+    e.stopPropagation();
+  }
+}
+
+function preventDefault( e ) {
   if ( e ) {
     e.stop();
   }
@@ -940,7 +946,7 @@ function renderPercentDone( percentage, torrent, ignore, cell ) {
 }
 
 function rInput( value, attributes ) {
-  return rE( "input", Object.extend( { "class": "styled", type: "text", value: value }, attributes ) );
+  return rE( "input", Object.extend( { "class": "styled", type: "text", value: value }, attributes ) ).observe( "keydown", preventBubbling );
 }
 
 function renderInterval( seconds ) {
@@ -1015,6 +1021,7 @@ function renderSelect( options ) {
     }
   }
   select.value = options.select.value;
+  select.observe( "keydown", preventBubbling );
   return select;
 }
 
@@ -1036,7 +1043,8 @@ function renderStatusFilter() {
       else {
         setDefaultTorrentRequest();
       }
-  } ) );
+    } )
+  );
   return f;
 }
 
@@ -1055,16 +1063,16 @@ function renderPercentDoneFilter() {
   var select = renderSelect( { select: { "class": "styled", value: filter.comparator }, options: defaultOptions } );
   var input = rInput( renderPercentage( filter.value ), { "class": "styled number" } );
 
-  var handler = function( e ) {
+  var _handler = function( e ) {
     filter.comparator = select.value;
     filter.value = normalizePercentage( input.value );
     input.value =  renderPercentage( filter.value );
     filterTorrents();
   };
 
-  select.observe( "change", handler );
-  input.observe( "change", handler );
-  input.observe( "blur", handler );
+  select.observe( "change", _handler );
+  input.observe( "change", _handler );
+  input.observe( "blur", _handler );
 
   var f = renderFilter( "Done" );
   f.down( "span.filterInput" ).insert( select ).insert( input );
@@ -1076,15 +1084,15 @@ function renderSizeFilter() {
   var select = renderSelect( { select: { "class": "styled", value: filter.comparator }, options: defaultOptions } );
   var input = rInput( filter.value, { "class": "styled number" } );
 
-  var handler = function( e ) {
+  var _handler = function( e ) {
     filter.comparator = select.value;
     input.value = filter.value = normalizeInteger( input.value );
     filterTorrents();
   };
 
-  select.observe( "change", handler );
-  input.observe( "change", handler );
-  input.observe( "blur", handler );
+  select.observe( "change", _handler );
+  input.observe( "change", _handler );
+  input.observe( "blur", _handler );
 
   var f = renderFilter( "Size" );
   f.down( "span.filterInput" ).insert( select ).insert( input );
@@ -1099,7 +1107,7 @@ function renderNameFilter() {
   var regExpLed = rLed();
   regExpLed.observe( "click", regExpLed.toggle );
 
-  var handler = function( e ) {
+  var _handler = function( e ) {
     filter.value = input.value.toLowerCase();
     if ( filter.isRegExp = regExpLed.value ) {
       try {
@@ -1112,8 +1120,8 @@ function renderNameFilter() {
     filterTorrents();
   };
 
-  input.observe( "change", handler );
-  input.observe( "blur", handler );
+  input.observe( "change", _handler );
+  input.observe( "blur", _handler );
 
   var f = renderFilter( "Name" );
   f.down( "span.filterInput" ).insert( input ).insert( " RegExp: " ).insert( regExpLed );
@@ -2369,6 +2377,9 @@ function selectFileLed( file ) {
   globals.uUrlLed.set( !file );
 }
 
+var selectFileLedTrue = selectFileLed.curry( true );
+var selectFileLedFalse = selectFileLed.curry( false );
+
 function renderMenuItem( render, item ) {
   return rE( "li", { id: item.toLowerCase() } ).insert( render ? render( item ) : item );
 }
@@ -2379,10 +2390,10 @@ function renderMenuPopup( id, items, render ) {
 
 function renderPage() {
   globals.uFile = rInput( null, { type: "file", style: "display: none", multiple: "multiple" } );
-  globals.uFileLed = rLed().observe( "click", selectFileLed.curry( true ) );
+  globals.uFileLed = rLed().observe( "click", selectFileLedTrue );
   globals.uFileName = rInput( null, { readonly: "readonly" } );
   globals.uBrowse = rInput( null, { "class": "styled upload", type: "button", value: "Browse" } );
-  globals.uUrlLed = rLed().observe( "click", selectFileLed.curry( false ) );
+  globals.uUrlLed = rLed().observe( "click", selectFileLedFalse );
   globals.uUrl = rInput( null );
   globals.uDir = rInput( globals.shift.session["download-dir"] );
 
@@ -2390,7 +2401,7 @@ function renderPage() {
   globals.uPausedLed.observe( "click", globals.uPausedLed.toggle );
 
   globals.uUpload = rInput( null, { "class": "styled upload", type: "button", value: "Upload" } );
-  selectFileLed( true );
+  selectFileLedTrue();
 
   globals.body.insert( rE( "div", { id: "popups" } ).insert(
     rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
@@ -2425,19 +2436,19 @@ function renderPage() {
 
   globals.uFile.observe( "change", function( e ) {
     globals.uFileName.value = $A( e.originalTarget.files ).pluck( "name" ).join( ";" );
-    selectFileLed( true );
+    selectFileLedTrue();
   } );
 
-  globals.uUrl.observe( "change", selectFileLed.curry( false ) );
-  globals.uUrl.observe( "keypress", selectFileLed.curry( false ) );
+  globals.uUrl.observe( "change", selectFileLedFalse );
+  globals.uUrl.observe( "keypress", selectFileLedFalse );
 
-  var uBrowseHandler = function( e ) {
+  var _handler = function( e ) {
     globals.uFile.click();
     e.stop();
   };
 
-  globals.uFileName.observe( "click", uBrowseHandler );
-  globals.uBrowse.observe( "click", uBrowseHandler );
+  globals.uFileName.observe( "click", _handler );
+  globals.uBrowse.observe( "click", _handler );
 
   globals.uUpload.observe( "click", function( e ) {
     if ( globals.uploadFile ) {
@@ -2647,6 +2658,7 @@ function globalKeyDown( e ) {
       }
     break;
   }
+  return true;
 }
 
 function globalKeyUp( e ) {
