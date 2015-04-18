@@ -109,7 +109,7 @@ var FastBase64 = {
   encLookup: [],
 
   init: function() {
-    for ( var i = 0; i < 4096; ++i ) {
+    for( var i = 0; i < 4096; ++i ) {
       this.encLookup[i] = this.chars[i >> 6] + this.chars[i & 0x3F];
     }
   },
@@ -118,7 +118,7 @@ var FastBase64 = {
     var len = src.length;
     var dst = '';
     var i = 0;
-    while ( len > 2 ) {
+    while( len > 2 ) {
       n = src[i] << 16 | src[i + 1] << 8 | src[i + 2];
       dst+= this.encLookup[n >> 12] + this.encLookup[n & 0xFFF];
       len-= 3;
@@ -178,7 +178,7 @@ function riffwave( data ) {
   function split16bitArray( data ) {
     var r = [];
     var j = 0;
-    for ( var i = 0, len = data.length; i < len; ++i ) {
+    for( var i = 0, len = data.length; i < len; ++i ) {
       r[j++] = data[i] & 0xFF;
       r[j++] = data[i] >> 8 & 0xFF;
     }
@@ -486,7 +486,7 @@ var torrentDetailsFieldKeysIgnore = [
   "totalSize"
 ];
 
-for ( var k in torrentFields ) {
+for( var k in torrentFields ) {
   if ( !torrentFields[k].edit ) {
     torrentFields[k].readOnly = true;
   }
@@ -831,11 +831,15 @@ var Torrent = Class.create( {
   },
   update: function( torrent ) {
     this.dirty = this.dirty || [];
-    for ( t in torrent ) {
+    for( t in torrent ) {
       if ( this[t] != torrent[t] ) {
-        if ( "status" == t && "Seeding" == globals.torrentStatus[torrent[t]] && "Downloading" == globals.torrentStatus[this[t]] ) {
-          this.done();
+        if ( "status" == t && "Seeding" == globals.torrentStatus[torrent[t]].label ) {
+          var status = this[t];
+          if ( status !== undefined && "Downloading" == globals.torrentStatus[status].label ) {
+            this.done();
+          }
         }
+
         this[t] = torrent[t];
         if ( "id" != t ) {
           this.dirty.pushUnique( "hashString" == t ? "name" : t );
@@ -844,6 +848,7 @@ var Torrent = Class.create( {
     }
   },
   done: function() {
+    sendNotification( "Torrent download complete.", { body: this.name } );
     playDoneSound();
   }
 } );
@@ -866,7 +871,7 @@ function rLed( k, attributes ) {
       }
       k = k ? k : "none";
       this.value = k != "none";
-      for ( p in filePriority ) {
+      for( p in filePriority ) {
         this.toggleClassName( p, k == p );
         found |= k == p;
       }
@@ -885,10 +890,10 @@ function $S(className) {
 
   var cssRules = document.styleSheets[0].cssRules ? "cssRules" : "rules";
 
-  for ( var s = 0, slen = document.styleSheets.length; s < slen; ++s ) {
+  for( var s = 0, slen = document.styleSheets.length; s < slen; ++s ) {
     var rules = document.styleSheets[s][cssRules];
 
-    for ( var r = 0, rlen = rules.length; r < rlen; ++r ) {
+    for( var r = 0, rlen = rules.length; r < rlen; ++r ) {
       if ( rules[r].selectorText == className ) {
         return rules[r].style;
       }
@@ -1015,7 +1020,7 @@ function renderFilter( label ) {
 function renderSelect( options ) {
   var select = rE( "select", options.select );
   if ( options.options ) {
-    for ( var i = 0, len = options.options.length; i < len; ++i ) {
+    for( var i = 0, len = options.options.length; i < len; ++i ) {
       var o = options.options[i];
       select.insert( rE( "option", o ).update( o.text ? o.text : o.value ) );
     }
@@ -1031,7 +1036,7 @@ function renderStatusFilter() {
     renderSelect( { select: { id: "statusSelect", value: globals.torrentStatusCurrent, "class": "styled" },
     options: Object.keys( globals.torrentStatus ).collect( function( k ) {
       return { value: k, text: globals.torrentStatus[k].label };
-    } ) } ).observe( "change", function ( e ) {
+    } ) } ).observe( "change", function( e ) {
       torrentColumns.status.filter.value = this.value;
       filterTorrents();
       globals.torrentStatusChanged = true;
@@ -1285,7 +1290,7 @@ function sortTorrents( property, reverse ) {
 
   property = updateOrder( torrentColumns, property );
 
-  for ( var i = 0, len = torrents.length; i < len; ++i ) {
+  for( var i = 0, len = torrents.length; i < len; ++i ) {
     torrents[i].i = i;
   }
 
@@ -1297,7 +1302,7 @@ function sortTorrents( property, reverse ) {
   var currentNode = $( "torrentBody" ).down();
 
   var process = orderChanged && currentNode;
-  for ( var i = 0, len = torrents.length; i < len; ++i ) {
+  for( var i = 0, len = torrents.length; i < len; ++i ) {
     var torrent = torrents[i];
     if ( process && torrent.renderNode ) {
       if ( torrent.i != i ) {
@@ -1312,7 +1317,7 @@ function sortTorrents( property, reverse ) {
 var filters = Object.values( torrentColumns ).pluck( "filter" ).compact();
 
 function filterTorrents() {
-  return globals.torrents.select( function ( torrent ) {
+  return globals.torrents.select( function( torrent ) {
     return torrent.display = filters.all( function( filter ) { return !filter.active || filter.match( this ) }, torrent );
   } );
 }
@@ -1346,7 +1351,7 @@ function renderTorrents( noRefresh ) {
 
     if ( torrent.dirty.length > 0 ) {
       if ( row ) {
-        for ( var k in torrentColumns ) {
+        for( var k in torrentColumns ) {
           if ( !torrent.dirty.include( k ) ) {
             continue;
           }
@@ -1432,7 +1437,7 @@ function renderTable( id, columnDefinitions, click ) {
     var columns = table.columns;
     var header = rE( "tr" );
     table.header.insert( header );
-    for ( var k in columnDefinitions ) {
+    for( var k in columnDefinitions ) {
       if ( columnDefinitions[k].label ) {
         columns.insert( rE( "col", { "class": k } ) );
         var cell = rE( "th", { id: "h_" + k, "class": k } ).insert( columnDefinitions[k].label );
@@ -1450,7 +1455,7 @@ function renderTable( id, columnDefinitions, click ) {
 function renderRow( object, columnDefinitions, row ) {
   row = row || rE( "tr" );
 
-  for ( var k in columnDefinitions ) {
+  for( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
     if ( undefined === render || false !== render ) {
       var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
@@ -1468,7 +1473,7 @@ function updateElement( element, content ) {
 }
 
 function updateRow( object, columnDefinitions, row ) {
-  for ( var k in columnDefinitions ) {
+  for( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
     if ( undefined === render || false !== render ) {
       var cell = row.down( "." + k );
@@ -1539,7 +1544,7 @@ function renderTorrentTable() {
   var h = rE( "th", { id: "filterContainerCell" } ).insert( c );
   torrentTable.header.insert( rE( "tr" ).insert( h ) );
 
-  for ( var k in torrentColumns ) {
+  for( var k in torrentColumns ) {
     var column = torrentColumns[k];
     var f = column.filter;
     if ( f ) {
@@ -1573,7 +1578,7 @@ function renderTorrentTable() {
 }
 
 function setTorrentsColumnsVisible( columns ) {
-  for ( var c in torrentColumns ) {
+  for( var c in torrentColumns ) {
     torrentColumns[ c ].style[ "display" ] = columns.include( c ) ? "" : "none";
   }
   $( "filterContainerCell" ).colSpan = columns.length;
@@ -1642,7 +1647,7 @@ function fileClickHandler( e ) {
 }
 
 function rMulti( target, elementName, inserts, arguments ) {
-  for ( var i = 0, len = inserts ? ( inserts.length ) : arguments ? ( arguments.length ) : 0; i < len; ++i ) {
+  for( var i = 0, len = inserts ? ( inserts.length ) : arguments ? ( arguments.length ) : 0; i < len; ++i ) {
     var element = rE( elementName, arguments ? Object.isString( arguments[i] ) ? { id: arguments[i] } : arguments[i] : null );
     if ( inserts && inserts[i] ) {
       element.insert( inserts[i] );
@@ -1682,6 +1687,27 @@ function playDoneSound() {
   }
 }
 
+function sendNotification( title, options ) {
+  if ( "Notification" in window ) {
+    sendNotification = function( title, options ) {
+      if ( globals.shift.settings.notificationEnabled ) {
+        var notification = new Notification( title, options );
+      }
+    };
+  } else if ( "mozNotification" in navigator ) { // Gecko < 22
+    sendNotification = function( title, options ) {
+      if ( globals.shift.settings.notificationEnabled ) {
+        var notification = navigator.mozNotification.createNotification( title, options.body, options.icon );
+        notification.show();
+      }
+    };
+  } else {
+    sendNotification = function( title, options ) {
+    };
+  }
+  sendNotification( title, options );
+};
+
 function rCell( attributes, content ) {
   return rE( "td", attributes, content );
 }
@@ -1689,7 +1715,7 @@ function rCell( attributes, content ) {
 function rFolder( base, fileParts, filePartIndex ) {
   var result = fileParts[filePartIndex] + "&sol;";
   if ( base ) {
-    for ( var i = 0; i <= filePartIndex; ++i ) {
+    for( var i = 0; i <= filePartIndex; ++i ) {
       base += fileParts[i] + "/";
     }
     result = rLink( base, result );
@@ -1727,7 +1753,7 @@ function renderFiles( torrent ) {
     var fileStyle = fileParts.length > 1 ? "padding-left: " + ( fileParts.length * 24 - 24 ) + "px" : "";
 
     var folderNodes = [];
-    for ( var i = 0, len = fileParts.length - 1; i < len; ++i ) {
+    for( var i = 0, len = fileParts.length - 1; i < len; ++i ) {
       if ( fileParts[i] == lastFileParts[i] ) {
         continue;
       }
@@ -1803,7 +1829,7 @@ function renderFileTable( torrent ) {
   else {
     globals.currentTorrent = torrent;
     var table = renderTable( "fileTable", fileColumns, function( e ) {
-      for ( var i = 0, len = torrent.files.length; i < len; ++i ) {
+      for( var i = 0, len = torrent.files.length; i < len; ++i ) {
         torrent.files[i].i = i;
       }
       var property = updateOrder( fileColumns, this.id.substring( 2 ) );
@@ -1821,7 +1847,7 @@ function renderFileTable( torrent ) {
     table.body.id = "fileBody";
     globals.body.insert( table.table );
 
-    for ( var i = 0, len = torrent.files.length; i < len; ++i ) {
+    for( var i = 0, len = torrent.files.length; i < len; ++i ) {
       torrent.files[i].folderNodes = [];
     }
     renderFiles( torrent );
@@ -2066,7 +2092,7 @@ function renderSessionTable() {
   globals.body.insert( sessionTable.table );
   renderKeyValuePairs( sessionTable.body, globals.shift.session, "s_", sessionFields );
   sessionTable.body.insert(
-    rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function ( e ) {
+    rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( e ) {
       var data = getChangedData( globals.shift.session, "s_", sessionFields );
       if ( !Object.isEmpty( data ) ) {
         Object.extend( globals.shift.session, data );
@@ -2454,7 +2480,7 @@ function renderPage() {
     if ( globals.uploadFile ) {
       if ( globals.uFileName.value.length > 0 ) {
         wait();
-        for ( var i = 0, len = globals.uFile.files.length; i < len; ++i ) {
+        for( var i = 0, len = globals.uFile.files.length; i < len; ++i ) {
           processFile( globals.uFile.files[i], globals.uDir.value, globals.uPausedLed.value );
         }
         $( "popups" ).close();
@@ -2588,7 +2614,7 @@ function renderPercentDoneSound() {
   var soundDone = globals.shift.settings.soundDone;
   if ( !soundDone || soundDone.length == 0 ) {
     var audioWave = [];
-    for ( var i = 0; i < 1024; i++ )
+    for( var i = 0; i < 1024; i++ )
     {
       audioWave[i] = 128 + Math.round( 127 * Math.sin( i / 1.8 ) );
     }
@@ -2690,7 +2716,7 @@ document.observe( "dom:loaded", function() {
     e.stop();
     var files = e.dataTransfer.files;
     if ( files && files.length > 0 ) {
-      for ( var i = 0, len = files.length; i < len; ++i ) {
+      for( var i = 0, len = files.length; i < len; ++i ) {
         processFile( files[i] )
       }
     }
@@ -2732,7 +2758,7 @@ document.observe( "dom:loaded", function() {
       globals.staticFields.remove( "queuePosition" );
     }
     globals.torrentStatusKeyHash = {};
-    for ( var k in globals.torrentStatus ) {
+    for( var k in globals.torrentStatus ) {
       var kc = globals.torrentStatus[k].keyCode;
       if ( kc ) {
         globals.torrentStatusKeyHash[kc] = k;
