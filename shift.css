@@ -40,14 +40,9 @@ select {
 }
 
 ul#menu {
-  background-attachment: scroll;
   background-clip: border-box;
   background-color: #8EA7BC;
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAABACAMAAAAH+FZxAAAAwFBMVEVqjauHoriwwc+Io7lvkKxsjqx6lq6htsd9mK94la5uj6yywtBrjatsjquou8t7l698l69zkq1rjqutvs2ascN0k62Sqr6vwM6PqL2uv86Op7yxwc+fs8WluMlwkKxxkaxykq13la6qvMyZr8KRqb2wwM95lq6Nprumucl1k62XrsF2lK6dssSxwdCLpbt7l65yka2Tq7+nusqRqr6svcyqvMujt8h1lK12lK2Jo7lwkayWrcCVrMCftMZ3lK6Kpbrgo3SxAAAAiUlEQVQI1zXG2QqCABQA0THFMk3NBZSScDdRsXypcPn/v4oLNZyHoSzZ7eh7TJPLRT6Ohe+TZdg2zydNQ5Kw37MsXK90HUFAntO2zDOPB9NEURBF1DXDwLbxfqOqKIo4HITr4jhC10VVYRikKevK68X9ThhyPotx5Hbj80HTxPH4czrhecKy+PcFU7AMvzNwDIEAAAAASUVORK5CYII=");
-  background-origin: padding-box;
-  background-position: 0 0;
-  background-repeat: repeat-x;
-  background-size: 100% 100%;
+  background-image: linear-gradient(to bottom, #b0c0cf 0%,#8EA7BC 50%,#7d98af 51%,#6a8dab 100%);
   border-radius: 4px;
   display: block;
   font-weight: bold;
