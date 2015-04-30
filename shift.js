@@ -2415,7 +2415,7 @@ function renderMenuPopup( id, items, render ) {
 }
 
 function renderPage() {
-  globals.uFile = rInput( null, { type: "file", style: "display: none", multiple: "multiple" } );
+  globals.uFile = rInput( null, { type: "file", multiple: "multiple" } ).hide();
   globals.uFileLed = rLed().observe( "click", selectFileLedTrue );
   globals.uFileName = rInput( null, { readonly: "readonly" } );
   globals.uBrowse = rInput( null, { "class": "styled upload", type: "button", value: "Browse" } );
@@ -2439,7 +2439,7 @@ function renderPage() {
     )
   ).insert(
     rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
-      rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", style: "display: none", multiple: "multiple" } ) ).insert(
+      rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", multiple: "multiple" } ).hide() ).insert(
       rE( "div" ).insert( [ globals.uFileLed, rSpan( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ) ).insert(
       rE( "div" ).insert( [ globals.uUrlLed, rSpan( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
       rE( "div" ).insert( [ rSpan( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
