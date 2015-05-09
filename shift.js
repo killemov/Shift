@@ -365,7 +365,7 @@ var sessionFields = {
   "encryption": { values: ["required", "preferred", "tolerated"] },
   // actions return true if handling should continue.
   "peer-port": { action: function( row, keyCell, valueCell, o ) {
-    var l = rLed( false, { id: "port-is-open", style: "float: right", title: "Checking", readonly: true } );
+    var l = rLed( false, { id: "port-is-open", title: "Checking", readonly: true } );
     keyCell.insert( l );
     doRequest( "port-test", {}, function( response ) {
       updateFields( getArguments( response ) );
@@ -702,7 +702,7 @@ var torrentColumns = {
   },
 
   "uploadRatio": {
-    label: "Karma"
+    label: "Karma", render: renderUploadRatio
   },
 
   "sizeWhenDone": {
@@ -943,11 +943,38 @@ function renderDateTime( seconds ) {
   return seconds == 0 ? "-" : new Date( 1000 * seconds ).toJSON().substr( 0, 19 ).replace( "T", " " );
 }
 
+var pctClassNames = [ "pct0", "pct25", "pct50", "pct75", "pct100" ];
+
+function setPercentageClass( element, percentage, multiplier ) {
+  multiplier = typeof multiplier === "undefined" ? 1.0 : multiplier;
+  percentage *= multiplier;
+  percentage = Math.max( 0.0, Math.min( 1.0, percentage ) );
+  for( var i = 0, len = pctClassNames.length; i < len; ++i ) {
+    element.toggleClassName( pctClassNames[ i ], i == Math.floor( percentage * ( len - 1 ) ) );
+  }
+}
+
 function renderPercentDone( percentage, torrent, ignore, cell ) {
   if ( cell && torrent.eta > -1 ) {
     cell.title = renderInterval( torrent.eta );
   }
-  return isNaN( percentage ) ? "" : renderPercentage( percentage );
+  if ( isNaN( percentage ) ) {
+    return "";
+  }
+  if ( cell ) {
+    setPercentageClass( cell, percentage );
+  }
+  return renderPercentage( percentage );
+}
+
+function renderUploadRatio( percentage, torrent, ignore, cell ) {
+  if ( isNaN( percentage ) ) {
+    return "";
+  }
+  if ( cell ) {
+    setPercentageClass( cell, percentage, 0.25 );
+  }
+  return renderPercentage( percentage );
 }
 
 function rInput( value, attributes ) {
@@ -1579,7 +1606,7 @@ function renderTorrentTable() {
 
 function setTorrentsColumnsVisible( columns ) {
   for( var c in torrentColumns ) {
-    torrentColumns[ c ].style[ "display" ] = columns.include( c ) ? "" : "none";
+    torrentColumns[ c ].style.display = columns.include( c ) ? "" : "none";
   }
   $( "filterContainerCell" ).colSpan = columns.length;
 }
@@ -2659,6 +2686,15 @@ function globalKeyDown( e ) {
         globals.currentTorrent = globals.torrentHash[row.id];
         if ( globals.selection !== undefined ) {
           globals.currentTorrent.toggleSelect( globals.selection );
+        }
+
+        var clientHeight = document.viewport.getHeight();
+        var clientTop = document.viewport.getScrollOffsets().top;
+        var rowHeight = row.getHeight();
+        var rowTop = row.cumulativeOffset().top;
+
+        if ( rowTop + rowHeight > clientHeight + clientTop || rowTop < clientHeight + clientTop ) {
+          window.scrollTo( 0, rowTop + rowHeight / 2 - clientHeight / 2 );
         }
       }
     }

@@ -1,0 +1,616 @@
+/**
+ * Shift: a Transmission web interface.
+ *
+ * © 2015 Killemov.
+ *
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
+ * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ */
+
+.pct0 {
+  color: #ff0000;
+}
+
+.pct25 {
+  color: #ff7f00;
+}
+
+.pct50 {
+  color: #ffbf00;
+}
+
+.pct75 {
+  color: #ffff00;
+}
+
+.pct100 {
+  color: #00ff00;
+}
+
+a {
+  color: #007f00;
+}
+
+/**
+ * The current background image should be used for demonstration purposes only. Please use your own
+ * background image, preferably with some green accents. ... or why not go nuts and change it all!
+ */
+
+html {
+  background-attachment: fixed;
+  background-color: #000000;
+  background-image: url( "http://www.cool-backgrounds.org/walls/technoid-other.jpg" );
+  background-size: 100%;
+}
+
+body {
+  background-color: rgba( 0, 0, 0, 0.5 );
+  color: #ffffff;
+  font-family: Arial,sans-serif;
+  font-size: 11pt;
+  font-weight: bold;
+  margin: 0;
+  padding: 8px;
+  text-shadow: -1px -1px 0 #3f3f3f, 1px -1px 0 #3f3f3f, -1px 1px 0 #3f3f3f, 1px 1px 0 #3f3f3f;
+}
+
+input {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+}
+
+h1 {
+  font-size: 28pt;
+  margin: 8px 0;
+  text-align: center;
+}
+
+select {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 11pt;
+}
+
+ul#menu {
+  border-radius: 8px;
+  display: block;
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+}
+
+body.box ul#menu {
+  margin: 8px;
+  background-color: rgba( 255, 255, 255, 0.25 );
+  border-radius: 8px;
+}
+
+ul#menu li {
+  background-color: rgba( 255, 255, 255, 0.25 );
+  border: 1px solid rgba( 255, 255, 255, 0.5 );
+  border-radius: 8px;
+  color: #000000;
+  display: inline-block;
+  height: 32px;
+  line-height: 32px;
+  margin-right: 8px;
+  padding: 0.5em 1em;
+  text-align: center;
+  text-shadow: -1px -1px 0 #bfbfbf, 1px -1px 0 #bfbfbf, -1px 1px 0 #bfbfbf, 1px 1px 0 #bfbfbf;
+  width:96px;
+}
+
+ul#menu li:hover {
+  background-color: rgba( 255, 255, 255, 0.5 );
+  cursor: pointer;
+}
+
+ul#menu li.selected:hover {
+  background-color: rgba( 255, 255, 255, 0.75 );
+}
+
+ul#menu li.selected {
+  background-color: rgba( 255, 255, 255, 0.75 );
+  color: #ffffff;
+  text-shadow: -1px -1px 0 #3f3f3f, 1px -1px 0 #3f3f3f, -1px 1px 0 #3f3f3f, 1px 1px 0 #3f3f3f;
+}
+
+ul#menu li.sub {
+  padding: 0.2em 1em;
+  vertical-align: bottom;
+}
+
+th#filterContainerCell {
+  padding: 8px;
+}
+
+div#filterContainer {
+}
+
+body.box div#filterContainer {
+  margin: 8px;
+}
+
+div.filter {
+  margin: 2px 8px;
+  min-height: 38px;
+}
+
+div.filter span.led {
+  float: none;
+}
+
+span.filterInput {
+  width: 272px;
+  display: inline-block;
+}
+
+span.filterLabel {
+  width: 64px;
+  display: inline-block;
+}
+
+div.name {
+  width: 100px;
+}
+
+div#outside {
+  background-color: transparent;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+div#popups {
+  background-color: transparent;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+div.popup div {
+  display: block;
+  position: relative;
+}
+
+.popup {
+  background-color: #3f3f3f;
+  border-color: #7f7f7f #000000 #000000 #7f7f7f;
+  border-style: solid;
+  border-width: 0;
+  display: none;
+  position: absolute;
+}
+
+.popup:hover {
+  cursor: pointer;
+}
+
+.popup ul {
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+.popup ul li {
+  border-color: #7f7f7f #000000 #000000 #7f7f7f;
+  border-style: solid;
+  border-width: 1px;
+  display: block;
+  font-weight: bold;
+  padding: 8px;
+  margin: 0;
+}
+
+.popup ul li:hover {
+  background-color: #bfbfbf !important;
+}
+
+div#popupAbout {
+  border-width: 1px;
+  padding: 0 16px;
+  position: fixed;
+  text-align: center;
+  width: 368px;
+}
+
+div#popupAdd {
+  border-width: 1px;
+  height: 224px;
+  position: fixed;
+  width: 432px;
+}
+
+div#popupAdd > div {
+  height: 38px;
+  padding: 0 16px;
+}
+
+div#popupAdd input[type="text"] {
+  left: 100px;
+  position: absolute;
+}
+
+span#labelDir {
+  display: inline-block;
+  line-height: 38px;
+  margin-left: 38px;
+}
+
+span#port-is-open {
+  margin-left: 144px;
+}
+
+li#high, li#normal, li#low, li#none {
+  display: inline-block;
+  padding: 0;
+}
+
+.styled {
+  -moz-box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-weight: bold;
+  height: 34px;
+  margin: 2px 16px 2px 8px;
+  padding: 4px 8px;
+  vertical-align: middle;
+}
+
+.filter input.styled {
+  background-color: transparent;
+}
+
+input.styled.number {
+  text-align: right;
+}
+
+input.styled[type="button"] {
+  color: #000000;
+  height: 32px;
+  min-width: 96px;
+  padding: 0 8px;
+  text-shadow: -1px -1px 0 #bfbfbf, 1px -1px 0 #bfbfbf, -1px 1px 0 #bfbfbf, 1px 1px 0 #bfbfbf;
+}
+
+input.styled.upload[type="button"] {
+  float: right;
+  margin-right: 0;
+  margin-top: 3px;
+}
+
+select.styled {
+  -moz-appearance: none;
+  -webkit-appearance:none;
+  appearance: none;
+  background: url("select.png") no-repeat scroll right center transparent;
+  padding: 0 16px 0 8px;
+}
+
+select.styled option {
+  border-color: #7f7f7f #000000 #000000 #7f7f7f;
+  border-style: solid;
+  border-width: 1px 0;
+  padding: 8px;
+}
+
+select.styled option:first-child {
+  border-top: 0;
+}
+
+select.styled option:last-child {
+  border-bottom: 0;
+}
+
+textarea.styled {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  height: 64px;
+  resize: none;  
+  width: 100%;
+}
+
+td .styled {
+  margin: 0;
+}
+
+td#s_encryption select.styled {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+span.led {
+  background-color: #00ff00;
+  border: 1px solid #007f00;
+  border-radius: 8px;
+  color: #007f00;
+  display: inline-block;
+  font-size: 32px;
+  font-weight: bold;
+  height: 32px;
+  margin: 2px;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: middle;
+  width: 32px;
+}
+
+span.led:hover {
+  cursor: pointer;
+}
+
+span.led[readonly]:hover {
+  cursor: auto;
+}
+
+span.led.high {
+  line-height: 32px;
+}
+
+span.led.low {
+  line-height: 26px;
+  text-indent: -2px;
+}
+
+span.led.none {
+  background-color: #003f00;
+}
+
+table {
+  border: 0;
+  border-collapse: collapse;
+  border-radius: 4px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+table thead tr th {
+  height: 38px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+table tbody tr td {
+  height: 38px;
+  white-space: nowrap;
+}
+
+table input[type=text] {
+  width: 100%;
+}
+
+table#torrentTable {
+  border-collapse: separate;
+  border-spacing: 0 16px;
+  text-align: right;
+}
+
+table#torrentTable thead tr th {
+  background-color: rgba( 255, 255, 255, 0.25 );
+  border-radius: 8px;
+  padding-left: 8px;
+}
+
+table#torrentTable thead tr:first-child th {
+  height: 60px;
+  padding-top: 4px;
+  vertical-align: top;
+}
+
+table#torrentTable thead tr:first-child th:first-child  {
+  padding-left: 0px;
+}
+
+table#torrentTable thead tr:first-child th span.led {
+  float: left;
+  margin: 0 0 4px 4px;
+}
+
+table#torrentTable thead tr:first-child th.menu span.led {
+  float: none;
+  margin-left: 0;
+  margin-top: 18px;
+}
+
+table#torrentTable tbody tr td {
+  background-color: rgba( 255, 255, 255, 0.25 );
+  border-radius: 8px;
+  height: 48px;
+}
+
+table#torrentTable tbody tr.active td {
+  background-color: rgba( 255, 255, 255, 0.75 );
+}
+
+table#torrentTable tbody tr.active:hover td {
+  background-color: rgba( 255, 255, 255, 0.75 );
+}
+
+table#torrentTable tbody tr:hover td {
+  background-color: rgba( 255, 255, 255, 0.5 );
+}
+
+table#peerTable {
+  text-align: right;
+}
+
+tbody tr:nth-child( even ) {
+}
+
+tbody tr:nth-child( odd ) {
+}
+
+col {
+  width: 64px;
+}
+
+col.address {
+  width: 128px;
+}
+
+col.announce {
+  width: 384px;
+}
+
+col.announce, col.clientName, col.name, col.value {
+  width: auto;
+}
+
+col.errorString {
+  width: 128px;
+}
+
+col.key {
+  width: 256px;
+}
+
+col.doneDate, col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+  width: 152px;
+}
+
+col.length, col.sizeWhenDone, col.uploadedEver, col.uploadRatio {
+  width: 84px;
+}
+
+col.menu, col.priority {
+  width: 64px;
+}
+
+col.port {
+  width: 56px;
+}
+
+col.progress {
+  width: 48px;
+}
+
+col.queuePosition {
+  width: 48px;
+}
+
+col.status {
+  width: 120px;
+}
+
+td[readonly] {
+  color: #ffffff;
+}
+
+td.announce, td.errorString, td.name, td.status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.menu, th.menu {
+  text-align: center;
+}
+
+td.status, td.name, td.address, td.clientName, td.flagStr {
+  text-align: left;
+}
+
+td.filePercentDone, td.length {
+  text-align: right;
+}
+
+td#d_magnetLink {
+  white-space: normal;
+}
+table#torrentTable td {
+  padding: 0 4px;
+}
+
+table#fileTable th:first-child, table#fileTable td:first-child, table#trackerTable td:first-child {
+  text-align: center;
+}
+
+table#shiftTable input[type=button]#tracker {
+  margin-left: 48px;
+  width: auto;
+}
+
+body.normal div#header {
+  position: inherit;
+  width: inherit;
+}
+
+body.fixed div#header {
+  position: fixed;
+  right: 9px;
+  top: 8px;
+  width: 99%;
+}
+
+body.box div#header {
+  background-color: #7f7f7f;
+  border-color: #bfbfbf #3f3f3f #3f3f3f #bfbfbf;
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 1px;
+  position: fixed;
+  right: 9px;
+  width: 372px;
+}
+
+body.fixed > table {
+  margin-top: 66px;
+}
+
+div#stats {
+  background-color: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba( 255, 255, 255, 0.5 );
+  border-radius: 8px;
+  float: right;
+  font-size: 8pt;
+  font-weight: bold;
+  height: 48px;
+  line-height: 10px;
+  padding: 0 4px;
+  width: 160px;
+}
+
+body.box div#stats {
+  background-color: #95AABC;
+  cursor: move;
+  float: none;
+  margin: 8px;
+  width: unset;
+}
+
+div#stats span {
+  display: inline-block;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+div#stats span.label {
+  margin: 4px 0 0 4px;
+  width: 3.5em;
+}
+
+table#trackerTable tfoot tr td {
+  padding: 0 4px;
+}
+/*
+table#trackerTable textarea.styled {
+  background-color: #ECf3f7;
+  border: 1px solid #3f3f3f;
+}
+*/
+span.drop {
+  display: block;
+}
+
+td#d_errorString {
+  font-weight: bold;
+}
