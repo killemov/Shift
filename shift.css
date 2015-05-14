@@ -194,6 +194,10 @@ span#labelDir {
   padding-left: 18px;
 }
 
+span#port-is-open {
+  float: right;
+}
+
 li#high, li#normal, li#low, li#none {
   display: inline-block;
   padding: 0;

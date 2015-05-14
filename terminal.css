@@ -184,6 +184,10 @@ span#labelDir {
   padding-left: 21px;
 }
 
+span#port-is-open {
+  float: right;
+}
+
 li#high, li#normal, li#low, li#none {
   display: inline-block;
   padding: 0;
@@ -291,7 +295,7 @@ table {
 
 table thead tr th {
   border: 1px solid #004000;
-  padding: 0;
+  padding: 0 4px;
   text-align: left;
   white-space: nowrap;
 }
@@ -353,7 +357,7 @@ col.length, col.sizeWhenDone, col.uploadedEver, col.uploadRatio {
 }
 
 col.menu, col.priority {
-  width: 20px;
+  width: 26px;
 }
 
 col.port {
@@ -382,11 +386,15 @@ td.announce, td.errorString, td.name, td.status {
   white-space: nowrap;
 }
 
+td.menu {
+  text-align: left;
+}
+
 table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
   text-align: left;
 }
 
-table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
+table#torrentTable tbody tr td.menu, table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
   text-align: left;
 }
 

@@ -52,7 +52,7 @@ body {
   font-weight: bold;
   margin: 0;
   padding: 8px;
-  text-shadow: -1px -1px 0 #3f3f3f, 1px -1px 0 #3f3f3f, -1px 1px 0 #3f3f3f, 1px 1px 0 #3f3f3f;
+  text-shadow: -1px -1px 4px #3f3f3f, 1px -1px 4px #3f3f3f, -1px 1px 4px #3f3f3f, 1px 1px 4px #3f3f3f;
 }
 
 input {
@@ -98,12 +98,14 @@ ul#menu li {
   margin-right: 8px;
   padding: 0.5em 1em;
   text-align: center;
-  text-shadow: -1px -1px 0 #bfbfbf, 1px -1px 0 #bfbfbf, -1px 1px 0 #bfbfbf, 1px 1px 0 #bfbfbf;
+  text-shadow: -1px -1px 4px #bfbfbf, 1px -1px 4px #bfbfbf, -1px 1px 4px #bfbfbf, 1px 1px 4px #bfbfbf;
+  transition: box-shadow 0.5s ease 0s;
   width:96px;
 }
 
 ul#menu li:hover {
   background-color: rgba( 255, 255, 255, 0.5 );
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
   cursor: pointer;
 }
 
@@ -114,7 +116,7 @@ ul#menu li.selected:hover {
 ul#menu li.selected {
   background-color: rgba( 255, 255, 255, 0.75 );
   color: #ffffff;
-  text-shadow: -1px -1px 0 #3f3f3f, 1px -1px 0 #3f3f3f, -1px 1px 0 #3f3f3f, 1px 1px 0 #3f3f3f;
+  text-shadow: -1px -1px 4px #3f3f3f, 1px -1px 4px #3f3f3f, -1px 1px 4px #3f3f3f, 1px 1px 4px #3f3f3f;
 }
 
 ul#menu li.sub {
@@ -280,7 +282,7 @@ input.styled[type="button"] {
   height: 32px;
   min-width: 96px;
   padding: 0 8px;
-  text-shadow: -1px -1px 0 #bfbfbf, 1px -1px 0 #bfbfbf, -1px 1px 0 #bfbfbf, 1px 1px 0 #bfbfbf;
+  text-shadow: -1px -1px 4px #bfbfbf, 1px -1px 4px #bfbfbf, -1px 1px 4px #bfbfbf, 1px 1px 4px #bfbfbf;
 }
 
 input.styled.upload[type="button"] {
@@ -341,11 +343,13 @@ span.led {
   margin: 2px;
   overflow: hidden;
   text-align: center;
+  transition: box-shadow 0.5s ease 0s;
   vertical-align: middle;
   width: 32px;
 }
 
 span.led:hover {
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
   cursor: pointer;
 }
 
@@ -426,6 +430,7 @@ table#torrentTable tbody tr td {
   background-color: rgba( 255, 255, 255, 0.25 );
   border-radius: 8px;
   height: 48px;
+  transition: box-shadow 0.5s ease 0s;
 }
 
 table#torrentTable tbody tr.active td {
@@ -438,6 +443,7 @@ table#torrentTable tbody tr.active:hover td {
 
 table#torrentTable tbody tr:hover td {
   background-color: rgba( 255, 255, 255, 0.5 );
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
 }
 
 table#peerTable {
