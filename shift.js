@@ -99,6 +99,7 @@ Object.extend( Array.prototype, {
       var bb = b[property];
       return aa == bb ? ( null == a.i ? 0 : a.i - b.i ) : null == bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
     } );
+    return this;
   }
 } );
 
@@ -360,9 +361,10 @@ var trackerRegexp = /(\b(https?|udp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&
 var dropCount = 0;
 
 var sessionFields = {
+  "blocklist-size": { readOnly: true },
   "config-dir": { readOnly: true },
   "download-dir-free-space": { readOnly: true, render: renderSize },
-  "encryption": { values: ["required", "preferred", "tolerated"] },
+  "encryption": { values: normalizeOptions( ["required", "preferred", "tolerated"] ) },
   // actions return true if handling should continue.
   "peer-port": { action: function( row, keyCell, valueCell, o ) {
     var l = rLed( false, { id: "port-is-open", title: "Checking", readonly: true } );
@@ -389,7 +391,10 @@ torrentActionLabels = ["Select"].concat( torrentActionLabels );
 var torrentFields = {
   "activityDate": { render: renderDateTime },
   "addedDate": { render: renderDateTime },
-  "bandwidthPriority": { edit: true },
+  "bandwidthPriority": {
+    edit: true,
+    values: normalizeOptions( { "-1": "Low", "0": "Normal", "1": "High" } ).sortByProperty( "value" )
+  },
   "comment": {},
   "corruptEver": { render: renderSize },
   "creator": {},
@@ -738,7 +743,7 @@ var fileColumns = {
 }
 
 var peerColumns = {
-  "menu": { label: {}, render: rLed },
+  "menu": { label: rLed(), render: rLed },
   "address": { label: "Peer", defaultOrder: false },
   "port": { label: "Port" },
   "rateToClient": { label: "Down", render: renderSpeed },
@@ -751,7 +756,7 @@ var peerColumns = {
 var trackerColumns = {
   "menu": {
     label: rLed(),
-    render: function() { return rLed() },
+    render: rLed,
     listHandler: function( e, tracker ) {
       globals.currentTracker = tracker;
 
@@ -1029,8 +1034,17 @@ function renderStatus( status ) {
 
 function normalizeOptions( options ) {
   var normalized = [];
-  for( var k in options ) {
-    normalized.push( { value: k, text: options[k] } );
+  if ( Object.isArray( options ) ) {
+    for( var i = 0, len = options.length; i < len; ++i ) {
+      normalized.push( { value: options[i], text: options[i] } );
+    }
+  }
+  else {
+    for( var k in options ) {
+      var i = parseInt( k );
+      k = isNaN( i ) ? k : i;
+      normalized.push( { value: k, text: options[k] } );
+    }
   }
   return normalized;
 }
@@ -1068,6 +1082,8 @@ function renderStatusFilter() {
       filterTorrents();
       globals.torrentStatusChanged = true;
       globals.torrentStatusCurrent = this.value;
+      $( "torrentBody" ).select( "tr" ).findAll( Element.visible ).invoke( "toggleClassName", "active", false );
+      globals.currentIndex = -1;
       globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
       if ( globals.torrentStatus[ globals.torrentStatusCurrent ].onChange ) {
         globals.torrentStatus[ globals.torrentStatusCurrent ].onChange();
@@ -1537,10 +1553,9 @@ function renderTorrentTable() {
       var torrent = globals.currentTorrent = globals.torrentHash[row.id];
 
       var rows = $( "torrentBody" ).select( "tr" ).findAll( Element.visible );
-      globals.currentIndex |= 0;
-      rows[ globals.currentIndex ].toggleClassName( "active", false );
+      rows.invoke( "toggleClassName", "active", false );
+      row.toggleClassName( "active", true );
       globals.currentIndex = rows.indexOf( row );
-      rows[ globals.currentIndex ].toggleClassName( "active", true );
 
       if ( column && column.listHandler ) {
         column.listHandler( e, torrent );
@@ -1818,9 +1833,10 @@ function renderFiles( torrent ) {
       Object.extend( file, torrent.fileStats[file.index] );
       file.filePercentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
       file.renderNode = rE( "tr", { id: "f_" + file.index } );
+      var cell = rCell( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) );
+      setPercentageClass( cell, file.filePercentDone );
       file.renderNode.insert(
-        rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert(
-        rCell( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) ) ).insert(
+        rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert( cell ).insert(
         rCell( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) ).insert(
         rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
       );
@@ -1845,7 +1861,9 @@ function renderFileTable( torrent ) {
 
       if ( fileStat.bytesCompleted != file.bytesCompleted ) {
         file.filePercentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
-        updateElement( row.down( "td.filePercentDone" ), renderPercentage( file.filePercentDone ) );
+        var cell = row.down( "td.filePercentDone" );
+        setPercentageClass( cell, file.filePercentDone );
+        updateElement( cell, renderPercentage( file.filePercentDone ) );
       }
       if ( fileStat.wanted != file.wanted || fileStat.priority != file.priority ) {
         row.down( ".led" ).set( filePriorityKeys[ fileStat.wanted ? ( 1 - fileStat.priority ) : 3 ] );
@@ -1986,7 +2004,7 @@ function getChangedData( elements, idPrefix, fields ) {
         v = f.getValue( cell );
       }
       else if ( fields[k] && fields[k].values ) {
-        v = cell.down( "select" ).value;
+        v = fields[k].values[ cell.down( "select" ).selectedIndex ].value;
       }
       else if ( Object.isBoolean( o ) ) {
         v = cell.down( "span.led" ).value;
@@ -2033,7 +2051,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
       }
       else if ( f && f.values ) {
         if ( !ro ) {
-          content = rMulti( rE( "select", { "class": "styled" } ), "option", f.values ).observe( "focus", lock.curry( fields, k ) );
+          content = renderSelect( { select: { "class": "styled" }, options: f.values } ).observe( "focus", lock.curry( fields, k ) );
           content.value = o;
           createInput = false;
         }
@@ -2677,8 +2695,7 @@ function globalKeyDown( e ) {
       preventDefault( e );
       var rows = $( "torrentBody" ).select( "tr" ).findAll( Element.visible );
       if ( rows.length > 0 ) {
-        globals.currentIndex = globals.currentIndex.limit( 0, rows.length - 1 );
-        rows[ globals.currentIndex ].toggleClassName( "active", false );
+        rows.invoke( "toggleClassName", "active", false );
         globals.currentIndex += 38 == kc ? -1 : 1;
         globals.currentIndex = globals.currentIndex.limit( 0, rows.length - 1 );
         var row = rows[ globals.currentIndex ];
@@ -2689,11 +2706,11 @@ function globalKeyDown( e ) {
         }
 
         var clientHeight = document.viewport.getHeight();
-        var clientTop = document.viewport.getScrollOffsets().top;
+        var clientBottom = document.viewport.getScrollOffsets().top + clientHeight;
         var rowHeight = row.getHeight();
         var rowTop = row.cumulativeOffset().top;
 
-        if ( rowTop + rowHeight > clientHeight + clientTop || rowTop < clientHeight + clientTop ) {
+        if ( rowTop < clientBottom || clientBottom < rowTop + rowHeight ) {
           window.scrollTo( 0, rowTop + rowHeight / 2 - clientHeight / 2 );
         }
       }

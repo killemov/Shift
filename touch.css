@@ -327,6 +327,10 @@ td .styled {
   margin: 0;
 }
 
+td#d_bandwidthPriority select.styled {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
 td#s_encryption select.styled {
   background-color: rgba(255, 255, 255, 0.25);
 }
@@ -435,10 +439,12 @@ table#torrentTable tbody tr td {
 
 table#torrentTable tbody tr.active td {
   background-color: rgba( 255, 255, 255, 0.75 );
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
 }
 
 table#torrentTable tbody tr.active:hover td {
   background-color: rgba( 255, 255, 255, 0.75 );
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
 }
 
 table#torrentTable tbody tr:hover td {
