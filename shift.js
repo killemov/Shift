@@ -2480,7 +2480,7 @@ function renderPage() {
     .insert( rE( "p", {}, "Shift is a minimalistic approach to maximum control of your Transmission." ) ).insert( rE( "p", {},
       "Shift is currently targeted at Mozilla Firefox 4+<br>" +
       "with degraded and untested functionality for other or older browsers.<br>" +
-      "Shift is built on prototype.js. ( V1.7.2 - Hacked! )" )
+      "Shift is built on prototype.js. ( V1.7.3 - Hacked! )" )
     )
   ).insert(
     rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
