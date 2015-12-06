@@ -2724,6 +2724,14 @@ function globalKeyDown( e ) {
       preventDefault( e );
       torrentMenuHandler( { target: { id: e.shiftKey ? "trash" : "remove" } } );
     }
+    else if ( 48 <= kc && kc <= 57 ) { // 0..9
+      preventDefault( e );
+      var headers = $( "torrentTable" ).select( "th" ).select( Element.visible ).select( function( column ){
+        return column.id.startsWith( "h_" ) && "h_menu" != column.id;
+      } );
+      var i = ( kc - 39 ) % 10; // 1..9,0
+      sortTorrents( headers[ i.limit( 0, headers.length - 1 ) ].id.substring( 2 ) );
+    }
     break;
   }
 
@@ -2821,7 +2829,7 @@ document.observe( "dom:loaded", function() {
       if ( kc ) {
         if ( globals.torrentStatusKeyHash[ kc ] ) {
           globals.torrentStatusKeyHash[ kc ].push( k );
-        } 
+        }
         else {
           globals.torrentStatusKeyHash[ kc ] = [ k ];
         }
