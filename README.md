@@ -80,12 +80,12 @@ var torrentColumns = {
 
 * Torrent view:
 
-| Key                        | Action                    |
-| -------------------------: | :------------------------ |
-| <kbd>**a**</kbd>           | Show all torrents         |
-| <kbd>**c**</kbd>           | Show checking torrent     |
-| <kbd>**d**</kbd>           | Show downloading torrents |
-| <kbd>**s**</kbd>           | Show stopped torrents     |
-| <kbd>**u**</kbd>           | Show uploading torrents   |
-| <kbd>**Del**</kbd>         | Remove torrent            |
-| <kbd>**Shift + Del**</kbd> | Trash torrent             |
+| Key                        | Action                              |
+| -------------------------: | :---------------------------------- |
+| <kbd>**a**</kbd>           | Show all torrents                   |
+| <kbd>**c**</kbd>           | Show checking(/waiting) torrents    |
+| <kbd>**d**</kbd>           | Show downloading(/waiting) torrents |
+| <kbd>**s**</kbd>           | Show stopped torrents               |
+| <kbd>**u**</kbd>           | Show uploading(/waiting) torrents   |
+| <kbd>**Del**</kbd>         | Remove torrent                      |
+| <kbd>**Shift + Del**</kbd> | Trash torrent                       |

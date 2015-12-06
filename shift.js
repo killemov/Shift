@@ -277,7 +277,8 @@ var globals = {
     1: {
       label: "Check waiting",
       columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "corruptEver" ]
+      fields: [ "id", "status", "percentDone", "corruptEver" ],
+      keyCode: 67
     },
     2: {
       label: "Checking",
@@ -288,7 +289,8 @@ var globals = {
     3: {
       label: "Download waiting",
       columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone" ]
+      fields: [ "id", "status", "percentDone" ],
+      keyCode: 68
     },
     4: {
       label: "Downloading",
@@ -299,7 +301,8 @@ var globals = {
     5: {
       label: "Seed waiting",
       columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone" ]
+      fields: [ "id", "status", "percentDone" ],
+      keyCode: 85
     },
     6: {
       label: "Seeding",
@@ -309,6 +312,7 @@ var globals = {
     }
   },
   torrentStatusDefault: 4,
+  hashIndex: 0,
   headerState: 0,
   magnets: [],
   torrents: [],
@@ -2685,7 +2689,8 @@ function globalKeyDown( e ) {
     globals.currentIndex |= 0;
     if ( Object.keys( globals.torrentStatusKeyHash ).include( kc ) ) {
       preventDefault( e );
-      $( "statusSelect" ).setValue( globals.torrentStatusKeyHash[ kc ] ).dispatchEvent( new Event( "change" ) );
+      globals.hashIndex = ( globals.hashIndex + 1 ) % globals.torrentStatusKeyHash[ kc ].length;
+      $( "statusSelect" ).setValue( globals.torrentStatusKeyHash[ kc ][ globals.hashIndex ] ).dispatchEvent( new Event( "change" ) );
     }
     else if ( 32 == kc ) { // space
       preventDefault( e );
@@ -2812,9 +2817,14 @@ document.observe( "dom:loaded", function() {
     }
     globals.torrentStatusKeyHash = {};
     for( var k in globals.torrentStatus ) {
-      var kc = globals.torrentStatus[k].keyCode;
+      var kc = globals.torrentStatus[ k ].keyCode;
       if ( kc ) {
-        globals.torrentStatusKeyHash[kc] = k;
+        if ( globals.torrentStatusKeyHash[ kc ] ) {
+          globals.torrentStatusKeyHash[ kc ].push( k );
+        } 
+        else {
+          globals.torrentStatusKeyHash[ kc ] = [ k ];
+        }
       }
     }
     renderTitle();
