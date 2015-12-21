@@ -25,6 +25,22 @@ catch( ex ) {
   } );
 }
 
+function rE( tag, attributes, content ) {
+  return new Element( tag, attributes ).insert( content );
+}
+
+var rA = rE.curry( "textarea", { "class": "styled" } );
+function rB( attributes ) {
+  attributes = Object.extend( { "class": "styled", type: "button", value: "Apply" }, attributes );
+  var value = attributes.value;
+  delete attributes.value;
+  return rE( "button", attributes, value );
+}
+var rC = rE.curry( "td" );
+var rD = rE.curry( "div" );
+var rR = rE.curry( "tr" );
+var rS = rE.curry( "span" );
+
 Object.extend( Object, {
   isBoolean: function( value ) {
     return "boolean" === typeof value;
@@ -117,7 +133,7 @@ var FastBase64 = {
 
   encode: function( src ) {
     var len = src.length;
-    var dst = '';
+    var dst = "";
     var i = 0;
     while( len > 2 ) {
       n = src[i] << 16 | src[i + 1] << 8 | src[i + 2];
@@ -862,16 +878,8 @@ var Torrent = Class.create( {
   }
 } );
 
-function rE( tag, attributes, content ) {
-  return new Element( tag, attributes ).insert( content );
-}
-
-function rSpan( attributes, content ) {
-  return rE( "span", attributes, content );
-}
-
 function rLed( k, attributes ) {
-  return Object.extend( rSpan( Object.extend( { "class": "led" }, attributes ) ), {
+  return Object.extend( rS( Object.extend( { "class": "led" }, attributes ) ), {
     value: false,
     set: function( k ) {
       var found = false;
@@ -942,10 +950,6 @@ function showPopup( popup, e, keepOpen ) {
     popup.style.left  = ( window.innerWidth / 2 - popup.offsetWidth / 2 ) + "px";
     popup.style.top =  ( window.innerHeight / 2 - popup.offsetHeight / 2 ) + "px";
   }
-}
-
-function rButton( attributes ) {
-  return rE( "input", Object.extend( { "class": "styled", type: "button", value: "Apply" }, attributes ) );
 }
 
 function renderDateTime( seconds ) {
@@ -1056,9 +1060,9 @@ function normalizeOptions( options ) {
 var defaultOptions = normalizeOptions( { lt : "<", le: "<=", eq: "==", ge: ">=", gt: ">" } );
 
 function renderFilter( label ) {
-  var f = rE( "div", { "class": "filter"} ).hide();
-  f.insert( rSpan( { "class" : "filterLabel" }, label + ":" ) );
-  f.insert( rSpan( { "class" : "filterInput" } ) );
+  var f = rD( { "class": "filter"} ).hide();
+  f.insert( rE( "label", null, label + ":" ) );
+  f.insert( rS( { "class" : "filterInput" } ) );
   return f;
 }
 
@@ -1433,7 +1437,7 @@ function renderTorrents( noRefresh ) {
       }
       else {
         newRows.push( torrent.id );
-        row = renderRow( torrent, torrentColumns, rE( "tr", { id: torrent.id } ) );
+        row = renderRow( torrent, torrentColumns, rR( { id: torrent.id } ) );
         noRefresh ? row.show() : row.hide();
         torrent.renderNode = row;
         torrentBody.insert( row );
@@ -1482,7 +1486,7 @@ function renderTable( id, columnDefinitions, click ) {
   table.table = rE( "table", { id: id } ).insert( table.columns ).insert( table.header ).insert( table.body ).insert( table.footer );
   if ( columnDefinitions ) {
     var columns = table.columns;
-    var header = rE( "tr" );
+    var header = rR();
     table.header.insert( header );
     for( var k in columnDefinitions ) {
       if ( columnDefinitions[k].label ) {
@@ -1500,12 +1504,12 @@ function renderTable( id, columnDefinitions, click ) {
 }
 
 function renderRow( object, columnDefinitions, row ) {
-  row = row || rE( "tr" );
+  row = row || rR();
 
   for( var k in columnDefinitions ) {
     var render = columnDefinitions[k].render;
     if ( undefined === render || false !== render ) {
-      var cell = rE( "td", Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
+      var cell = rC( Object.extend( { "class": k }, columnDefinitions[k].attributes ), "" );
       updateElement( cell, undefined === render || true === render ? object[k] : render( object[k], object, k, cell ) );
       row.insert( cell );
     }
@@ -1586,9 +1590,9 @@ function renderTorrentTable() {
      torrentTable.mousedown = 0;
   } );
 
-  var c = rE( "div", { id: "filterContainer" } ).hide();
+  var c = rD( { id: "filterContainer" } ).hide();
   var h = rE( "th", { id: "filterContainerCell" } ).insert( c );
-  torrentTable.header.insert( rE( "tr" ).insert( h ) );
+  torrentTable.header.insert( rR().insert( h ) );
 
   for( var k in torrentColumns ) {
     var column = torrentColumns[k];
@@ -1754,10 +1758,6 @@ function sendNotification( title, options ) {
   sendNotification( title, options );
 };
 
-function rCell( attributes, content ) {
-  return rE( "td", attributes, content );
-}
-
 function rFolder( base, fileParts, filePartIndex ) {
   var result = fileParts[filePartIndex] + "&sol;";
   if ( base ) {
@@ -1782,7 +1782,7 @@ function renderFiles( torrent ) {
   var extension = globals.shift.session["rename-partial-files"] ? ".part" : "";
 
   var currentNode = $( "fileBody" ).down();
-  var dummyNode =  currentNode == null ? rE( "tr" ) : null;
+  var dummyNode =  currentNode == null ? rR() : null;
 
   if ( dummyNode ) {
     $( "fileBody" ).insert( dummyNode );
@@ -1809,11 +1809,11 @@ function renderFiles( torrent ) {
         file.folderNodes.remove( row );
       }
       else {
-        row = rE( "tr", { id: rowId } );
+        row = rR( { id: rowId } );
         row.insert(
-          rCell( {}, rLed().observe( "click", fileMenuClickHandler ) ) ).insert(
-          rCell( { colspan: 2 } ) ).insert(
-          rCell( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) ).observe( "dblclick", fileClickHandler )
+          rC( {}, rLed().observe( "click", fileMenuClickHandler ) ) ).insert(
+          rC( { colspan: 2 } ) ).insert(
+          rC( { "class": "name", style: "padding-left: " + i * 24 + "px" } ).insert( rFolder( folderLink, fileParts, i ) ).observe( "dblclick", fileClickHandler )
         );
       }
       folderNodes.push( row );
@@ -1836,13 +1836,13 @@ function renderFiles( torrent ) {
     else {
       Object.extend( file, torrent.fileStats[file.index] );
       file.filePercentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
-      file.renderNode = rE( "tr", { id: "f_" + file.index } );
-      var cell = rCell( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) );
+      file.renderNode = rR( { id: "f_" + file.index } );
+      var cell = rC( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) );
       setPercentageClass( cell, file.filePercentDone );
       file.renderNode.insert(
-        rCell( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert( cell ).insert(
-        rCell( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) ).insert(
-        rCell( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
+        rC( {}, rLed( filePriorityKeys[ file.wanted ? ( 1 - file.priority ) : 3 ] ).observe( "click", fileMenuClickHandler ) ) ).insert( cell ).insert(
+        rC( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) ).insert(
+        rC( { "class": "name", style: fileStyle }, base ? rLink( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", fileClickHandler )
       );
     }
     currentNode.insert( { after: file.renderNode } );
@@ -1933,7 +1933,7 @@ function renderPeerTable( torrent ) {
       updateRow( peer, peerColumns, row );
     }
     else {
-      peerBody.insert( renderRow( peer, peerColumns, rE( "tr", { id: id } ) ) );
+      peerBody.insert( renderRow( peer, peerColumns, rR( { id: id } ) ) );
     }
   } );
   globals.oldPeers = torrent.peers;
@@ -1959,7 +1959,7 @@ function renderTrackerTable( torrent ) {
       }
     } );
 
-    var trackerArea = new Element( "textarea", { "class": "styled" } );
+    var trackerArea = rA();
     var trackerLed = rLed().observe( "click", function( e ) {
       var popup = $( "popupTrackerAdd" );
       popup.observe( "click", function( e ) {
@@ -1971,7 +1971,7 @@ function renderTrackerTable( torrent ) {
       } );
       showPopup( popup, e );
     } );
-    trackerTable.down( "tfoot" ).insert( new Element( "tr" ).insert( rCell().insert( trackerLed ) ).insert( rCell().insert( trackerArea ) ) );
+    trackerTable.down( "tfoot" ).insert( rR().insert( rC().insert( trackerLed ) ).insert( rC().insert( trackerArea ) ) );
   }
 
   trackerBody = trackerTable.down( "tbody" );
@@ -1985,7 +1985,7 @@ function renderTrackerTable( torrent ) {
 
   torrent.trackerStats.each( function( tracker ) {
     if ( !$( "t_" + tracker.id ) ) {
-      trackerBody.insert( renderRow( tracker, trackerColumns, rE( "tr", { id: "t_" + tracker.id } ) ) );
+      trackerBody.insert( renderRow( tracker, trackerColumns, rR( { id: "t_" + tracker.id } ) ) );
     }
   } );
   globals.oldTrackerStats = torrent.trackerStats;
@@ -2044,11 +2044,11 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
     if ( elements.hasOwnProperty( k ) ) {
       var o = elements[k];
       var createInput = true;
-      var row = rE( "tr" );
-      var keyCell = rCell( {}, k );
+      var row = rR();
+      var keyCell = rC( {}, k );
       var ro = f && f.readOnly;
       var content = o;
-      var valueCell = rCell( { id: idPrefix + k } );
+      var valueCell = rC( { id: idPrefix + k } );
 
       if ( f && f.render ) {
         content = f.render( o );
@@ -2141,7 +2141,7 @@ function renderSessionTable() {
   globals.body.insert( sessionTable.table );
   renderKeyValuePairs( sessionTable.body, globals.shift.session, "s_", sessionFields );
   sessionTable.body.insert(
-    rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( e ) {
+    rMulti( rR(), "td", ["", rB().observe( "click", function( e ) {
       var data = getChangedData( globals.shift.session, "s_", sessionFields );
       if ( !Object.isEmpty( data ) ) {
         Object.extend( globals.shift.session, data );
@@ -2156,9 +2156,7 @@ var shiftFields = {
     getValue: function( cell ) {
       return cell.down( "textarea" ).value;
     },
-    renderAdvanced: function( value ) {
-      return new Element( "textarea", { "class": "styled" } ).insert( value );
-    },
+    renderAdvanced: rA,
     update: function( cell, value ) {
     }
   }
@@ -2233,7 +2231,7 @@ function renderShiftTable() {
   }
   globals.body.insert( shiftTable.table );
   renderKeyValuePairs( shiftTable.body, globals.shift.settings, "s_", shiftFields );
-  var trackerButton = rButton( { value: "Add to all torrents", id: "tracker" } );
+  var trackerButton = rB( { value: "Add to all torrents", id: "tracker" } );
   trackerButton.observe( "click", function( e ) {
     trackerButton.disable();
     var trackers = shiftTable.body.down( "td#s_trackers" ).down( "textarea" ).value.match( trackerRegexp );
@@ -2241,12 +2239,12 @@ function renderShiftTable() {
   } );
   shiftTable.body.down( "td#s_trackers" ).previous( "td" ).insert( trackerButton );
   if ( globals.hasQ ) {
-    shiftTable.body.insert( rE( "tr" ).insert( rE( "td" ).insert( "Set queue positions" ) ).insert( rE( "td" ).insert(
-      rButton( { value: "Date" } ).observe( "click", queueTorrentsByDate )
+    shiftTable.body.insert( rR().insert( rC().insert( "Set queue positions" ) ).insert( rC().insert(
+      rB( { value: "Date" } ).observe( "click", queueTorrentsByDate )
     ) ) );
   }
   shiftTable.body.insert(
-    rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( e ) {
+    rMulti( rR(), "td", ["", rB().observe( "click", function( e ) {
       var data = getChangedData( globals.shift.settings, "s_", shiftFields );
       globals.shift.settingsChanged = !Object.isEmpty( data );
       if ( globals.shift.settingsChanged ) {
@@ -2268,7 +2266,7 @@ function renderDetailsTable( torrent ) {
     globals.body.insert( detailsTable.table );
     renderKeyValuePairs( detailsTable.body, torrent, "d_", torrentFields );
     detailsTable.body.insert(
-    rMulti( rE( "tr" ), "td", ["", rButton().observe( "click", function( e ) {
+    rMulti( rR(), "td", ["", rB().observe( "click", function( e ) {
       wait();
       var data = getChangedData( torrent, "d_", torrentFields );
       doRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
@@ -2331,7 +2329,7 @@ function torrentClickHandler( handler, e ) {
 }
 
 function filesClickHandler( e ) {
-  torrentClickHandler( updateHandler.curry(  "files", "fileTable",  [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ), e );
+  torrentClickHandler( updateHandler.curry( "files", "fileTable", [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ), e );
 }
 
 function newMenu( label, click, attributes ) {
@@ -2368,9 +2366,9 @@ var menu = {
     } )
   },
   torrentGroupDetails: {
-    files: newMenu( "Files", torrentClickHandler.curry( updateHandler.curry(  "files", "fileTable",  [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ) ), { id: "menu_files" } ),
+    files: newMenu( "Files", torrentClickHandler.curry( updateHandler.curry( "files", "fileTable", [ "id", "fileStats", "sizeWhenDone" ], renderFileTable ) ), { id: "menu_files" } ),
     peers: newMenu( "Peers", torrentClickHandler.curry( updateHandler.curry( "peers", "peerTable", [ "id", "peers" ], renderPeerTable ) ), { id: "menu_peers" } ),
-    trackers: newMenu( "Trackers", torrentClickHandler.curry( updateHandler.curry( "trackers", "trackerTable",  [ "id", "trackerStats" ], renderTrackerTable ) ), { id: "menu_trackers" } ),
+    trackers: newMenu( "Trackers", torrentClickHandler.curry( updateHandler.curry( "trackers", "trackerTable", [ "id", "trackerStats" ], renderTrackerTable ) ), { id: "menu_trackers" } ),
     details: newMenu( "Details", torrentClickHandler.curry( updateHandler.curry( "details", "detailsTable", torrentDetailsFieldKeys, renderDetailsTable ) ), { id: "menu_details" } )
   },
   session: newMenu( "Session", function( e ) {
@@ -2431,16 +2429,16 @@ function group( g ) {
 }
 
 function initFileUploads() {
-  var fakeFileUpload = rE('div');
-  fakeFileUpload.className = 'fakefile';
-  fakeFileUpload.appendChild( rE('input') );
-  fakeFileUpload.appendChild( rE( "div", { class: "button" }, "Select" ) );
+  var fakeFileUpload = rD();
+  fakeFileUpload.className = "fakefile";
+  fakeFileUpload.appendChild( rE( "input" ) );
+  fakeFileUpload.appendChild( rD( { class: "button" }, "Select" ) );
 
   var element = $( "fileZapper" );
 
   var clone = fakeFileUpload.cloneNode(true);
   element.parentNode.appendChild(clone);
-  element.relatedElement = clone.getElementsByTagName('input')[0];
+  element.relatedElement = clone.getElementsByTagName( "input" )[0];
   element.onchange = element.onmouseout = function () {
     this.relatedElement.value = this.value;
   }
@@ -2460,14 +2458,14 @@ function renderMenuItem( render, item ) {
 }
 
 function renderMenuPopup( id, items, render ) {
-  return rE( "div", { id: id, "class": "popup" } ).insert( rE( "ul" ).insert( items.collect( renderMenuItem.curry( render ) ) ) ).hide();
+  return rD( { id: id, "class": "popup" } ).insert( rE( "ul" ).insert( items.collect( renderMenuItem.curry( render ) ) ) ).hide();
 }
 
 function renderPage() {
   globals.uFile = rInput( null, { type: "file", multiple: "multiple" } ).hide();
   globals.uFileLed = rLed().observe( "click", selectFileLedTrue );
   globals.uFileName = rInput( null, { readonly: "readonly" } );
-  globals.uBrowse = rInput( null, { "class": "styled upload", type: "button", value: "Browse" } );
+  globals.uBrowse = rB( { "class": "styled upload", type: "button", value: "Browse" } );
   globals.uUrlLed = rLed().observe( "click", selectFileLedFalse );
   globals.uUrl = rInput( null );
   globals.uDir = rInput( globals.shift.session["download-dir"] );
@@ -2475,11 +2473,11 @@ function renderPage() {
   globals.uPausedLed = rLed();
   globals.uPausedLed.observe( "click", globals.uPausedLed.toggle );
 
-  globals.uUpload = rInput( null, { "class": "styled upload", type: "button", value: "Upload" } );
+  globals.uUpload = rB( { "class": "styled upload", type: "button", value: "Upload" } );
   selectFileLedTrue();
 
-  globals.body.insert( rE( "div", { id: "popups" } ).insert(
-    rE( "div", { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
+  globals.body.insert( rD( { id: "popups" } ).insert(
+    rD( { id: "popupAbout", "class": "popup" } ).hide().insert( rE( "h1", {}, "Shift / Transmission" ) )
     .insert( rE( "h2", {}, "By Killemov" )  ).insert( "Version: " + globals.shift.version + " / " + globals.shift.session.version )
     .insert( rE( "p", {}, "Shift is a minimalistic approach to maximum control of your Transmission." ) ).insert( rE( "p", {},
       "Shift is currently targeted at Mozilla Firefox 4+<br>" +
@@ -2487,12 +2485,12 @@ function renderPage() {
       "Shift is built on prototype.js. ( V1.7.3 - Hacked! )" )
     )
   ).insert(
-    rE( "div", { id: "popupAdd", "class": "popup" } ).hide().insert(
+    rD( { id: "popupAdd", "class": "popup" } ).hide().insert(
       rE( "h1", {}, "Add a torrent" ) ).insert( rInput( null, { type: "file", multiple: "multiple" } ).hide() ).insert(
-      rE( "div" ).insert( [ globals.uFileLed, rSpan( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ) ).insert(
-      rE( "div" ).insert( [ globals.uUrlLed, rSpan( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
-      rE( "div" ).insert( [ rSpan( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
-      rE( "div" ).insert( [ globals.uPausedLed, rSpan( { id: "labelPaused" }, "Add paused" ), globals.uUpload ] ) )
+      rD().insert( [ globals.uFileLed, rS( { "class": "upload" }, "File" ), globals.uFileName, globals.uBrowse ] ) ).insert(
+      rD().insert( [ globals.uUrlLed, rS( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
+      rD().insert( [ rS( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
+      rD().insert( [ globals.uPausedLed, rS( { id: "labelPaused" }, "Add paused" ), globals.uUpload ] ) )
   ).insert(
     renderMenuPopup( "popupGeneral", ["Select Visible", "Deselect Visible", "Select All", "Deselect All", "Store Selection", "Restore Selection", "Reset"] )
   ).insert(
@@ -2548,15 +2546,15 @@ function renderPage() {
 
   var clazz = { "class": "label" };
 
-  var header = rE( "div", { id: "header" } );
+  var header = rD( { id: "header" } );
 
   globals.body.insert( header );
 
-  header.insert( rE( "div", { id: "stats" } )
-    .insert( rSpan( clazz, "Dl/Ul: " ) ).insert( rSpan( { id: "downloadSpeed" }, "0Bs" ) ).insert( " / " )
-    .insert( rSpan( { id: "uploadSpeed" }, "0Bs" ) ).insert( rE( "br" ) ).insert( rSpan( clazz, "Total: " ) )
-    .insert( rSpan( { id: "downloadedBytes" }, "0B" ) ).insert( " / " ).insert( rSpan( { id: "uploadedBytes" }, "0B" ) )
-    .insert( rE( "br" ) ).insert( rSpan( clazz, "Free: " ) ).insert( rSpan( { id: "download-dir-free-space" }, "0B" ) )
+  header.insert( rD( { id: "stats" } )
+    .insert( rS( clazz, "Dl/Ul: " ) ).insert( rS( { id: "downloadSpeed" }, "0Bs" ) ).insert( " / " )
+    .insert( rS( { id: "uploadSpeed" }, "0Bs" ) ).insert( rE( "br" ) ).insert( rS( clazz, "Total: " ) )
+    .insert( rS( { id: "downloadedBytes" }, "0B" ) ).insert( " / " ).insert( rS( { id: "uploadedBytes" }, "0B" ) )
+    .insert( rE( "br" ) ).insert( rS( clazz, "Free: " ) ).insert( rS( { id: "download-dir-free-space" }, "0B" ) )
     .observe( "dblclick", function( e ) {
       var f = $( "filterContainer" );
       globals.headerState++;
@@ -2612,7 +2610,7 @@ function processFile( file, target, paused ) {
 
   var dropId = "drop" + dropCount++;
   var f = $( "filterContainer" );
-  f.insert( rSpan( { id: dropId, "class": "drop" }, "Uploading " + file.name  ) );
+  f.insert( rS( { id: dropId, "class": "drop" }, "Uploading " + file.name ) );
   f.show();
 
   // Upload the file first to see if Transmission can handle it.
@@ -2682,6 +2680,9 @@ function renderTitle() {
 }
 
 function globalKeyDown( e ) {
+  if ( e.ctrlKey ) {
+    return true;
+  }
   var kc = e.keyCode;
 
   switch( globals.activeTableId ) {
@@ -2767,7 +2768,7 @@ document.observe( "dom:loaded", function() {
   globals.body.addClassName( "normal" );
 
   // This is the catch-all element for clicking outside popups or modal dialogs.
-  globals.body.insert( rE( "div", { id: "outside" } ) );
+  globals.body.insert( rD( { id: "outside" } ) );
 
   /**
    * Handle the following dropped items:

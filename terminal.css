@@ -104,9 +104,11 @@ span.filterInput {
   display: inline-block;
 }
 
-span.filterLabel {
-  width: 64px;
+label {
   display: inline-block;
+  margin-right: 0.5em;
+  text-align: right;
+  width: 4em;
 }
 
 div.name {
@@ -208,19 +210,20 @@ input.styled.number {
   width: 6em;
 }
 
-input.styled[type=button] {
+button.styled {
   background-color: #00A000;
   border-color: #00F000 #004000 #004000 #00F000;
   border-style: solid;
   border-width: 1px;
   color: #000000;
-  margin-right: 2px;
+  font: inherit;
   font-weight: bold;
   font-size: larger;
+  margin-right: 2px;
   width: 6em;
 }
 
-input.styled[type=button].upload {
+button.styled.upload {
   position: absolute;
   right: 4px;
 }
@@ -403,11 +406,6 @@ table#detailsTable input {
   width: 100%;
 }
 
-table#detailsTable input[type=button] {
-  border-width: 1px;
-  width: 6em;
-}
-
 table#fileTable tbody tr td.name {
   text-align: left;
 }
@@ -417,22 +415,12 @@ table#sessionTable input {
   width: 100%;
 }
 
-table#sessionTable input[type=button] {
-  border-width: 1px;
-  width: 6em;
-}
-
 table#shiftTable input {
   border-width: 0;
   width: 100%;
 }
 
-table#shiftTable input[type=button] {
-  border-width: 1px;
-  width: 6em;
-}
-
-table#shiftTable input[type=button]#tracker {
+table#shiftTable button#tracker {
   margin-left: 20px;
   width: auto;
 }

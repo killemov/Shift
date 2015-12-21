@@ -149,9 +149,11 @@ span.filterInput {
   display: inline-block;
 }
 
-span.filterLabel {
-  width: 64px;
+label {
   display: inline-block;
+  margin-right: 0.5em;
+  text-align: right;
+  width: 4em;
 }
 
 div.name {
@@ -277,15 +279,16 @@ input.styled.number {
   text-align: right;
 }
 
-input.styled[type="button"] {
+button.styled {
   color: #000000;
+  font: inherit;
   height: 32px;
   min-width: 96px;
   padding: 0 8px;
   text-shadow: -1px -1px 4px #bfbfbf, 1px -1px 4px #bfbfbf, -1px 1px 4px #bfbfbf, 1px 1px 4px #bfbfbf;
 }
 
-input.styled.upload[type="button"] {
+button.styled.upload {
   float: right;
   margin-right: 0;
   margin-top: 3px;
@@ -546,7 +549,7 @@ table#fileTable th:first-child, table#fileTable td:first-child, table#trackerTab
   text-align: center;
 }
 
-table#shiftTable input[type=button]#tracker {
+table#shiftTable button#tracker {
   margin-left: 48px;
   width: auto;
 }
