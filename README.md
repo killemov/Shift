@@ -3,8 +3,9 @@ Shift is a minimalistic approach to maximum control of your Transmission.
 
 *Shift is targeted at Mozilla Firefox 4+ with degraded and untested functionality for other or older browsers.*
 
-![shift_torrents](https://f.cloud.github.com/assets/128298/1134763/2dd28c28-1bfa-11e3-9bd9-79a3c3902443.png)
-![shift_session](https://f.cloud.github.com/assets/128298/1134770/564ab734-1bfa-11e3-9e52-0eb93697d9bd.png)
+![shift_torrents](https://cloud.githubusercontent.com/assets/932370/12071321/fa568a5a-b0a5-11e5-919c-28adadfe0852.png)
+![shift_session](https://cloud.githubusercontent.com/assets/932370/12071322/ff3b78fa-b0a5-11e5-9ee8-195593a59364.png)
+
 ## Column based sorting and filtering.
 
 * General:
