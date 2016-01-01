@@ -8,6 +8,7 @@
   "incompleteFolderLink": "http://localhost/downloads/incomplete/",
   "incompleteFolderLinkEnabled": false,
   "notificationEnabled": false,
+  "screenshotMode": false,
   "showSpeedTitle": false,
   "soundEnabled": false,
   "soundDone": "",

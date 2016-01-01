@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2015 Killemov.
+ * © 2016 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -296,10 +296,20 @@ button.styled.upload {
 
 select.styled {
   -moz-appearance: none;
-  -webkit-appearance:none;
+  -webkit-appearance: none;
   appearance: none;
-  background: url("select.png") no-repeat scroll right center transparent;
-  padding: 0 16px 0 8px;
+  background: inherit;
+  background-image:
+    linear-gradient( 45deg, transparent 50%, #FFFFFF 50% ),
+    linear-gradient( 135deg, #FFFFFF 50%, transparent 50% );
+  background-position:
+    calc(100% - 16px) 0.9em,
+    calc(100% - 8px) 0.9em;
+  background-repeat: no-repeat;
+  background-size:
+    8px 8px,
+    8px 8px;
+  padding: 0 2em 0 8px;
 }
 
 select.styled option {
@@ -322,7 +332,7 @@ textarea.styled {
   font-family: inherit;
   font-size: inherit;
   height: 64px;
-  resize: none;  
+  resize: none;
   width: 100%;
 }
 
@@ -463,6 +473,18 @@ tbody tr:nth-child( even ) {
 }
 
 tbody tr:nth-child( odd ) {
+}
+
+th.asc {
+}
+
+th.desc {
+}
+
+col.asc {
+}
+
+col.desc {
 }
 
 col {
