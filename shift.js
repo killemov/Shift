@@ -167,6 +167,12 @@ Object.extend( Array.prototype, {
   }
 } );
 
+Object.extend( String.prototype, {
+  includes: function( s ) {
+     return this.indexOf( s ) > -1;
+  }
+} );
+
 // riffwave by Pedro Ladaria <pedro.ladaria at Gmail dot com>
 var FastBase64 = {
 
@@ -1371,7 +1377,7 @@ function sortTorrents( property, reverse ) {
 
   var setSortClass = function( element ) {
     element.removeClassName( "asc" ).removeClassName( "desc" );
-    if ( element.className.contains( property ) ) {
+    if ( element.className.includes( property ) ) {
         element.addClassName( column.order ? "asc" : "desc" );
     }
   };
