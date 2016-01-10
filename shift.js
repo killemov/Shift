@@ -453,13 +453,14 @@ var sessionFields = {
   "version": { readOnly: true }
 }
 
-var torrentActionLabels = ["Details", "Start", "Stop", "Announce", "Check", "Remove", "Trash"];
+var torrentActionLabels = [ "Details", "Check", "Start", "Start Now", "Stop", "Reannounce", "Remove", "Trash" ];
 var torrentActions = {};
-torrentActionLabels.concat( ["add", "get", "set"] ).invoke( "toLowerCase" ).each( function( action ) {
+torrentActionLabels.concat( [ "add", "get", "set" ] ).each( function( action ) {
+  action = action.toLowerCase().replace( " ", "-" );
   torrentActions[action] = { method: "torrent-" + ( "check" == action ? "verify" : action ) };
 } );
-torrentActions["trash"].method = torrentActions["remove"].method;
-torrentActionLabels = ["Select"].concat( torrentActionLabels );
+torrentActions[ "trash" ].method = torrentActions[ "remove" ].method;
+torrentActionLabels = [ "Select" ].concat( torrentActionLabels );
 
 var torrentFields = {
   "activityDate": { render: renderDateTime },
@@ -468,7 +469,11 @@ var torrentFields = {
     edit: true,
     values: normalizeOptions( { "-1": "Low", "0": "Normal", "1": "High" } ).sortByProperty( "value" )
   },
-  "comment": { sss: true },
+  "comment": {
+    render: function( comment ) {
+      return comment.replace( torrentRegexp, "<a href=\"$1\" target=\"_blank\">$1</a>" );
+    },
+    sss: true },
   "corruptEver": { render: renderSize },
   "creator": { sss: true },
   "display": { ignore: true },
@@ -578,7 +583,7 @@ function wait() {
 }
 
 function getQueuePositions( removed ) {
-  if ( !globals.hasQ ) {
+  if ( globals.version < 2.4 ) {
     if ( removed ) {
       removed.each( removeTorrentById );
     }
@@ -597,8 +602,9 @@ function getQueuePositions( removed ) {
 
 function torrentMenuHandler( e ) {
   var action = e.target.id;
+
   if ( action == "select" ) {
-    torrent.toggleSelect();
+    globals.currentTorrent.toggleSelect();
     return;
   }
 
@@ -1632,6 +1638,10 @@ function renderTorrentTable() {
   var h = rE( "th", { id: "filterContainerCell" } ).insert( c );
   torrentTable.header.insert( rR().insert( h ) );
 
+  var _show = function() {
+    [ c, h ].invoke( $A( c.children ).select( Element.visible ).length ? "show" : "hide" );
+  }
+
   for( var k in torrentColumns ) {
     var column = torrentColumns[k];
     var f = column.filter;
@@ -1650,7 +1660,7 @@ function renderTorrentTable() {
         var f = torrentColumns[ this.up().id.substring( 2 ) ].filter;
         this.set( f.visible = !f.visible );
         f.visible ? f.node.show() : f.node.hide();
-        $A( c.children ).select( Element.visible ).length ? c.show() : c.hide();
+        _show()
         e.stop();
       } );
 
@@ -1662,7 +1672,7 @@ function renderTorrentTable() {
     }
   }
   h.writeAttribute( "colSpan", globals.torrentColumnHash.length );
-  $A( c.children ).select( Element.visible ).length ? c.show() : c.hide();
+  _show()
 }
 
 function setTorrentsColumnsVisible( columns ) {
@@ -2276,7 +2286,7 @@ function renderShiftTable() {
     addTrackersToTorrents( globals.torrents.pluck( "id" ), trackers );
   } );
   shiftTable.body.down( "td#s_trackers" ).previous( "td" ).insert( trackerButton );
-  if ( globals.hasQ ) {
+  if ( globals.version >= 2.4 ) {
     shiftTable.body.insert( rR().insert( rC().insert( "Set queue positions" ) ).insert( rC().insert(
       rB( { value: "Date" } ).observe( "click", queueTorrentsByDate )
     ) ) );
@@ -2834,8 +2844,8 @@ document.observe( "dom:loaded", function() {
     globals.lastResponse = response;
     globals.shift.session = response.responseJSON.arguments;
     globals.version = parseFloat( globals.shift.session.version );
-    globals.hasQ = globals.version >= 2.4;
-    if ( !globals.hasQ ) {
+    if ( globals.version < 2.4 ) {
+      delete torrentAction[ "torrent-start-now" ];
       globals.torrentStatus = {
         "-1": globals.torrentStatus["-1"],
         1: globals.torrentStatus[1],
