@@ -481,6 +481,7 @@ var torrentFields = {
   "desiredAvailable": { render: renderSize },
   "doneDate": { render: renderDateTime },
   "downloadDir": {},
+  "downloadGroup": { edit: true },
   "downloadedEver": { render: renderSize },
   "downloadLimit": { edit: true },
   "downloadLimited": { edit: true },
