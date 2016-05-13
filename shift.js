@@ -2476,7 +2476,7 @@ function renderPage() {
   ) );
 
   globals.uFile.observe( "change", function( e ) {
-    globals.uFileName.value = $A( e.originalTarget.files ).pluck( "name" ).join( ";" );
+    globals.uFileName.value = $A( e.currentTarget.files ).pluck( "name" ).join( ";" );
     selectFileLedTrue();
   } );
 
