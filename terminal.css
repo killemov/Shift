@@ -451,6 +451,12 @@ table#shiftTable button#tracker {
   width: auto;
 }
 
+canvas.pieces {
+  border-color: #004000 #00F000 #00F000 #004000;
+  color: #00ff00;
+  width: 100%;
+}
+
 div#stats {
   float: right;
   font-weight: bold;

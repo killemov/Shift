@@ -38,6 +38,7 @@ select {
 ul#menu {
   margin: 0;
   padding: 0;
+  width: calc( 100% - 18em );
 }
 
 body.box ul#menu {
@@ -80,6 +81,10 @@ ul#menu li.sub {
 div#filterContainer {
 }
 
+body.box th#filterContainerCell {
+  display: none;
+}
+
 body.box div#filterContainer {
   background-color: #EFEFEF;
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
@@ -88,7 +93,7 @@ body.box div#filterContainer {
   margin: 8px;
 }
 
-div.filter {
+div.filter, div.drop {
   margin: 2px 8px;
 }
 
@@ -101,7 +106,15 @@ label {
   display: inline-block;
   margin-right: 0.5em;
   text-align: right;
-  width: 4em;
+  width: 6em;
+}
+
+div.drop div {
+  border: 1px solid #D5D5D5;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: normal;
+  padding: 3px 4px 2px;
 }
 
 div.name {
@@ -342,6 +355,10 @@ table {
   width: 100%;
 }
 
+table#peerTable, table#webseedTable {
+  margin-top: 2em;
+}
+
 table thead tr th {
   border-bottom: 1px solid black;
   border-top: 1px solid black;
@@ -422,8 +439,12 @@ col.key {
   width: 256px;
 }
 
-col.doneDate, col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+col.doneDate {
   width: 152px;
+}
+
+col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTime {
+  width: 88px;
 }
 
 col.length, col.sizeWhenDone, col.uploadedEver {
@@ -489,8 +510,9 @@ table#shiftTable button#tracker {
 }
 
 body.normal div#header {
+  height: 74px;
   position: inherit;
-  width: inherit
+  width: inherit;
 }
 
 body.fixed div#header {
@@ -513,6 +535,11 @@ body.box div#header {
 
 body.fixed > table {
   margin-top: 74px;
+}
+
+canvas.pieces {
+  color: #5CA941;
+  width: 100%;
 }
 
 div#stats {

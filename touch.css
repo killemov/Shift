@@ -603,6 +603,14 @@ body.fixed > table {
   margin-top: 66px;
 }
 
+canvas.pieces {
+  border: 1px solid #007f00;
+  border-radius: 8px;
+  color: #00ff00;
+  margin: 4px 0;
+  width: 100%;
+}
+
 div#stats {
   background-color: rgba(255, 255, 255, 0.25);
   border: 1px solid rgba( 255, 255, 255, 0.5 );
