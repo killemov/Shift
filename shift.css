@@ -141,8 +141,7 @@ div#popups {
 }
 
 div.popup div {
-  display: block;
-  position: relative;
+  margin: 4px 0;
 }
 
 .popup {
@@ -151,6 +150,15 @@ div.popup div {
   box-shadow: 8px 8px 16px #3F3F3F;
   display: none;
   position: absolute;
+}
+
+.dialog {
+  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
+  border-radius: 8px;
+  padding: 8px;
+  position: fixed;
+  min-width: 320px;
+  white-space: nowrap;
 }
 
 .popup:hover {
@@ -181,25 +189,18 @@ div.popup div {
 }
 
 div#popupAbout {
-  background-color: #EFEFEF;
-  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
-  border-radius: 8px;
-  padding: 8px;
-  position: fixed;
   text-align: center;
-  width: 368px;
+}
+
+button.styled.about {
+  float: right;
 }
 
 div#popupAdd {
-  background-color: #EFEFEF;
-  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
-  border-radius: 8px;
   height: 196px;
-  position: fixed;
-  width: 368px;
 }
 
-div#popupAdd input.styled {
+.popup input.styled {
   border: 1px solid #D5D5D5;
 }
 
@@ -251,8 +252,13 @@ button.styled {
 }
 
 button.styled.upload {
-  position: absolute;
-  right: 4px;
+  float: right;
+  margin-left: 8px;
+}
+
+button.styled.rename {
+  float: right;
+  margin-left: 8px;
 }
 
 div#filterContainer input.styled[type=text] {
@@ -344,7 +350,12 @@ span.led.none {
 
 span.upload {
   display: inline-block;
-  width: 30px;
+  width: 32px;
+}
+
+span.rename {
+  display: inline-block;
+  width: 64px;
 }
 
 table {
