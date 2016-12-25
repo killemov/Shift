@@ -37,23 +37,19 @@ body {
   color: #00F000;
   font-family: wellbutrin;
   font-size: 9pt;
-  padding: 0;
-  margin: 0;
 }
 
-input {
-  color: #00FF00;
-  font-family: wellbutrin;
+input, select {
+  color: inherit;
+  font-family: inherit;
 }
 
 h1 {
   font-size: 28pt;
-  text-align: center;
 }
 
-select {
-  color: #00FF00;
-  font-family: wellbutrin;
+div#header {
+  background-color: unset;
 }
 
 ul#menu {
@@ -69,15 +65,10 @@ ul#menu li {
   border-style: solid;
   border-width: 1px;
   color: #000000;
-  display: inline-block;
   font-size: larger;
   margin-right: 2px;
   padding: 0.5em 1em;
   text-align: center;
-}
-
-ul#menu li:hover {
-  cursor: pointer;
 }
 
 ul#menu li.selected {
@@ -91,53 +82,29 @@ ul#menu li.sub {
   vertical-align: bottom;
 }
 
+div#stats {
+  float: right;
+  font-weight: bold;
+  line-height: 10pt;
+  width: 18em;
+}
+
+div#stats span {
+  display: inline-block;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+div#stats span.label {
+  width: 3.5em;
+}
+
 div#filterContainer {
   margin: 0 4px 4px;
 }
 
-div.filter {
-  margin: 2px 8px;
-}
-
-span.filterInput {
-  width: 272px;
-  display: inline-block;
-}
-
 label {
-  display: inline-block;
-  margin-right: 0.5em;
-  text-align: right;
   width: 4em;
-}
-
-div.name {
-  width: 100px;
-}
-
-div#outside {
-  background-color: transparent;
-  display: none;
-  height: 100%;
-  left: 0;
-  position: fixed;
-  top: 0;
-  width: 100%;
-}
-
-div#popups {
-  background-color: transparent;
-  display: none;
-  height: 100%;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 100%;
-}
-
-div.popup div {
-  display: block;
-  position: relative;
 }
 
 .popup {
@@ -151,6 +118,15 @@ div.popup div {
 
 .popup:hover {
   cursor: pointer;
+}
+
+.popup div {
+  display: block;
+  position: relative;
+}
+
+.dialog div:last-child .styled {
+	margin: 0 0 0 8px;
 }
 
 .popup ul {
@@ -170,7 +146,6 @@ div.popup div {
 
 div#popupAbout {
   background-color: #008000;
-  height: 300px;
   position: fixed;
   text-align: center;
   width: 424px;
@@ -178,21 +153,11 @@ div#popupAbout {
 
 div#popupAdd {
   position: fixed;
-  height: 196px;
   width: 368px;
 }
 
-span#labelDir {
-  padding-left: 21px;
-}
-
 span#port-is-open {
-  float: right;
-}
-
-li#high, li#normal, li#low, li#none {
-  display: inline-block;
-  padding: 0;
+  margin-top: 3px;
 }
 
 .styled {
@@ -223,28 +188,17 @@ button.styled {
   width: 6em;
 }
 
-button.styled.upload {
-  position: absolute;
-  right: 4px;
-}
-
 select.styled {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-  background: inherit;
   background-image:
     linear-gradient( 45deg, transparent 50%, #00F000 50% ),
     linear-gradient( 135deg, #00F000 50%, transparent 50% );
   background-position:
     calc(100% - 12px) 0.4em,
     calc(100% - 6px) 0.4em;
-  background-repeat: no-repeat;
   background-size:
     6px 6px,
     6px 6px;
   height: 1.4em;
-  padding-right: 2em;
 }
 
 select.styled option {
@@ -253,11 +207,6 @@ select.styled option {
 
 textarea.styled {
   border: 1px solid #004000;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  resize: none;
-  width: 100%;
 }
 
 span.led {
@@ -270,18 +219,9 @@ span.led {
   font-weight: 900;
   height: 12px;
   margin: 2px;
-  overflow: hidden;
-  vertical-align: text-bottom;
   width: 12px;
 }
 
-span.led:hover {
-  cursor: pointer;
-}
-
-span.led[readonly]:hover {
-  cursor: auto;
-}
 span.led.high {
   line-height: 11px;
   text-align: center;
@@ -299,58 +239,24 @@ span.led.none {
 }
 
 span.upload {
-  display: inline-block;
   width: 30px;
 }
 
 table {
   border: 0;
-  border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
 }
 
 table thead tr th {
   border: 1px solid #004000;
-  padding: 0 4px;
-  text-align: left;
+  line-height: 20px;
   white-space: nowrap;
 }
 
 table tbody tr td {
   border: 1px solid #004000;
-  padding: 0 4px;
-}
-
-table#fileTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-table#peerTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-table#torrentTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-tbody tr:nth-child( even ) {}
-
-tbody tr:nth-child( odd ) {}
-
-th.asc {
-}
-
-th.desc {
-}
-
-col.asc {
-}
-
-col.desc {
+  line-height: 20px;
 }
 
 col {
@@ -455,26 +361,6 @@ canvas.pieces {
   border-color: #004000 #00F000 #00F000 #004000;
   color: #00ff00;
   width: 100%;
-}
-
-div#stats {
-  float: right;
-  font-weight: bold;
-  line-height: 10pt;
-  width: 18em;
-}
-
-div#stats span {
-  display: inline-block;
-  font-weight: inherit;
-  font-size: inherit;
-}
-
-div#stats span.label {
-  width: 3.5em;
-}
-
-table#trackerTable tfoot tr td {
 }
 
 table#trackerTable textarea.styled {

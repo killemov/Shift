@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2016 Killemov.
+ * © 2017 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
@@ -16,7 +16,6 @@ body {
   font-family: Arial, sans-serif;
   font-size: 11pt;
   margin: 2px;
-  padding: 0;
 }
 
 input {
@@ -36,8 +35,6 @@ select {
 }
 
 ul#menu {
-  margin: 0;
-  padding: 0;
   width: calc( 100% - 18em );
 }
 
@@ -46,7 +43,6 @@ body.box ul#menu {
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border: 1px solid #D5D5D5;
   border-radius: 4px;
-  margin: 8px;
 }
 
 ul#menu li {
@@ -57,15 +53,9 @@ ul#menu li {
   border-width: 1px;
   border-radius: 4px;
   color: #3F3F3F;
-  display: inline-block;
   margin: 2px;
   min-width: 8em;
-  padding: 0.5em;
   text-shadow: 0 1px 0 rgba( 0, 0, 0, 0.15 );
-}
-
-ul#menu li:hover {
-  cursor: pointer;
 }
 
 ul#menu li.selected {
@@ -78,107 +68,38 @@ ul#menu li.sub {
   float: left;
 }
 
-div#filterContainer {
-}
-
-body.box th#filterContainerCell {
-  display: none;
-}
-
 body.box div#filterContainer {
   background-color: #EFEFEF;
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border: 1px solid #D5D5D5;
   border-radius: 4px;
-  margin: 8px;
-}
-
-div.filter, div.drop {
-  margin: 2px 8px;
-}
-
-span.filterInput {
-  width: 272px;
-  display: inline-block;
-}
-
-label {
-  display: inline-block;
-  margin-right: 0.5em;
-  text-align: right;
-  width: 6em;
 }
 
 div.drop div {
   border: 1px solid #D5D5D5;
   border-radius: 4px;
-  display: inline-block;
   font-weight: normal;
-  padding: 3px 4px 2px;
-}
-
-div.name {
-  width: 100px;
-}
-
-div#outside {
-  display: none;
-  height: 100%;
-  left: 0;
-  position: fixed;
-  top: 0;
-  width: 100%;
-}
-
-div#popups {
-  background-color: transparent;
-  display: none;
-  height: 100%;
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 100%;
-}
-
-div.popup div {
-  margin: 4px 0;
 }
 
 .popup {
   background-color: #EFEFEF;
   border: 1px solid #D5D5D5;
   box-shadow: 8px 8px 16px #3F3F3F;
-  display: none;
-  position: absolute;
 }
 
 .dialog {
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border-radius: 8px;
-  padding: 8px;
-  position: fixed;
-  min-width: 320px;
-  white-space: nowrap;
 }
 
-.popup:hover {
-  cursor: pointer;
-}
-
-.popup ul {
-  display: block;
-  margin: 0;
-  padding: 0;
+.dialog div:last-child .styled {
+  margin-left: 8px;
 }
 
 .popup ul li {
   background-color: #EFEFEF;
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border: 1px solid #D5D5D5;
-  display: block;
-  margin: 0;
-  padding-left: 4px;
-  padding-right: 4px;
 }
 
 .popup ul li:hover {
@@ -188,33 +109,12 @@ div.popup div {
   color: #FFFFFF;
 }
 
-div#popupAbout {
-  text-align: center;
-}
-
-button.styled.about {
-  float: right;
-}
-
-div#popupAdd {
-  height: 196px;
-}
-
 .popup input.styled {
   border: 1px solid #D5D5D5;
 }
 
 span#labelDir {
   padding-left: 18px;
-}
-
-span#port-is-open {
-  float: right;
-}
-
-li#high, li#normal, li#low, li#none {
-  display: inline-block;
-  padding: 0;
 }
 
 .styled {
@@ -232,11 +132,6 @@ input.styled, textarea.styled {
   background-color: transparent;
 }
 
-input.styled.number {
-  text-align: right;
-  width: 6em;
-}
-
 button.styled {
   background-color: #60B044;
   background-image: linear-gradient( -8deg, #60B044, #8ADD6D );
@@ -247,43 +142,14 @@ button.styled {
   font: inherit;
   margin: 2px;
   min-width: 8em;
-  padding: 0.5em;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
 }
 
-button.styled.upload {
-  float: right;
-  margin-left: 8px;
-}
-
-button.styled.rename {
-  float: right;
-  margin-left: 8px;
-}
-
-div#filterContainer input.styled[type=text] {
-  height: 1.33em;
-  text-indent: 4px;
-}
-
 select.styled {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-  background: inherit;
   background-image:
     linear-gradient( 45deg, transparent 50%, #60B044 50%),
     linear-gradient( 135deg, #60B044 50%, transparent 50%);
-  background-position:
-    calc(100% - 16px) 0.5em,
-    calc(100% - 8px) 0.5em;
-  background-size:
-    8px 8px,
-    8px 8px;
-  background-repeat: no-repeat;
   border: 1px solid #D5D5D5;
-  height: 1.6em;
-  padding-right: 2em;
 }
 
 select.styled option {
@@ -296,11 +162,6 @@ select.styled option:hover {
 
 textarea.styled {
   border: 1px solid #D5D5D5;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  resize: none;
-  width: 100%;
 }
 
 span.led {
@@ -310,23 +171,12 @@ span.led {
   border-style: solid;
   border-width: 1px;
   border-radius: 8px;
-  display: inline-block;
   font-size: 1.1em;
   font-weight: 900;
   height: 12px;
   margin: 2px;
-  overflow: hidden;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
-  vertical-align: text-bottom;
   width: 12px;
-}
-
-span.led:hover {
-  cursor: pointer;
-}
-
-span.led[readonly]:hover {
-  cursor: auto;
 }
 
 span.led.high {
@@ -348,38 +198,19 @@ span.led.none {
   color: #3F3F3F;
 }
 
-span.upload {
-  display: inline-block;
-  width: 32px;
-}
-
-span.rename {
-  display: inline-block;
-  width: 64px;
-}
-
 table {
-  border: 0;
-  border-collapse: collapse;
+  border: none;
   border-radius: 4px;
   table-layout: fixed;
-  width: 100%;
-}
-
-table#peerTable, table#webseedTable {
-  margin-top: 2em;
 }
 
 table thead tr th {
   border-bottom: 1px solid black;
+  border-left: none;
   border-top: 1px solid black;
+  border-right: none;
+  line-height: unset;
   padding: 1px 4px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-table#torrentTable thead tr th:not(:first-child) {
-  cursor: ns-resize;
 }
 
 table tbody tr:hover {
@@ -387,43 +218,9 @@ table tbody tr:hover {
 }
 
 table tbody tr td {
+  border: none;
+  line-height: unset;
   padding: 0 4px;
-}
-
-table#fileTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-table#peerTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-table#torrentTable tbody tr.active {
-}
-
-table#torrentTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
-}
-
-tbody tr:nth-child( even ) {
-}
-
-tbody tr:nth-child( odd ) {
-}
-
-th.asc {
-}
-
-th.desc {
-}
-
-col.asc {
-}
-
-col.desc {
 }
 
 col {
@@ -482,55 +279,23 @@ col.status {
   width: 120px;
 }
 
-td[readonly] {
-}
-
 td.announce, td.errorString, td.name, td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
-  text-align: left;
-}
-
-table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
-  text-align: left;
-}
-
-table#detailsTable input {
-  width: 100%;
-}
-
-table#fileTable tbody tr td.name {
-  text-align: left;
-}
-
-table#sessionTable input {
-  width: 100%;
-}
-
-table#shiftTable input {
-  width: 100%;
-}
-
-table#shiftTable button#tracker {
-  margin-left: 2em;
-  width: auto;
-}
-
 body.normal div#header {
   height: 74px;
-  position: inherit;
-  width: inherit;
 }
 
 body.fixed div#header {
   background-color: white;
-  position: fixed;
   top: 2px;
-  width: 100%;
+}
+
+body.fixed div#content {
+  margin-top: 74px;
 }
 
 body.box div#header {
@@ -539,18 +304,12 @@ body.box div#header {
   border: 1px solid #D5D5D5;
   border-radius: 8px;
   box-shadow: 8px 8px 16px #3F3F3F;
-  position: fixed;
   right: 9px;
   width: 372px;
 }
 
-body.fixed > table {
-  margin-top: 74px;
-}
-
 canvas.pieces {
   color: #5CA941;
-  width: 100%;
 }
 
 div#stats {
@@ -563,36 +322,4 @@ div#stats {
   margin: 8px 8px -22px 0;
   min-width: 16em;
   padding: 0 0.5em;
-}
-
-body.box div#stats {
-  cursor: move;
-  float: none;
-  margin: 8px;
-  width: unset;
-}
-
-div#stats span {
-  display: inline-block;
-  font-weight: inherit;
-  font-size: inherit;
-}
-
-div#stats span.label {
-  width: 3.5em;
-}
-
-table#trackerTable tfoot tr td {
-  padding: 0 4px;
-}
-
-table#trackerTable textarea.styled {
-}
-
-span.drop {
-  display: block;
-}
-
-td#d_errorString {
-  font-weight: bold;
 }

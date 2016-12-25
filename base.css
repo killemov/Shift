@@ -1,0 +1,413 @@
+/**
+ * Shift: a Transmission web interface.
+ *
+ * © 2017 Killemov.
+ *
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
+ * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  margin: 8px 0;
+  text-align: center;
+}
+
+ul#menu {
+  margin: 0;
+  padding: 0;
+}
+
+body.box ul#menu {
+  margin: 8px;
+}
+
+ul#menu li {
+  background-color: lightgray;
+  display: inline-block;
+  padding: 0.5em;
+}
+
+ul#menu li:hover {
+  cursor: pointer;
+}
+
+ul#menu li.selected {
+  color: purple;
+}
+
+body.box th#filterContainerCell {
+  display: none;
+}
+
+body.box div#filterContainer {
+  margin: 8px;
+}
+
+div.filter, div.drop {
+  margin: 2px 8px;
+  white-space: nowrap;
+}
+
+span.filterInput {
+  width: 272px;
+  display: inline-block;
+}
+
+label {
+  display: inline-block;
+  margin-right: 0.5em;
+  text-align: right;
+  width: 6em;
+}
+
+div.drop div {
+  display: inline-block;
+  padding: 3px 4px 2px;
+}
+
+div.name {
+  width: 100px;
+}
+
+div#outside {
+  display: none;
+  height: 100%;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+div#popups {
+  background-color: transparent;
+  display: none;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.popup {
+  background-color: white;
+  border: 1px solid lightgray;
+  display: none;
+  position: absolute;
+}
+
+.popup div {
+  margin: 4px 0;
+}
+
+.dialog {
+  padding: 8px;
+  position: fixed;
+  min-width: 320px;
+}
+
+div.dialog div:last-child {
+  margin: 0;
+  float: right;
+}
+
+.dialog div:last-child .styled {
+  margin: 0;
+  float: unset;
+}
+
+div.dialog div:last-child:after {
+  content: " ";
+  display: block;
+  height: 0;
+  clear: both;
+}
+
+.popup ul {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.popup ul li {
+  display: block;
+  margin: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.popup ul li:hover {
+  background-color: lightgray;
+  color: purple;
+  cursor: pointer;
+}
+
+div#popupAbout {
+  text-align: center;
+}
+
+div#popupAdd input[readonly="readonly"].styled {
+  cursor: pointer;
+}
+
+span#labelDir {
+  padding-left: 18px;
+}
+
+span#port-is-open {
+  float: right;
+  margin-top: 6px;
+}
+
+li#high, li#normal, li#low, li#none {
+  display: inline-block;
+  padding: 0;
+}
+
+.styled {
+  border: 1px solid lightgray;
+  font-size: inherit;
+  text-align: left;
+}
+
+.keyvalue .styled {
+  border: unset;
+}
+
+.filter .styled {
+  margin-right: 2px;
+}
+
+input.styled.number {
+  text-align: right;
+  width: 6em;
+}
+
+button.styled {
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5em;
+}
+
+div.popup button.styled {
+  float: right;
+}
+
+div#filterContainer input.styled[type=text] {
+  text-indent: 4px;
+}
+
+select.styled {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: inherit;
+  background-image:
+    linear-gradient( 45deg, transparent 50%, purple 50%),
+    linear-gradient( 135deg, purple 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 0.5em,
+    calc(100% - 8px) 0.5em;
+  background-size:
+    8px 8px,
+    8px 8px;
+  background-repeat: no-repeat;
+  padding-right: 2em;
+}
+
+textarea.styled {
+  border: 1px solid lightgray;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  resize: none;
+  width: 100%;
+}
+
+span.led {
+  background-color: purple;
+  border: 1px solid white;
+  color: lightgray;
+  display: inline-block;
+  font-size: 1.1em;
+  font-weight: 900;
+  height: 12px;
+  margin: 2px;
+  overflow: hidden;
+  vertical-align: text-bottom;
+  width: 12px;
+}
+
+span.led:hover {
+  cursor: pointer;
+}
+
+span.led[readonly]:hover {
+  cursor: auto;
+}
+
+span.led.high {
+  line-height: 10px;
+  text-align: center;
+}
+
+span.led.low {
+  line-height: 9px;
+  text-align: left;
+  text-indent: 2px;
+}
+
+span.led.none {
+  background-color: lightgray;
+  color: purple;
+}
+
+span.upload {
+  display: inline-block;
+  width: 32px;
+}
+
+span.rename {
+  display: inline-block;
+  width: 64px;
+}
+
+table {
+  border: 1px solid lightgray;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table.keyvalue {
+  text-align: left;
+}
+
+col.menu, col.priority {
+  width: 20px;
+}
+
+table#peerTable, table#webseedTable {
+  margin-top: 2em;
+}
+
+table thead tr th {
+  border: 1px solid lightgray;
+  line-height: 25px;
+  padding: 0 4px;
+  text-align: left;
+}
+
+table#torrentTable thead tr th:not(:first-child) {
+  cursor: ns-resize;
+}
+
+table tbody tr td {
+  border: 1px solid lightgray;
+  line-height: 25px;
+  padding: 0 4px;
+}
+
+table#fileTable tbody tr td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table#peerTable tbody tr td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table#torrentTable tbody tr td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+td.announce, td.errorString, td.name, td.status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
+  text-align: left;
+}
+
+table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
+  text-align: left;
+}
+
+table.keyvalue input {
+  width: 100%;
+}
+
+table#fileTable tbody tr td.name {
+  text-align: left;
+}
+
+table#shiftTable button#tracker {
+  margin-left: 2em;
+  width: auto;
+}
+
+div#header {
+  background-color: white;
+}
+
+body.normal div#header {
+  position: inherit;
+  width: inherit;
+}
+
+body.fixed div#header {
+  position: fixed;
+  top: 0px;
+  width: 100%;
+}
+
+body.fixed > div#content {
+  margin-top: 112px;
+}
+
+body.box div#header {
+  position: fixed;
+  right: 9px;
+  width: 372px;
+}
+
+body.box div#stats {
+  cursor: move;
+  float: none;
+  margin: 8px;
+  width: unset;
+}
+
+canvas.pieces {
+  color: purple;
+  width: 100%;
+}
+
+div#stats span {
+  display: inline-block;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+div#stats span.label {
+  width: 3.5em;
+}
+
+table#trackerTable tfoot tr td {
+  padding: 0 4px;
+}
+
+span.drop {
+  display: block;
+}
+
+td#d_errorString {
+  font-weight: bold;
+}

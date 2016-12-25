@@ -191,6 +191,12 @@ Object.extend( Element.prototype, {
   }
 } );
 
+function handleFocus( e ) {
+  e.stop();
+  var target = e.target;
+  target.setSelectionRange( target.value.length, target.value.length );
+}
+
 // riffwave by Pedro Ladaria <pedro.ladaria at Gmail dot com>
 var FastBase64 = {
 
@@ -471,6 +477,7 @@ var sessionFields = {
   } },
   "rpc-version": { readOnly: true },
   "rpc-version-minimum": { readOnly: true },
+  "units": { ignore: true },
   "version": { readOnly: true }
 }
 
@@ -497,9 +504,10 @@ var torrentFields = {
     sss: true },
   "corruptEver": { render: renderSize },
   "creator": { sss: true },
-  "display": { ignore: true },
   "dateCreated": { render: renderDateTime },
   "desiredAvailable": { render: renderSize },
+  "dirty": { ignore: true },
+  "display": { ignore: true },
   "doneDate": { render: renderDateTime },
   "downloadDir": {},
   "downloadedEver": { render: renderSize },
@@ -526,6 +534,7 @@ var torrentFields = {
   "maxConnectedPeers": {},
   "metadataPercentComplete": { render: renderPercentage },
   "name": { sss: true },
+  "node": { ignore: true },
   "peer-limit": { edit: true },
   "peers": { ignore: true },
   "peersConnected": {},
@@ -1849,6 +1858,7 @@ function handleFileMenuClick( e ) {
   var id = row.id.split( "_" );
   var popup = $( "popupFile" );
   popup.observe( "click", function( e ) {
+    closePopup();
     e.stop();
     var torrent = globals.currentTorrent;
     var item = e.findElement( "li" ).id;
@@ -1856,11 +1866,11 @@ function handleFileMenuClick( e ) {
     id[ 1 ] = parseInt( id[ 1 ] );
     switch( item ) {
       case "rename":
-        closePopup();
         globals.currentFile = torrent.files[ id[ 1 ] ];
         globals.pathDepth = isFile ? -1 : parseInt( id[ 2 ] );
         globals.rFileName.value = getFilePart( getTargetPath() );
         showPopup( "popupRename" ).observe( "click", preventDefault );
+        globals.rFileName.focus();
         break;
       default:
         var selected = isFile ? [ id[ 1 ] ] : getSelectedFiles( torrent.files, id[ 1 ], parseInt( id[ 2 ] ) );
@@ -2105,7 +2115,8 @@ function showPeers( torrent ) {
   }
 
   var peersFromTable = getTable( "peersFromTable", peersDiv, peersFromColumns, function( t ) {
-    renderKeyValuePairs( t.body, torrent.peersFrom );
+    renderKeyValuePairs( t.body, torrent.peersFrom, null, false );
+    t.table.addClassName( "peersFrom keyvalue" );
   } );
   updateKeyValuePairs( peersFromTable.down( "tbody" ), torrent.peersFrom );
 
@@ -2196,7 +2207,7 @@ function showTrackers( torrent ) {
 
 function showDetails( torrent ) {
   var detailsTable = getTable( "detailsTable", globals.content, detailsColumns, function( t ) {
-    t.table.addClassName( "torrent" );
+    t.table.addClassName( "torrent keyvalue" );
     renderKeyValuePairs( t.body, torrent, "d_", torrentFields );
     t.body.insert(
     rMulti( rR(), "td", [ "", rB().observe( "click", function( e ) {
@@ -2257,21 +2268,21 @@ function lock( fields, k ) {
 
 function renderKeyValuePairs( target, elements, idPrefix, fields ) {
   Object.keys( elements ).sort().each( function( k ) {
-    var f = fields ? fields[ k ] : null;
+    var f = fields ? fields[ k ] : fields === false ? false : null;
     if( f && f.ignore ) {
       return;
     }
     if( elements.hasOwnProperty( k ) ) {
       var o = elements[ k ];
-      var createInput = true;
+      var createInput = f !== false;
       var row = rR();
       var keyCell = rC( {}, k );
       var ro = f && f.readOnly;
       var content = globals.shift.settings.screenshotMode && f && f.sss ? k.capitalize() : o;
-      var valueCell = rC( { id: idPrefix + k } );
+      var valueCell = rC( { id: idPrefix || "" + k } );
 
       var a = f && f.action;
-      if( a == null || a( row, keyCell, valueCell, content ) ) {
+      if( a === false || a == null || a( row, keyCell, valueCell, content ) ) {
         row.insert( keyCell ).insert( valueCell );
       }
       target.insert( row );
@@ -2316,13 +2327,13 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
 
 function updateKeyValuePairs( elements, idPrefix, fields ) {
   Object.keys( elements ).sort().each( function( k ) {
-    var f = fields[ k ];
+    var f = fields ? fields[ k ] : fields === false ? false : null;
     if( f && ( f.ignore || f.locked ) ) {
       return;
     }
     if( elements.hasOwnProperty( k ) ) {
       var o = elements[ k ];
-      var ro = f && f.readOnly;
+      var ro = f === false || f && f.readOnly;
       var content = globals.shift.settings.screenshotMode && f && f.sss ? k.capitalize() : o;
       var valueCell = $( idPrefix + k );
 
@@ -2361,6 +2372,7 @@ function showSessionTable() {
   doRequest( "session-get", {}, function( response ) {
     globals.shift.session = response.responseJSON.arguments;
     var sessionTable = getTable( "sessionTable", globals.content, sessionColumns, function( t ) {
+      t.table.addClassName( "keyvalue" );
       renderKeyValuePairs( t.body, globals.shift.session, "s_", sessionFields );
       t.body.insert(
         rMulti( rR(), "td", [ "", rB().observe( "click", function( e ) {
@@ -2454,6 +2466,7 @@ function showShiftTable() {
   }
 
   var shiftTable = getTable( "shiftTable", globals.content, shiftColumns, function( t ) {
+    t.table.addClassName( "keyvalue" );
     renderKeyValuePairs( t.body, globals.shift.settings, "s_", shiftFields );
     var trackerButton = rB( { value: "Add to all torrents", id: "tracker" } );
     trackerButton.observe( "click", function( e ) {
@@ -2630,7 +2643,7 @@ function renderMenuPopup( id, items, render ) {
 }
 
 function renderPage() {
-  globals.aCancel = rB( { "class": "styled upload", type: "button", value: "Back" } ).observe( "click", closePopup );
+  globals.aCancel = rB( { "class": "styled", type: "button", value: "Back" } ).observe( "click", closePopup );
 
   globals.uFile = rI( null, { type: "file", multiple: "multiple" } ).hide();
   globals.uFileLed = rLed().observe( "click", selectFileLedTrue );
@@ -2645,7 +2658,7 @@ function renderPage() {
   globals.uUpload = rB( { "class": "styled upload", type: "button", value: "Upload" } );
   selectFileLedTrue();
 
-  globals.rFileName = rI( null, { size: 64 } );
+  globals.rFileName = rI( null, { size: 64 } ).observe( "focus", handleFocus );
   globals.rCancel = rB( { "class": "styled rename", type: "button", value: "Cancel" } ).observe( "click", closePopup );
   globals.rRename = rB( { "class": "styled rename", type: "button", value: "Rename" } );
 
@@ -2655,7 +2668,8 @@ function renderPage() {
       "<p>Shift is a minimalistic approach to maximum control of your Transmission.</p>" +
       "<p>Shift is currently targeted at Mozilla Firefox 4+<br>" +
       "with degraded and untested functionality for other or older browsers.<br><br>" +
-      "Shift is built on prototype.js. ( V" + Prototype.Version + " - Hacked! )</p>" ).insert( globals.aCancel )
+      "Shift is built on prototype.js. ( V" + Prototype.Version + " - Hacked! )</p>" ).insert(
+      rD().insert( globals.aCancel ) )
   ).insert(
     renderDialogPopup( "popupAdd" ).insert(
       rE( "h1", {}, "Add a torrent" ) ).insert( rI( null, { type: "file", multiple: "multiple" } ).hide() ).insert(
@@ -2663,7 +2677,7 @@ function renderPage() {
       rD().insert( [ globals.uUrlLed, rS( { "class": "upload" }, "Url" ), globals.uUrl ] ) ).insert(
       rD().insert( [ rS( { "class": "upload", id: "labelDir" }, "Dir" ), globals.uDir ] ) ).insert(
       rD().insert( [ globals.uPausedLed, rS( { id: "labelPaused" }, "Add paused" ) ] ) ).insert(
-      rD().insert( [ globals.uUpload, globals.uCancel ] ) )
+      rD().insert( [ globals.uCancel, globals.uUpload ] ) )
   ).insert(
     renderMenuPopup( "popupGeneral", [ "Select Visible", "Deselect Visible", "Select All", "Deselect All", "Store Selection", "Restore Selection", "Reset" ] )
   ).insert(
@@ -2682,7 +2696,7 @@ function renderPage() {
     renderDialogPopup( "popupRename" ).insert(
       rE( "h1", {}, "Rename" ) ).insert(
       rD().insert( [ rS( { "class": "rename" }, "Name" ), globals.rFileName ] ) ).insert(
-      rD().insert( [ globals.rRename, globals.rCancel ] ) )
+      rD().insert( [ globals.rCancel, globals.rRename ] ) )
   );
   globals.body.insert( popups );
 
@@ -3002,6 +3016,11 @@ function handleKeyUp( e ) {
   var kc = e.keyCode;
   if( globals.selection !== undefined && 32 == kc ) { // space
     delete globals.selection;
+  }
+  if ( 9 == kc ) { // tab
+     if ( globals.rFileName == document.activeElement ) {
+        globals.rFileName.trigger( "focus" );
+     }
   }
 }
 
