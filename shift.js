@@ -2267,6 +2267,7 @@ function lock( fields, k ) {
 }
 
 function renderKeyValuePairs( target, elements, idPrefix, fields ) {
+  idPrefix = idPrefix || "";
   Object.keys( elements ).sort().each( function( k ) {
     var f = fields ? fields[ k ] : fields === false ? false : null;
     if( f && f.ignore ) {
@@ -2279,7 +2280,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
       var keyCell = rC( {}, k );
       var ro = f && f.readOnly;
       var content = globals.shift.settings.screenshotMode && f && f.sss ? k.capitalize() : o;
-      var valueCell = rC( { id: idPrefix || "" + k } );
+      var valueCell = rC( { id: idPrefix + k } );
 
       var a = f && f.action;
       if( a === false || a == null || a( row, keyCell, valueCell, content ) ) {
