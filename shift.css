@@ -171,6 +171,7 @@ span.led {
   border-style: solid;
   border-width: 1px;
   border-radius: 8px;
+  color: #3F3F3F;
   font-size: 1.1em;
   font-weight: 900;
   height: 12px;
@@ -186,9 +187,9 @@ span.led.high {
 
 span.led.low {
   line-height: 10px;
-  padding-left: 3px;
+  padding-left: 1px;
   text-align: left;
-  width: 9px;
+  width: 11px;
 }
 
 span.led.none {

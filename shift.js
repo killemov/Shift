@@ -418,7 +418,7 @@ var globals = {
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
 
   shift: {
-    version: "0.9.8",
+    version: "0.9.9",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
       var arguments = getArguments( response );
 
