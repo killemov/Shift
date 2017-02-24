@@ -516,6 +516,7 @@ var torrentFields = {
   "error": {},
   "errorString": {},
   "eta": {},
+  "etaIdle": {},
   "files": { ignore: true, sss: true },
   "fileStats": { ignore: true },
   "hashString": { sss: true },
@@ -866,7 +867,7 @@ var trackerColumns = {
       popup.observe( "click", function( e ) {
         var action = e.target.id;
         if( "remove" == action ) {
-          doRequest( "torrent-set", { ids: [ globals.currentTorrent.id ], path: [ globals.currentTracker ] }, function( response ) {
+          doRequest( "torrent-set", { ids: [ globals.currentTorrent.id ], trackerRemove: [ globals.currentTracker ] }, function( response ) {
             if( "success" == response.responseJSON.result ) {
             }
           } );
