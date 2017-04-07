@@ -1098,6 +1098,9 @@ function renderPieces( pieces, cell ) {
   canvas.width = w;
 
   var ppp = globals.currentTorrent.pieceCount / w; // pieceCount per pixel
+  if( ppp == 0 ) {
+    return canvas;
+  }
 
   var ctx = canvas.getContext( "2d" );
   ctx.strokeStyle = globals.piecesColor;
