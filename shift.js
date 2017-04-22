@@ -510,6 +510,7 @@ var torrentFields = {
   "display": { ignore: true },
   "doneDate": { render: renderDateTime },
   "downloadDir": {},
+  "downloadGroup": { edit: true },
   "downloadedEver": { render: renderSize },
   "downloadLimit": { edit: true },
   "downloadLimited": { edit: true },
