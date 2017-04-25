@@ -1086,14 +1086,15 @@ function renderPieces( pieces, cell ) {
   if( !canvas ) {
     canvas = rE( "canvas", { "class": "pieces" } );
     canvas.height = h;
+    canvas.width = w;
     globals.percentDone = null;
     globals.piecesColor = canvas.getStyle( "color" );
   }
-  canvas.width = w;
 
-  if( !globals.currentTorrent.pieceCount || globals.percentDone == globals.currentTorrent.percentDone ) {
+  if( !globals.currentTorrent.pieceCount || w == canvas.width && globals.percentDone == globals.currentTorrent.percentDone ) {
     return canvas;
   }
+  canvas.width = w;
   globals.percentDone = globals.currentTorrent.percentDone;
 
   var ppp = globals.currentTorrent.pieceCount / w; // pieceCount per pixel
