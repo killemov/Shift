@@ -1,42 +1,45 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2017 Killemov.
+ * © 2018 Killemov.
  *
- * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
- * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
+ * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
- .pct0 {
-  color: #ff0000;
+.pct0 {
+  color: #FF0000;
 }
 
 .pct25 {
-  color: #ff7f00;
+  color: #FF7F00;
 }
 
 .pct50 {
-  color: #ffbf00;
+  color: #FFBF00;
 }
 
 .pct75 {
-  color: #ffff00;
+  color: #FFFF00;
 }
 
 .pct100 {
-  color: #00ff00;
+  color: #00FF00;
+}
+
+html {
+  background-color: #000000;
+}
+
+body {
+  color: #00F000;
+  font-family: wellbutrin;
+  font-size: 9pt;
 }
 
 a {
   color: inherit;
-}
-
-body {
-  background-color: #000000;
-  color: #00F000;
-  font-family: wellbutrin;
-  font-size: 9pt;
 }
 
 input, select {
@@ -238,7 +241,7 @@ span.led.none {
   background-color: #004000;
 }
 
-span.upload {
+span.add {
   width: 30px;
 }
 
@@ -353,13 +356,12 @@ table#shiftTable input {
 }
 
 table#shiftTable button#tracker {
-  margin-left: 20px;
   width: auto;
 }
 
 canvas.pieces {
   border-color: #004000 #00F000 #00F000 #004000;
-  color: #00ff00;
+  color: #00FF00;
   width: 100%;
 }
 

@@ -1,13 +1,20 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2017 Killemov.
+ * © 2018 Killemov.
  *
- * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
- * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
+ * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
+
+html {
+  background-color: white;
+  cursor: auto;
+}
+
 body {
+  background-color: inherit;
   margin: 0;
   padding: 0;
 }
@@ -38,6 +45,12 @@ ul#menu li:hover {
 
 ul#menu li.selected {
   color: purple;
+}
+
+.popup div.menuSpacer {
+  height: 1em;
+  margin: 0;
+  padding: 0;
 }
 
 body.box th#filterContainerCell {
@@ -266,7 +279,7 @@ span.led.none {
   color: purple;
 }
 
-span.upload {
+span.add {
   display: inline-block;
   width: 32px;
 }
@@ -349,12 +362,11 @@ table#fileTable tbody tr td.name {
 }
 
 table#shiftTable button#tracker {
-  margin-left: 2em;
-  width: auto;
+  width: 12em;
 }
 
 div#header {
-  background-color: white;
+  background-color: inherit;
 }
 
 body.normal div#header {
@@ -369,10 +381,11 @@ body.fixed div#header {
 }
 
 body.fixed > div#content {
-  margin-top: 112px;
+  margin-top: 102px;
 }
 
 body.box div#header {
+  border: 1px solid lightgray;
   position: fixed;
   right: 9px;
   width: 372px;
@@ -387,6 +400,7 @@ body.box div#stats {
 
 canvas.pieces {
   color: purple;
+  margin-bottom: -4px;
   width: 100%;
 }
 
@@ -408,6 +422,28 @@ span.drop {
   display: block;
 }
 
+td#d_downloadDir {
+  overflow-x: hidden;
+  white-space: nowrap;
+}
+
+td#d_downloadDir input {
+   width: calc(100% - 20px);
+}
+
+span#d_move {
+  margin-right: 8px;
+}
+
 td#d_errorString {
   font-weight: bold;
+}
+
+div.torrents {
+  max-height: 120px;
+  max-width: 600px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

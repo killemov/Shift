@@ -1,11 +1,11 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2017 Killemov.
+ * © 2018 Killemov.
  *
- * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/ or send a
- * letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
+ * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
 a {
@@ -59,13 +59,17 @@ ul#menu li {
 }
 
 ul#menu li.selected {
-  color: white;
+  color: #FFFFFF;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
 }
 
 ul#menu li.sub {
   clear: right;
   float: left;
+}
+
+.popup div.menuSpacer {
+  border: 1px solid #D3D3D3;
 }
 
 body.box div#filterContainer {
@@ -147,8 +151,8 @@ button.styled {
 
 select.styled {
   background-image:
-    linear-gradient( 45deg, transparent 50%, #60B044 50%),
-    linear-gradient( 135deg, #60B044 50%, transparent 50%);
+    linear-gradient( 45deg, transparent 50%, #60B044 50% ),
+    linear-gradient( 135deg, #60B044 50%, transparent 50% );
   border: 1px solid #D5D5D5;
 }
 
@@ -206,9 +210,9 @@ table {
 }
 
 table thead tr th {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid #000000;
   border-left: none;
-  border-top: 1px solid black;
+  border-top: 1px solid #000000;
   border-right: none;
   line-height: unset;
   padding: 1px 4px;
@@ -256,7 +260,7 @@ col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTi
   width: 88px;
 }
 
-col.length, col.sizeWhenDone, col.uploadedEver {
+col.corruptEver, col.length, col.sizeWhenDone, col.uploadedEver {
   width: 84px;
 }
 
@@ -269,7 +273,6 @@ col.port {
 }
 
 col.progress {
-  width: 48px;
 }
 
 col.queuePosition {
@@ -291,12 +294,11 @@ body.normal div#header {
 }
 
 body.fixed div#header {
-  background-color: white;
-  top: 2px;
+  padding-top: 2px;
 }
 
 body.fixed div#content {
-  margin-top: 74px;
+  margin-top: 76px;
 }
 
 body.box div#header {
@@ -323,4 +325,12 @@ div#stats {
   margin: 8px 8px -22px 0;
   min-width: 16em;
   padding: 0 0.5em;
+}
+
+body.fixed div#stats {
+  margin-right: 12px;
+}
+
+span.led.clipboard {
+  margin: 0 8px 0 16px;
 }
