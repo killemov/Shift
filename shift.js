@@ -409,7 +409,7 @@ var globals = {
     2: {
       label: "Checking",
       columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name" ],
-      fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver" ],
+      fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone" ],
       keyCode: 67
     },
     3: {
@@ -841,9 +841,9 @@ function handleTorrentActionClick( e ) {
       return;
 
     case "trash":
-      var partitioned = selected.partition( hasCompleteMetadata );
-      args.ids = partitioned[ 0 ].pluck( "id" );
-      selectedMagnetIds = partitioned[ 1 ].pluck( "id" );
+      var partitioned = selected.partition( isMagnet );
+      args.ids = partitioned[ 1 ].pluck( "id" );
+      selectedMagnetIds = partitioned[ 0 ].pluck( "id" );
 
       if( args.ids.length > 0 ) {
         args[ "delete-local-data" ] = true;
@@ -1194,6 +1194,9 @@ var Torrent = Class.create( {
     this.display = false;
     this.update( torrent );
   },
+  isMagnet: function() {
+    return 1.0 > this.metadataPercentComplete && 0.0 == this.percentDone;
+  },
   isSelected: function() {
     return this.selected;
   },
@@ -1435,11 +1438,15 @@ function renderPieces( pieces, cell ) {
   var h = cell.getHeight();
 
   if( !canvas ) {
-    canvas = rE( "canvas", { "class": "pieces" } );
+    canvas = rE( "canvas", { "class": "pieces" } ).hide();
     canvas.height = h;
     canvas.width = w;
     globals.percentDone = null;
+    // workaround for getComputedStyle being made "browser consistent"
+    globals.body.insert( canvas );
     globals.piecesColor = canvas.getStyle( "color" );
+    canvas.remove();
+    canvas.show();
   }
 
   if( !globals.currentTorrent.pieceCount || w == canvas.width && globals.percentDone == globals.currentTorrent.percentDone ) {
@@ -1501,7 +1508,7 @@ function renderInterval( seconds ) {
 }
 
 function renderName( name, torrent, ignore, cell ) {
-  return ( torrent.eta == -2 && torrent.sizeWhenDone === 0 && torrent.hashString ? "magnet#" + torrent.hashString + ": " : "" ) + name;
+  return ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
 }
 
 function renderPercentage( percentage, decimals ) {
@@ -1895,8 +1902,8 @@ function sortTorrents( property, reverse ) {
   }
 }
 
-function hasCompleteMetadata( torrent ) {
-  return 1.0 === torrent.metadataPercentComplete;
+function isMagnet( torrent ) {
+  return torrent.isMagnet();
 }
 
 function renderTorrents( noRefresh ) {
@@ -1918,59 +1925,52 @@ function renderTorrents( noRefresh ) {
       return;
     }
 
-    if( torrent.dirty.length > 0 ) {
-      if( row ) {
-        for( var k in torrentColumns ) {
-          if( !torrent.dirty.include( k ) ) {
-            continue;
-          }
-          var render = torrentColumns[ k ].render;
-          render = undefined === render ? torrentFields[ k ].render : render;
-          if( false !== render ) {
-            var content = globals.shift.settings.screenshotMode && torrentFields[ k ].sss ? k.capitalize() + " " + torrent.id : torrent[ k ];
-            var cell = row.down( "." + k );
-            updateElement( cell, undefined === render || true === render ? content : render( content, torrent, k, cell ) );
-          }
-          torrent.dirty.remove( k );
+    if( row ) {
+      for( var i = 0, len = torrent.dirty.length; i < len; ++i ) {
+        var k = torrent.dirty[ i ];
+        var c = torrentColumns[ k ];
+        if ( !c ) {
+          continue;
         }
-        row.style.display = "";
-        if( globals.magnets.include( torrent.id ) ) {
-          if( torrent.percentDone ) {
-            ids.push( torrent.id );
-            globals.magnets.remove( torrent.id );
-          }
+        var render = c.render || torrentFields[ k ].render;
+        if( false !== render ) {
+          var content = globals.shift.settings.screenshotMode && torrentFields[ k ].sss ? k.capitalize() + " " + torrent.id : torrent[ k ];
+          var cell = row.down( "." + k );
+          updateElement( cell, undefined === render || true === render ? content : render( content, torrent, k, cell ) );
         }
-        else {
-          // This may indicate an incomplete magnet.
-          if( torrent.eta == -2 && torrent.sizeWhenDone == 0 ) {
-            mids.push( torrent.id );
-          }
+      }
+      torrent.dirty = [];
+      row.style.display = "";
+
+      if( globals.magnets.include( torrent.id ) ) {
+        if( !torrent.isMagnet() ) {
+          ids.push( torrent.id );
+          globals.magnets.remove( torrent.id );
         }
       }
       else {
-        ids.push( torrent.id );
-        row = renderRow( torrent, torrentColumns, rR( { id: torrent.id } ) );
-        noRefresh ? row.show() : row.hide();
-        torrent.node = row;
-        torrentBody.insert( row );
-        row.observe( "dblclick", function( e ) {
-          globals.currentTorrent = globals.torrentHash[ e.currentTarget.id ];
-          $( "menu_files" ).click();
-        } );
+        if( torrent.isMagnet() ) {
+          mids.push( torrent.id );
+        }
       }
-    }
-    else if( row ) {
       row.show();
+    }
+    else {
+      ids.push( torrent.id );
+      row = renderRow( torrent, torrentColumns, rR( { id: torrent.id } ) );
+      noRefresh ? row.show() : row.hide();
+      torrent.node = row;
+      torrentBody.insert( row );
+      row.observe( "dblclick", function( e ) {
+        globals.currentTorrent = globals.torrentHash[ e.currentTarget.id ];
+        $( "menu_files" ).click();
+      } );
     }
   } );
 
   if( mids.length > 0 ) {
     doTorrentGet( [ "id", "hashString", "metadataPercentComplete" ], mids, function( response ) {
-      updateTorrents( response ).each( function( torrent ) {
-        if( !hasCompleteMetadata( torrent ) ) {
-          globals.magnets.push( torrent.id )
-        }
-      } );
+      globals.magnets.concatUnique( updateTorrents( response ).filter( isMagnet ).pluck( "id" ) );
     } );
   }
 
@@ -3403,15 +3403,26 @@ function keepProcessing( response ) {
 }
 
 function processFiles( files, target, paused ) {
-  var file = files.shift();
-  if( undefined === file ) {
+  if( !files.length ) {
     return;
   }
 
   var dropId = "drop" + dropCount++;
   var f = $( "filterContainer" );
-  f.insert( rD( { id: dropId, "class": "drop" } ).insert( rE( "label", null, "Uploading:" ) ).insert( rD().insert( file.name ) ) );
+  var drops = rD( { id: dropId, "class": "drop" } ).insert( rE( "label", null, "Uploading:" ) );
+  f.insert( drops );
+  for( var i = 0, l = files.length; i < l; ++i ) {
+    if( i > 0 ) {
+      drops.insert( rE( "br" ) ).insert( rE( "label" ) );
+    }
+    drops.insert( rD().insert( files[ i ].name ) )
+  }
   f.show();
+
+  var file = files.shift();
+  if( !file ) {
+    return;
+  }
 
   // Upload the file first to see if Transmission can handle it.
   var torrentReader = new FileReader();
