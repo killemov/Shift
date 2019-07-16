@@ -128,15 +128,15 @@ In rare cases a started torrent that stopped before any files could be written t
 * "I really loved your old-skool green-on-black theme, just loved it!"
 No problemo, it is still around but has been renamed to terminal.css. You can change the Session/Shift/styleSheet attribute.
 * "I really need to have a column to show the eta of the torrents."
-Then you can add a "doneDate" entry in the torrentColumns object. To make it visible and have it regularly updated for status "Downloading" also add the entry to the columns and field arrays:
+Then you need to add an "eta" entry in the torrentColumns object and you need to invoke a specific renderer for it because it is communicated as an interval in seconds. To make it visible and have it regularly updated for status "Downloading" also add the entry to the columns array. It should already be there in the fields array.
 ```javascript
 var globals = {
   torrentStatus: {
     ...
     4: {
       label: "Downloading",
-      columns: [... , "doneDate", ...],
-      fields: [... , "doneDate", ...]
+      columns: [... , "eta", ...],
+      fields: [... , "eta", ...]
     },
     ...
   }
@@ -144,9 +144,9 @@ var globals = {
 
 var torrentColumns = {
   ...
-  "doneDate": {
-    label: "ETA", render: function( date ) {
-      return date ? renderDateTime( date ) : "";
+  "eta": {
+    label: "ETA", render: function( seconds ) {
+      return seconds ? renderDateTime( Date.now() / 1000 + seconds ) : "";
     }
   },
   ...
