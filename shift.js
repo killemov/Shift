@@ -931,31 +931,40 @@ function handleTorrentMenuClick( e ) {
   handleTorrentActionClick( e );
 }
 
+function selectTorrents( action ) {
+  var select = "select visible" == action;
+  var visible = select || "deselect visible" == action;
+  select = select || "select all" == action;
+  globals.torrents.each( function( torrent ) {
+    torrent.set( !visible || visible && torrent.display ? select : torrent.selected );
+  } );
+}
+
+function storeSelection() {
+  globals.selectedIds = getSelected().pluck( "id" );
+}
+
+function restoreSelection() {
+  globals.torrents.each( function( torrent ) {
+    torrent.set( globals.selectedIds.include( torrent.id ) );
+  } );
+}
+
 var torrentColumns = {
   "menu": {
     label: rLed().observe( "click", function( e ) {
       showPopup( "popupGeneral", function( e ) {
         var action = e.target.id;
-        var select = "select visible" == action || "select all" == action;
-        var visible = "select visible" == action || "deselect visible" == action;
         switch( action ) {
-          case "select all":
-          case "deselect all":
-          case "select visible":
-          case "deselect visible":
-          case "reset":
-            globals.torrents.each( function( torrent ) {
-              torrent.set( !visible || visible && torrent.display ? select : torrent.selected );
-            } );
-            // TODO: Set every filter to default settings
-            break;
           case "store selection":
-            globals.selectedIds = getSelected().pluck( "id" );
+            storeSelection();
             break;
           case "restore selection":
-            globals.torrents.each( function( torrent ) {
-              torrent.set( globals.selectedIds.include( torrent.id ) );
-            } );
+            restoreSelection();
+            break;
+          default:
+            selectTorrents( action );
+            // TODO: Set every filter to default settings
             break;
         }
       }, e );
@@ -3537,6 +3546,18 @@ function handleKeyDown( e ) {
     else if( 32 == kc ) { // space
       preventDefault( e );
       globals.select = globals.currentTorrent.toggleSelect().isSelected();
+    }
+    else if( 219 == kc ) { // [
+      preventDefault( e );
+      storeSelection();
+    }
+    else if( 220 == kc ) { // \
+      preventDefault( e );
+      selectTorrents( "select visible" );
+    }
+    else if( 221 == kc ) { // ]
+      preventDefault( e );
+      restoreSelection();
     }
     else if( 38 == kc || 40 == kc ) { // up, down
       preventDefault( e );

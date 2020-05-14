@@ -96,7 +96,7 @@ Shift has some additional functionality on the Shift configuration page. The pag
 * **Set queue positions** Every time Transmission is started the torrents are queued randomly. Clicking "Date" reorders the torrents queuePositions by addedDate.
 
 ## Files not found? Remove + re-add? Recycle!
-In rare cases a started torrent that stopped before any files could be written to disk cannot be restarted by Transmission. You can only remove and re-add the torrent to continue downloading the payload. If you have configured the torrentLink properly and you can download a torrent file from the torrent details page a Recycle option will be available in the torrents context menu of the main torrents view. This allows you to keep all changes, such as file renames, made to the torrent within Transmission.
+In rare cases a started torrent that stopped before any files could be written to disk cannot be restarted by Transmission. You can only remove and re-add the torrent to continue downloading the payload. If you have configured the torrentLink properly and you can download a torrent file from the torrent details page a Recycle option will be available in the torrents context menu of the main torrents view.
 
 ## Keyboard navigation.
 
@@ -122,6 +122,9 @@ In rare cases a started torrent that stopped before any files could be written t
 | <kbd>**1**</kbd>..<kbd>**0**</kbd> | Sort torrents                        |
 | <kbd>**Del**</kbd>                 | Remove torrent                       |
 | <kbd>**Shift + Del**</kbd>         | Trash torrent                        |
+| <kbd>**[**</kbd>                   | Store selection                      |
+| <kbd>**]**</kbd>                   | Restore selection                    |
+| <kbd>**\|**</kbd>                  | Select visible torrents              |
 
  ## Open for mutilation.
 
