@@ -20,8 +20,8 @@ catch( ex ) {
     "exception": _alert
   }
   [ "assert", "clear", "count", "debug", "dir", "dirxml", "group", "groupCollapsed", "groupEnd", "info", "log", "memoryProfile",
-    "memoryProfileEnd", "profile", "profileEnd", "table", "time", "timeEnd", "timeStamp", "trace", "warn" ].each( function( k ){
-      console[ k ] = function(){};
+    "memoryProfileEnd", "profile", "profileEnd", "table", "time", "timeEnd", "timeStamp", "trace", "warn" ].each( function( k ) {
+      console[ k ] = function() {};
   } );
 }
 
@@ -205,7 +205,7 @@ Object.extend( Event.prototype, {
 } );
 
 function copyToClipboard( o ) {
-  document.observe( "copy", function( e ){
+  document.observe( "copy", function( e ) {
     e.clipboardData.setData('text/plain', JSON.stringify( o, null, 2) );
     e.preventDefault();
     document.stopObserving( "copy" );
@@ -492,7 +492,7 @@ var comparators = {
 }
 var defaultOptions = normalizeOptions( Object.keys( comparators ) );
 
-var filePriority = { "high": { label: "+" } , "normal": { label: " " }, "low": { label: "-" }, "none": { label: "" } };
+var filePriority = { "high": { label: "+" }, "normal": { label: " " }, "low": { label: "-" }, "none": { label: "" } };
 var filePriorityKeys = Object.keys( filePriority );
 var fileMenuItems = [ "Rename" ];
 var nowordRegexp = /\\W/ig;
@@ -526,7 +526,7 @@ var torrentActions = {};
 
 torrentActionLabels.concat( [ "add", "get", "set", "Rename" ] ).each( function( action ) {
   var label = action;
-  action = action.toLowerCase().replace( " ", "-" );
+  action = action.toLowerCase();
   torrentActions[ action ] = {
      label: label,
      method: "torrent-" + function( a ) {
@@ -534,7 +534,7 @@ torrentActionLabels.concat( [ "add", "get", "set", "Rename" ] ).each( function( 
           case "check": return "verify";
           case "relocate": return "set-location";
           case "rename": return "rename-path";
-          default: return a;
+          default: return a.replace( " ", "-" );
        }
     } ( action ) };
 } );
@@ -728,7 +728,7 @@ function recycleTorrents( torrents ) {
         doRequest( "torrent-add", {
           "download-dir": globals.shift.session[ "download-dir" ],
           "metainfo": window.btoa( s ),
-          "dummy": function(){
+          "dummy": function() {
             s = null;
             return undefined;
           }()
@@ -747,7 +747,7 @@ function recycleTorrents( torrents ) {
       recycleTorrents( torrents );
     }
   }
-  req.send(null);
+  req.send( null );
 }
 
 function handleTorrentActionClick( e ) {
@@ -768,7 +768,7 @@ function handleTorrentActionClick( e ) {
 
   var selected = getSelected();
   var selectedMagnetIds = [];
-  var preRequest = function( request ){ return request };
+  var preRequest = function( request ) { return request };
   var postRequest = preRequest;
   var postResponse = null;
 
@@ -859,7 +859,7 @@ function handleTorrentActionClick( e ) {
         selectedMagnetIds = [];
       }
     case "remove":
-      postRequest = function( request ){
+      postRequest = function( request ) {
         globals.removed.concatUnique( args.ids );
         return request
       }
@@ -1797,7 +1797,7 @@ function updateFields( object ) {
   }
 }
 
-function getError( ids ){
+function getError( ids ) {
   if( ids.isEmpty() ) {
      return;
   }
@@ -1938,7 +1938,7 @@ function renderTorrents( noRefresh ) {
       for( var i = 0, len = torrent.dirty.length; i < len; ++i ) {
         var k = torrent.dirty[ i ];
         var c = torrentColumns[ k ];
-        if ( !c ) {
+        if( !c ) {
           continue;
         }
         var render = c.render || torrentFields[ k ].render;
@@ -3106,9 +3106,9 @@ function renderMenuPopup( id, items, render ) {
 }
 
 function getFileSearcher( search, isRegExp ) {
-  return isRegExp ? function( file ){
+  return isRegExp ? function( file ) {
     return getFilePart( file.name ).match( search );
-  } : function( file ){
+  } : function( file ) {
     return getFilePart( file.name ).indexOf( search ) !== -1;
   }
 }
@@ -3349,7 +3349,7 @@ function renderPage() {
     ]
   };
 
-  Object.values( globals.menu ).each( function( group ){
+  Object.values( globals.menu ).each( function( group ) {
     group.invoke( "addClassName", "sub" ).invoke( "hide" );
   } );
 
@@ -3469,7 +3469,7 @@ function processURLs( urls, target, paused ) {
     return;
   }
 
-  url = url.replace( "&amp;", "&" )
+  url = decodeURIComponent( url ).replace( new RegExp( "&amp;", "g" ), "&" );
   doRequest( "torrent-add", { "download-dir": target, "paused": paused, "filename": url }, function( response ) {
     if( window.location.href.indexOf( "uri=" ) > 0 ) {
       window.history.back();
@@ -3581,7 +3581,7 @@ function handleKeyDown( e ) {
     }
     else if( 48 <= kc && kc <= 57 ) { // 0..9
       preventDefault( e );
-      var headers = $( "torrentTable" ).select( "th" ).select( Element.visible ).select( function( column ){
+      var headers = $( "torrentTable" ).select( "th" ).select( Element.visible ).select( function( column ) {
         return column.id.startsWith( "h_" ) && "h_menu" != column.id;
       } );
       var i = ( kc - 39 ) % 10; // 1..9,0
@@ -3764,8 +3764,8 @@ document.observe( "dom:loaded", function() {
         globals.shift.statsUpdater = doRequest( globals.shift.updateStats );
         globals.shift.sessionUpdater = doRequest( globals.shift.updateSession );
 
-        Event.observe( window, "keydown", handleKeyDown );
-        Event.observe( window, "keyup", handleKeyUp );
+        Event.observe( document, "keydown", handleKeyDown );
+        Event.observe( document, "keyup", handleKeyUp );
       } );
       // Get some more fields for ALL torrents that do not need direct processing.
       doTorrentGet( [ "id", "hashString", "metadataPercentComplete" ], undefined, updateTorrents );
