@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2018 Killemov.
+ * © 2021 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -83,6 +83,7 @@ div.drop div {
   border: 1px solid #D5D5D5;
   border-radius: 4px;
   font-weight: normal;
+  line-height: 12px;
 }
 
 .popup {

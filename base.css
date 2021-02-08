@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2018 Killemov.
+ * © 2021 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -79,7 +79,6 @@ label {
 }
 
 div.drop div {
-  display: inline-block;
   padding: 3px 4px 2px;
 }
 
@@ -123,17 +122,17 @@ div#popups {
   min-width: 320px;
 }
 
-div.dialog div:last-child {
+div.dialog > div:last-child {
   margin: 0;
   float: right;
 }
 
-.dialog div:last-child .styled {
+.dialog > div:last-child .styled {
   margin: 0;
   float: unset;
 }
 
-div.dialog div:last-child:after {
+div.dialog > div:last-child:after {
   content: " ";
   display: block;
   height: 0;
@@ -165,6 +164,13 @@ div#popupAbout {
 
 div#popupAdd input[readonly="readonly"].styled {
   cursor: pointer;
+}
+
+div#uploads {
+  max-height: 20em;
+  max-width: 48em;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 span#labelDir {
@@ -446,4 +452,42 @@ div.torrents {
   overflow-y: auto;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+div.drop div span.led {
+  font-weight: bold;
+  line-height: 1em;
+  margin: 0 4px 0 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+div.drop div span.loading {
+  animation: blinker 1s linear infinite;
+  background-color: blue;
+}
+
+div.drop div span.loaded {
+  background-color: yellow;
+  color: black;
+}
+
+div.drop div span.uploading {
+  animation: blinker 1s linear infinite;
+  background-color: purple;
+  line-height: 0.9em;
+  text-indent: -1px;
+}
+
+div.drop div span.added {
+  background-color: green;
+}
+
+div.drop div span.duplicate {
+  background-color: red;
+  line-height: 0.7em;
 }

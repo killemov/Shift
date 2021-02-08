@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2018 Killemov.
+ * © 2021 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -377,6 +377,36 @@ span.drop {
 
 td#d_errorString {
   font-weight: bold;
+}
+
+div.drop div span.led {
+  line-height: 1.0em;
+}
+
+div.drop div span.loading {
+  animation: blinker 1s linear infinite;
+  background-color: blue;
+}
+
+div.drop div span.loaded {
+  background-color: yellow;
+  color: black;
+  line-height: 1.3em;
+}
+
+div.drop div span.uploading {
+  animation: blinker 1s linear infinite;
+  background-color: purple;
+  line-height: 1.3em;
+  text-indent: -1px;
+}
+
+div.drop div span.added {
+  background-color: green;
+}
+
+div.drop div span.duplicate {
+  background-color: #00FF00;
 }
 
 /* Wellbutrin font by Karen Clemens & Apostrophe */

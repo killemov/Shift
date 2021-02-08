@@ -66,7 +66,7 @@ For testing purposes you could use transmission-daemon itself to serve the linke
 </figure>
 
 ## Future/feature proof-ish.
-The torrent details, session configuration and shift configuration pages all are dynamically generated from the data itself. So when developers add a simple field to the data, Shift will automagically display it and make it editable. Only if you, developer, need to hide a field, make it read-only or make it special/complex then you need to edit the shift.js file. If you activate "Copy to clipboard" and click "Apply", the data will be available in JSON format for pasting in any text editor.
+The session configuration and shift configuration pages are dynamically generated from the data itself. So when developers add a simple field to the data, Shift will automagically display it and make it editable. Only if you, developer, need to hide a field, make it read-only or make it special/complex then you need to edit the shift.js file. If you activate "Copy to clipboard" and click "Apply", the data will be available in JSON format for pasting in any text editor.
 
 ## Session configuration
 
