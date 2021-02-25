@@ -105,6 +105,10 @@ Object.extend( Object, {
       }
     }
     return result;
+  },
+  without: function( o, keys ) {
+    keys.each( function( k ) { delete o[ k ] } );
+    return o;
   }
 } );
 
@@ -2638,7 +2642,7 @@ function showDetails( torrent ) {
         var data = getKeyValuePairs( torrent, "d_", torrentFields );
         if( clipboardLed.value ) {
           var t = Object.extend( Object.clone( torrent ), data );
-          [ "dirty", "display", "id", "node", "selected" ].each( function( a ) { delete t[ a ] } );
+          Object.without( t, [ "_dirty", "_display", "_selected", "id", "node" ] );
           copyToClipboard( t );
         }
         if( !Object.isEmpty( data ) ) {
@@ -2671,6 +2675,9 @@ function showDetails( torrent ) {
 function getKeyValuePairs( elements, idPrefix, fields ) {
   var data = {};
   for( var k in elements ) {
+    if( k[ 0 ] === '_' ) {
+      continue;
+    }
     var f = fields[ k ];
     if( elements.hasOwnProperty( k ) && !( f && f.readOnly ) ) {
       var o = elements[ k ];
