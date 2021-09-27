@@ -193,6 +193,10 @@ li#high, li#normal, li#low, li#none {
   text-align: left;
 }
 
+.styled:focus {
+  outline: 2px solid purple;
+}
+
 .keyvalue .styled {
   border: unset;
 }
@@ -363,6 +367,10 @@ table.keyvalue input {
   width: 100%;
 }
 
+table.keyvalue td#d_labels input {
+  width: 8em;
+}
+
 table#fileTable tbody tr td.name {
   text-align: left;
 }
@@ -434,7 +442,7 @@ td#d_downloadDir {
 }
 
 td#d_downloadDir input {
-   width: calc(100% - 20px);
+  width: calc(100% - 24px);
 }
 
 span#d_move {
@@ -476,6 +484,13 @@ div.drop div span.loaded {
   color: black;
 }
 
+div.drop div span.processing {
+  animation: blinker 1s linear infinite;
+  background-color: purple;
+  line-height: 0.9em;
+  text-indent: -1px;
+}
+
 div.drop div span.uploading {
   animation: blinker 1s linear infinite;
   background-color: purple;
@@ -490,4 +505,39 @@ div.drop div span.added {
 div.drop div span.duplicate {
   background-color: red;
   line-height: 0.7em;
+}
+
+table#torrentTable .labels {
+  float: right;
+}
+
+.labels span.label {
+  background-color: lightgray;
+  margin-left: 0.5em;
+  padding: 0 0.5em;
+}
+
+.labels span.label.example {
+  background-color: purple;
+}
+
+.labels span.label.example:before {
+  background-image: url( "" );
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+table#detailsTable .labels .label {
+  cursor: pointer;
+}
+
+button#addLabel {
+  height: 16px;
+  line-height: 4px;
+  min-width: 16px;
+  padding: 0;
+  text-align: center;
+  vertical-align: inherit;
+  width: 16px;
 }

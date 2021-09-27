@@ -219,6 +219,10 @@ span#port-is-open {
   transition: box-shadow 0.4s ease 0s, color 0.4s ease 0s;
 }
 
+.styled:focus {
+  outline: 2px solid rgba( 0, 255, 0, 0.5 ) !important;
+}
+
 .dialog .styled {
   background-color: unset;
 }
@@ -283,6 +287,10 @@ select.styled option:last-child {
 
 .keyvalue select.styled {
   background-color: rgba( 255, 255, 255, 0.25 );
+}
+
+td#d_downloadDir input {
+  width: calc(100% - 44px);
 }
 
 td#d_bandwidthPriority select.styled {
@@ -373,6 +381,15 @@ table#torrentTable thead tr:first-child th span.led {
 table#torrentTable thead tr:first-child th.menu span.led {
   display: inline-block;
   margin-top: 32px;
+}
+
+table#torrentTable thead th#h_name {
+  display: flex;
+}
+
+table#torrentTable thead th#h_name span.labels {
+  position: absolute;
+  right: 16px;
 }
 
 table#torrentTable tbody tr {

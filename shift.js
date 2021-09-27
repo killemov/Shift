@@ -85,10 +85,13 @@ Object.extend( Object, {
         target[ k ] = source[ k ];
       }
     } );
+    return target;
   },
+
   isBoolean: function( o ) {
     return "boolean" === typeof o;
   },
+
   isEmpty: function( o ) {
     for( var k in o ) {
       if( Object.prototype.hasOwnProperty.call( o, k ) ) {
@@ -97,6 +100,7 @@ Object.extend( Object, {
     }
     return true;
   },
+
   select: function( o, iterator ) {
     var result = {};
     for( var k in o ) {
@@ -106,6 +110,15 @@ Object.extend( Object, {
     }
     return result;
   },
+
+  sort: function( o ) {
+    var result = {};
+    Object.keys( o ).sort().forEach( function( k ) {
+      result[ k ] = o[ k ];
+    } );
+    return result;
+  },
+
   without: function( o, keys ) {
     keys.each( function( k ) { delete o[ k ] } );
     return o;
@@ -152,6 +165,12 @@ Object.extend( Array.prototype, {
   },
 
   remove: function( element ) {
+    if( Array.isArray( element ) ) {
+      for( var i = 0, len = element.length; i < len; ++i ) {
+         this.remove( element[ i ] );
+      }
+      return this;
+    }
     var i = this.indexOf( element );
     if( i >= 0 ) {
         this.splice( i, 1 );
@@ -184,8 +203,12 @@ Object.extend( Array.prototype, {
 } );
 
 Object.extend( String.prototype, {
-  includes: function( s ) {
-     return this.indexOf( s ) > -1;
+  include: function( s ) {
+    return this.indexOf( s ) > -1;
+  },
+
+  toCSS: function() {
+    return encodeURIComponent( this ).toLowerCase().replace( /\.|%[0-9a-z]{2}/gi, '_' );
   }
 } );
 
@@ -210,7 +233,7 @@ Object.extend( Event.prototype, {
 
 function copyToClipboard( o ) {
   document.observe( "copy", function( e ) {
-    e.clipboardData.setData('text/plain', JSON.stringify( o, null, 2) );
+    e.clipboardData.setData( "text/plain", JSON.stringify( Object.sort( o ), null, 2 ) );
     e.preventDefault();
     document.stopObserving( "copy" );
   } );
@@ -384,13 +407,13 @@ var globals = {
   torrentStatus: {
     "-1": {
       label: "All",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "eta", "uploadedEver" ],
       keyCode: 65
     },
     0: {
       label: "Stopped",
-      columns: [ "menu", "queuePosition", "status", "errorString", "percentDone", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "errorString", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "error" ],
       keyCode: 83,
       onChange: function() {
@@ -406,37 +429,37 @@ var globals = {
     },
     1: {
       label: "Check waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "corruptEver" ],
       keyCode: 67
     },
     2: {
       label: "Checking",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone" ],
       keyCode: 67
     },
     3: {
       label: "Download waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone" ],
       keyCode: 68
     },
     4: {
       label: "Downloading",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "uploadedEver", "eta" ],
       keyCode: 68
     },
     5: {
       label: "Seed waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone" ],
       keyCode: 85
     },
     6: {
       label: "Seeding",
-      columns: [ "menu", "queuePosition", "status", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name" ],
+      columns: [ "menu", "queuePosition", "status", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "rateUpload", "uploadedEver", "uploadRatio" ],
       keyCode: 85
     }
@@ -482,7 +505,7 @@ var globals = {
       updateFields( globals.shift.session = getArguments( response ) );
     } )
   },
-  staticFields: [ "name", "percentDone", "queuePosition", "sizeWhenDone" ]
+  staticFields: [ "labels", "name", "percentDone", "queuePosition", "sizeWhenDone" ]
 }
 globals.torrentStatusCurrent = globals.torrentStatusDefault;
 globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
@@ -567,10 +590,12 @@ var torrentFields = {
   "downloadedEver": { render: renderSize },
   "downloadLimit": { edit: true },
   "downloadLimited": { edit: true },
+  "editDate": { render: renderDateTime },
   "error": {},
   "errorString": {},
   "eta": {},
   "etaIdle": {},
+  "file-count": {},
   "files": { ignore: true, sss: true },
   "fileStats": { ignore: true },
   "hashString": { sss: true },
@@ -578,18 +603,20 @@ var torrentFields = {
   "haveValid": { render: renderSize },
   "honorsSessionLimits": { edit: true },
   "id": { ignore: true },
-  "index": { ignore: true },
   "isFinished": {},
   "isPrivate": {},
   "isStalled": {},
   "leftUntilDone": { render: renderSize },
+  "labels": { render: renderLabels, edit: true, getValue: function( cell ) {
+      return cell.down( "span.labels" ).select( ".label" ).pluck( "innerHTML" ).sort();
+    }
+  },
   "location": { edit: true },
   "magnetLink": { render: function( link ) { return rA( link ) }, sss: true },
   "manualAnnounceTime": {},
   "maxConnectedPeers": {},
   "metadataPercentComplete": { render: renderPercentage },
   "name": { sss: true },
-  "node": { ignore: true },
   "peer-limit": { edit: true },
   "peers": { ignore: true },
   "peersConnected": {},
@@ -600,6 +627,7 @@ var torrentFields = {
   "pieces": { render: renderPieces },
   "pieceCount": {},
   "pieceSize": { render: renderSize },
+  "primary-mime-type": {},
   "priorities": { ignore: true },
   "queuePosition": { edit: true },
   "rateDownload": { render: renderSpeed },
@@ -636,27 +664,31 @@ var torrentFields = {
   "webseedsSendingToUs": {}
 };
 
-var torrentFieldKeys = Object.keys( torrentFields );
+var torrentFieldKeys = [];
+var torrentDetailsUpdateKeys = [];
 
-var torrentDetailsUpdateKeys = Object.keys( Object.select( torrentFields, function( value ) {
-  value.readOnly = value.readOnly || !value.edit;
-  return !value.ignore;
-} ) ).without(
-  "addedDate",
-  "comment",
-  "creator",
-  "dateCreated",
-  "hashString",
-  "isFinished",
-  "isPrivate",
-  "magnetLink",
-  "metadataPercentComplete",
-  "name",
-  "pieceCount",
-  "pieceSize",
-  "torrentFile",
-  "totalSize"
-).pushUnique( "id" );
+function updatePostSession() {
+  torrentFieldKeys = Object.keys( torrentFields );
+  torrentDetailsUpdateKeys = Object.keys( Object.select( torrentFields, function( value ) {
+    value.readOnly = value.readOnly || !value.edit;
+    return !value.ignore;
+  } ) ).without(
+    "addedDate",
+    "comment",
+    "creator",
+    "dateCreated",
+    "hashString",
+    "isFinished",
+    "isPrivate",
+    "magnetLink",
+    "metadataPercentComplete",
+    "name",
+    "pieceCount",
+    "pieceSize",
+    "torrentFile",
+    "totalSize"
+  ).pushUnique( "id" );
+}
 
 function showDone() {
   globals.html.style.cursor = "auto";
@@ -1077,10 +1109,37 @@ var torrentColumns = {
         return undefined === torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().include( this.value ) );
       }
     }
+  },
+
+  "labels": {
+    column: false,
+    actualColumn: "name",
+    render: false,
+    filter: {
+      active: true,
+      value: "",
+      renderNode: renderLabelFilter,
+      match: function( torrent ) {
+        if( this.exclude ) {
+          if ( this.value.length === 0 ) {
+            return undefined === torrent.labels || torrent.labels.length;
+          }
+          return torrent.labels.length === 0 || !torrent.labels.include( this.value );
+        }
+        else {
+          if ( undefined === torrent.labels || this.value.length === 0 ) {
+            return true;
+          }
+          return torrent.labels.length > 0 && torrent.labels.include( this.value );
+        }
+      }
+    }
   }
 }
 
-globals.torrentColumnHash = Object.values( torrentColumns );
+globals.torrentColumnHash = Object.values( torrentColumns ).select( function( columnDefinition ) {
+  return columnDefinition.column !== false;
+} );
 
 Object.copyNestedProperties( torrentFields, torrentColumns, Object.keys( torrentColumns ), [ "sss" ] );
 
@@ -1227,9 +1286,9 @@ var Torrent = Class.create( {
   set: function( selected ) {
     if( this._selected != selected ) {
       this._selected = selected;
-      if( this.node ) {
-        this.node.toggleClassName( "selected", this._selected );
-        this.node.down( ".led" ).set( selected );
+      if( this._node ) {
+        this._node.toggleClassName( "selected", this._selected );
+        this._node.down( ".led" ).set( selected );
       }
     }
     return this;
@@ -1532,8 +1591,20 @@ function renderInterval( seconds ) {
   return seconds < 300 ? seconds + "s" : Math.floor( seconds / 60 ) + "m";
 }
 
+function renderLabels( labels ) {
+  return rS( {  class: "labels" }, labels.map( function( label ) {
+    return rS( { class: "label " + label.toCSS(), title: label }, label );
+  } ) );
+}
+
 function renderName( name, torrent, ignore, cell ) {
-  return ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
+  var s = ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
+  if( cell && torrent.labels && torrent.labels.length ) {
+    cell.insert( renderLabels( torrent.labels ) );
+    cell.insert( s );
+    return "";
+  }
+  return s;
 }
 
 function renderPercentage( percentage, decimals ) {
@@ -1691,7 +1762,7 @@ var noMatchRegExp = new RegExp( "\0" );
 
 function renderNameFilter() {
   var filter = torrentColumns.name.filter;
-  var input = rI( filter.value, { id: "doneInput" } );
+  var input = rI( filter.value );
   var regExpLed = rLed().makeToggle();
 
   var _handler = function( e ) {
@@ -1716,12 +1787,32 @@ function renderNameFilter() {
   return f;
 }
 
+function renderLabelFilter() {
+  var filter = torrentColumns.labels.filter;
+  var input = rI( filter.value );
+  var inputExclude = rLed().makeToggle();
+
+  var _handler = function( e ) {
+    filter.value = input.value;
+    filter.exclude =  inputExclude.value;
+    filterTorrents();
+  };
+
+  input.observe( "change", _handler );
+  input.observe( "blur", _handler );
+  inputExclude.observe( "click", _handler );
+
+  var f = renderFilter( "Label" );
+  f.down( "span.filterInput" ).insert( input ).insert( " Exclude: " ).insert( inputExclude );
+  return f;
+}
+
 function removeTorrentById( id ) {
   globals.removed.pushUnique( id );
 
   var t = globals.torrentHash[ id ];
   if( t ) {
-    t.node.remove();
+    t._node.remove();
     globals.torrents.remove( t );
     sendNotification( 3, "Torrent removed.", getBody( t ) );
   }
@@ -1946,7 +2037,7 @@ function sortTorrents( property, reverse ) {
 
   var setSortClass = function( element ) {
     element.removeClassName( "asc" ).removeClassName( "desc" );
-    if( element.className.includes( property ) ) {
+    if( element.className.include( property ) ) {
         element.addClassName( column.order ? "asc" : "desc" );
     }
   };
@@ -1961,11 +2052,11 @@ function sortTorrents( property, reverse ) {
   var process = orderChanged && currentNode;
   for( var i = 0, len = torrents.length; i < len; ++i ) {
     var torrent = torrents[ i ];
-    if( process && torrent.node ) {
+    if( process && torrent._node ) {
       if( torrent.i != i ) {
-        currentNode.insert( { after: torrent.node } );
+        currentNode.insert( { after: torrent._node } );
       }
-      currentNode = torrent.node;
+      currentNode = torrent._node;
     }
     delete torrent.i;
   }
@@ -1984,7 +2075,7 @@ function renderTorrents( refresh ) {
 
   var ids = [];  // Ids of torrents to be updated
   globals.torrents.each( function( torrent ) {
-    var row = torrent.node;
+    var row = torrent._node;
 
     if( !torrent.isDisplayed() || globals.removed.include( torrent.id ) ) {
       if( row ) {
@@ -1997,7 +2088,7 @@ function renderTorrents( refresh ) {
       for( var i = 0, len = torrent._dirty.length; i < len; ++i ) {
         var k = torrent._dirty[ i ];
         var c = torrentColumns[ k ];
-        if( !c ) {
+        if( !c || c.column === false ) {
           continue;
         }
         var render = c.render || torrentFields[ k ].render;
@@ -2015,7 +2106,7 @@ function renderTorrents( refresh ) {
       ids.push( torrent.id );
       row = renderRow( torrent, torrentColumns, rR( { id: torrent.id } ) );
       refresh ? row.hide() : row.show();
-      torrent.node = row;
+      torrent._node = row;
       torrentBody.insert( row );
       row.observe( "dblclick", function( e ) {
         globals.currentTorrent = globals.torrentHash[ e.currentTarget.id ];
@@ -2045,14 +2136,27 @@ function getTable( id, target, columnDefinitions, renderer, click ) {
     var header = rR();
     t.header.insert( header );
     for( var k in columnDefinitions ) {
-      var c = columnDefinitions[ k ]
-      t.columns.insert( rE( "col", { "class": k } ) );
-      var cell = rE( "th", { id: "h_" + k, "class": k } ).insert( c.label || k.capitalize() );
-      if( c.click || click ) {
-        cell.observe( "click", c.click ? c.click : click );
+      var c = columnDefinitions[ k ];
+      if( c.column !== false ) {
+        t.columns.insert( rE( "col", { "class": k } ) );
+        var cell = rE( "th", { id: "h_" + k, "class": k } ).insert( rS( { id: "l_" + k, "class": k } ).insert( c.label || k.capitalize() ) );
+        if( c.click || click ) {
+          cell.observe( "click", c.click ? c.click : click );
+        }
+        header.insert( cell );
       }
-      header.insert( cell );
     }
+
+    for( var k in columnDefinitions ) {
+      var c = columnDefinitions[ k ];
+      if( c.actualColumn ) {
+        var cell = t.header.down( "th#h_" + c.actualColumn );
+        if( cell ) {
+          cell.insert( rS( { id: "l_" + k, "class": k } ).insert( c.label || k.capitalize() ) );
+        }
+      }
+    }
+
     updateOrder( columnDefinitions );
   }
   if( target ) {
@@ -2099,7 +2203,7 @@ function updateRow( object, columnDefinitions, row ) {
 
 function showTorrentTable() {
   if( showContent( "torrentTable" ) ) {
-    centerVertically( globals.currentTorrent ? globals.currentTorrent.node : null );
+    centerVertically( globals.currentTorrent ? globals.currentTorrent._node : null );
     return;
   }
 
@@ -2166,11 +2270,11 @@ function showTorrentTable() {
       var column = torrentColumns[ k ];
       var f = column.filter;
       if( f ) {
-        if( f.node ) {
-          c.insert( f.node );
+        if( f._node ) {
+          c.insert( f._node );
         }
         else if( f.renderNode ) {
-          c.insert( f.node = f.renderNode() );
+          c.insert( f._node = f.renderNode() );
         }
         else {
           continue;
@@ -2179,16 +2283,16 @@ function showTorrentTable() {
         var l = rLed( f.visible ).observe( "click", function( e ) {
           var f = torrentColumns[ this.up().id.substring( 2 ) ].filter;
           this.set( f.visible = !f.visible );
-          f.visible ? f.node.show() : f.node.hide();
+          f.visible ? f._node.show() : f._node.hide();
           _show()
           e.stop();
         } );
 
         if( f.visible ) {
-          f.node.show();
+          f._node.show();
         }
 
-        $( "h_" + k ).insert( l );
+        $( "l_" + k ).insert( { bottom: l } );
       }
     }
     h.writeAttribute( "colSpan", globals.torrentColumnHash.length );
@@ -2197,14 +2301,24 @@ function showTorrentTable() {
   function( e ) {
     sortTorrents( this.id.substring( 2 ) );
   } );
-  centerVertically( globals.currentTorrent ? globals.currentTorrent.node : null );
+  centerVertically( globals.currentTorrent ? globals.currentTorrent._node : null );
 }
 
 function setTorrentsColumnsVisible( columns ) {
+  var columnCount = 0;
   for( var c in torrentColumns ) {
-    torrentColumns[ c ].style.display = columns.include( c ) ? "" : "none";
+    var style = torrentColumns[ c ].style;
+    if( columns.include( c ) ) {
+      if( torrentColumns[ c ].column !== false ) {
+        style.display = "";
+        columnCount++;
+      }
+    }
+    else {
+      style.display = "none"
+    }
   }
-  $( "filterContainerCell" ).colSpan = columns.length;
+  $( "filterContainerCell" ).colSpan = columnCount;
 }
 
 function getPathPart( file, depth ) {
@@ -2474,39 +2588,42 @@ function renderFiles( torrent ) {
 }
 
 function showFiles( torrent ) {
-  var fileTable = getTable( "fileTable", globals.content, fileColumns, function( t ) {
-    t.table.addClassName( "torrent" );
-    t.body.id = "fileBody";
-    if( torrent.pieces ) {
-      var cell = rE( "th", { id: "filePieces", colspan: "4", style: "height: 2em; padding: 0;" } );
-      t.header.insert( { top: rR().insert( cell ) } );
-      cell.insert( renderPieces( torrent.pieces, cell ) );
-    }
-    for( var i = 0, len = torrent.files.length; i < len; ++i ) {
-      torrent.files[ i ].folderNodes = [];
-    }
-    renderFiles( torrent );
-  },
-  function( e ) {
-    for( var i = 0, len = torrent.files.length; i < len; ++i ) {
-      torrent.files[ i ].i = i;
-    }
-    var property = updateOrder( fileColumns, this.id.substring( 2 ) );
-    var column = fileColumns[ property ];
-    var o = column.order;
+  var fileTable = getTable( "fileTable", globals.content, fileColumns,
+    function( t ) {
+      t.table.addClassName( "torrent" );
+      t.body.id = "fileBody";
+      if( torrent.pieces ) {
+        var cell = rE( "th", { id: "filePieces", colspan: "4", style: "height: 2em; padding: 0;" } );
+        t.header.insert( { top: rR().insert( cell ) } );
+        cell.insert( renderPieces( torrent.pieces, cell ) );
+      }
+      for( var i = 0, len = torrent.files.length; i < len; ++i ) {
+        torrent.files[ i ].folderNodes = [];
+      }
+      renderFiles( torrent );
+    },
+    function( e ) {
+      for( var i = 0, len = torrent.files.length; i < len; ++i ) {
+        torrent.files[ i ].i = i;
+      }
+      var property = updateOrder( fileColumns, this.id.substring( 2 ) );
+      var column = fileColumns[ property ];
+      var o = column.order;
 
-    if( property == "name" ) {
-      torrent.files.sortByProperty( o ? "name" : "index", true, o );
+      if( property == "name" ) {
+        torrent.files.sortByProperty( o ? "name" : "_index", true, o );
+      }
+      else {
+        torrent.files.sortByProperty( property, o, column.isString );
+      }
+      renderFiles( torrent );
     }
-    else {
-      torrent.files.sortByProperty( property, o, column.isString );
-    }
-    renderFiles( torrent );
-  } );
+  );
 
   if( torrent.pieces ) {
     renderPieces( torrent.pieces, $( "filePieces" ) );
   }
+
   torrent.files.each( function( file ) {
     var index = file.index;
     var row = $( "f_" + index );
@@ -2642,7 +2759,7 @@ function showDetails( torrent ) {
         var data = getKeyValuePairs( torrent, "d_", torrentFields );
         if( clipboardLed.value ) {
           var t = Object.extend( Object.clone( torrent ), data );
-          Object.without( t, [ "_dirty", "_display", "_selected", "id", "node" ] );
+          Object.without( t, [ "_dirty", "_display", "_index", "_node", "_selected", "id" ] );
           copyToClipboard( t );
         }
         if( !Object.isEmpty( data ) ) {
@@ -2669,7 +2786,8 @@ function showDetails( torrent ) {
       } ) ).insert( clipboardLed ).insert( "Copy to clipboard" ) )
     );
   } );
-  updateKeyValuePairs( torrent, "d_", torrentFields );
+  updateKeyValuePairs( Object.copyNestedProperties( torrent, {}, torrent._dirty ), "d_", torrentFields );
+  torrent._dirty = [];
 }
 
 function getKeyValuePairs( elements, idPrefix, fields ) {
@@ -2686,6 +2804,10 @@ function getKeyValuePairs( elements, idPrefix, fields ) {
 
       if( f && f.locked ) {
         delete f.locked;
+      }
+
+      if( !cell ) {
+        continue;
       }
 
       if( f && f.getValue ) {
@@ -2751,22 +2873,19 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
         if( !ro ) {
           content = renderSelect( { select: { "class": "styled" }, options: f.values } ).observe( "focus", lock.curry( fields, k ) );
           content.value = o;
-          createInput = false;
         }
       }
       else if( Object.isArray( o ) ) {
-        var content = renderSelect( { select: { "class": "styled", value: o[ 0 ] }, options: normalizeOptions( o ) } );
-        createInput = false;
+        content = renderSelect( { select: { "class": "styled", value: o[ 0 ] }, options: normalizeOptions( o ) } );
       }
       else if( Object.isBoolean( o ) ) {
-        var content = rLed( o, ro ? { readonly: "readonly" } : {} );
+        content = rLed( o, ro ? { readonly: "readonly" } : {} );
         if( !ro ) {
           content.observe( "click", function( e ) {
             lock( fields, k );
             content.toggle();
           } );
         }
-        createInput = false;
       }
       else if( !Object.isNumber( o ) && !Object.isString( o ) ) {
         return;
@@ -2778,7 +2897,7 @@ function renderKeyValuePairs( target, elements, idPrefix, fields ) {
       else if( f && f.renderAdvanced ) {
         content = f.renderAdvanced( content );
       }
-      else if( createInput ) {
+      else if( createInput && !Object.isElement( content ) ) {
         content = rI( content ).observe( "focus", lock.curry( fields, k ) );
       }
       valueCell.insert( content );
@@ -2818,7 +2937,7 @@ function updateKeyValuePairs( elements, idPrefix, fields ) {
       if( ro ) {
         valueCell.update( content );
       }
-      else {
+      else if( !Object.isElement( content ) ) {
         valueCell.down( "input" ).value = content;
       }
     }
@@ -2926,15 +3045,11 @@ function addTrackersToTorrents( ids, trackers ) {
   doRequest( request );
 }
 
-function queueTorrentsByDate() {
-  if( globals.torrents.length < 2 ) {
-    return;
-  }
-
+function setQueuePositionBy( property ) {
   showWait();
-  doTorrentGet( [ "id", "addedDate" ], undefined, function( response ) {
+  doTorrentGet( [ "id", property ], undefined, function( response ) {
     updateTorrents( response );
-    globals.torrents.sortByProperty( "addedDate" );
+    globals.torrents.sortByProperty( property );
     if( undefined === globals.torrents[ 0 ].queuePosition ) {
       globals.torrents[ 0 ].queuePosition = 0;
     }
@@ -2950,11 +3065,16 @@ function queueTorrentsByDate() {
       ids.push( globals.torrents[ i ].id );
     }
     batchIds.push( ids );
+    batchIds.reverse();
+    if( batchIds.length < 2 ) {
+      showDone();
+      return;
+    }
 
-    var _setTopQueuePosition = function( ids ) {
-      doRequest( "queue-move-top", { ids: ids }, function( response ) {
+    var _setQueuePosition = function( ids ) {
+      doRequest( "queue-move-bottom", { ids: ids }, function( response ) {
         if( batchIds.length > 0 ) {
-          _setTopQueuePosition( batchIds.shift() );
+          _setQueuePosition( batchIds.shift() );
         }
         else {
           getQueuePositions( null );
@@ -2964,7 +3084,7 @@ function queueTorrentsByDate() {
     }
 
     if( batchIds.length > 0 ) {
-      _setTopQueuePosition( batchIds.shift() );
+      _setQueuePosition( batchIds.shift() );
     }
     else {
       showDone();
@@ -2997,7 +3117,7 @@ function showShiftTable() {
     t.body.down( "td#s_trackers" ).insert( trackerButton );
     if( globals.version >= 2.4 ) {
       t.body.insert( rR().insert( rC().insert( "Set queue positions" ) ).insert( rC().insert(
-        rB( { value: "Date" } ).observe( "click", queueTorrentsByDate )
+        rB( { value: "Date" } ).observe( "click", setQueuePositionBy.curry( "addedDate" ) )
       ) ) );
     }
     t.body.insert(
@@ -3768,10 +3888,18 @@ function registerMagnetHandler() {
     }
   }
   else {
-    if( navigator.registerProtocolHandler ) {
+    if( navigator.unregisterProtocolHandler ) {
       navigator.unregisterProtocolHandler( "magnet" );
     }
   }
+}
+
+function removeFields( fields ){
+  Object.without( torrentFields, fields );
+  Object.values( globals.torrentStatus ).pluck( "columns" ).each( function( columns ) {
+    columns.remove( fields );
+  } );
+  globals.staticFields.remove( fields );
 }
 
 document.observe( "dom:loaded", function() {
@@ -3829,13 +3957,18 @@ document.observe( "dom:loaded", function() {
   doRequest( "session-get", {}, function( response ) {
     globals.shift.session = getArguments( response );
     globals.version = parseFloat( globals.shift.session.version );
-    if( globals.version < 2.84 ) {
+    if( globals.version < 3.01 ) {
+      removeFields( [ "file-count", "primary-mime-type" ] );
+    }
+    if( globals.version < 3.00 ) {
+      removeFields( [ "session-id", "labels", "editDate" ] );
+    }
+    if( globals.version < 2.80 ) {
+      removeFields( [ "etaIdle" ] );
       fileMenuItems.remove( "Rename" );
     }
-    if( globals.version < 2.7 ) {
-      torrentActionLabels.remove( "Relocate" );
-    }
     if( globals.version < 2.4 ) {
+      removeFields( [ "queuePosition", "isStalled" ] );
       torrentActionLabels.remove( "Start Now" );
       globals.torrentStatus = {
         "-1": globals.torrentStatus[ "-1" ],
@@ -3851,6 +3984,10 @@ document.observe( "dom:loaded", function() {
       } );
       globals.staticFields.remove( "queuePosition" );
     }
+    if( globals.version < 1.7 ) {
+      torrentActionLabels.remove( "Relocate" );
+    }
+
     var h = {};
     for( var k in globals.torrentStatus ) {
       var kc = globals.torrentStatus[ k ].keyCode;
@@ -3861,6 +3998,8 @@ document.observe( "dom:loaded", function() {
       }
     }
     globals.torrentStatusKeyHash = h;
+
+    updatePostSession();
     renderTitle();
     renderPage();
     updateFields( globals.shift.session );

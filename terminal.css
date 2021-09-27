@@ -167,6 +167,10 @@ span#port-is-open {
   border: 1px solid #004000;
 }
 
+.styled:focus {
+  outline: 2px solid rgba( 0, 255, 0, 0.5 ) !important;
+}
+
 input.styled, textarea.styled {
   background: inherit;
   border: 1px solid #004000;
