@@ -231,13 +231,17 @@ Object.extend( Event.prototype, {
   }
 } );
 
-function copyToClipboard( o ) {
+function copyToClipboard( s ) {
   document.observe( "copy", function( e ) {
-    e.clipboardData.setData( "text/plain", JSON.stringify( Object.sort( o ), null, 2 ) );
+    e.clipboardData.setData( "text/plain", s );
     e.preventDefault();
     document.stopObserving( "copy" );
   } );
   document.execCommand( "copy" );
+}
+
+function copyObjectToClipboard( o ) {
+  copyToClipboard( JSON.stringify( Object.sort( o ), null, 2 ) );
 }
 
 function handleFocus( e ) {
@@ -1600,9 +1604,9 @@ function renderLabels( labels ) {
 function renderName( name, torrent, ignore, cell ) {
   var s = ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
   if( cell && torrent.labels && torrent.labels.length ) {
-    cell.insert( renderLabels( torrent.labels ) );
+    cell.update( renderLabels( torrent.labels ) );
     cell.insert( s );
-    return "";
+    return undefined;
   }
   return s;
 }
@@ -2184,6 +2188,9 @@ function renderRow( object, columnDefinitions, row ) {
 }
 
 function updateElement( element, content ) {
+  if( undefined === content ) {
+    return;
+  }
   if( content != element.innerHTML || content === 0 ) {
     element.update( content );
   }
@@ -2611,7 +2618,7 @@ function showFiles( torrent ) {
       var o = column.order;
 
       if( property == "name" ) {
-        torrent.files.sortByProperty( o ? "name" : "_index", true, o );
+        torrent.files.sortByProperty( o ? "name" : "index", true, o );
       }
       else {
         torrent.files.sortByProperty( property, o, column.isString );
@@ -2760,7 +2767,7 @@ function showDetails( torrent ) {
         if( clipboardLed.value ) {
           var t = Object.extend( Object.clone( torrent ), data );
           Object.without( t, [ "_dirty", "_display", "_index", "_node", "_selected", "id" ] );
-          copyToClipboard( t );
+          copyObjectToClipboard( t );
         }
         if( !Object.isEmpty( data ) ) {
           if( data.hasOwnProperty( "downloadDir" ) ) {
@@ -2960,7 +2967,7 @@ function showSessionTable() {
         rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function( e ) {
           var data = getKeyValuePairs( globals.shift.session, "s_", sessionFields );
           if( clipboardLed.value ) {
-            copyToClipboard( globals.shift.session );
+            copyObjectToClipboard( globals.shift.session );
           }
           if( !Object.isEmpty( data ) ) {
             Object.extend( globals.shift.session, data );
@@ -3132,7 +3139,7 @@ function showShiftTable() {
             setStylesheet( data.styleSheet[ 0 ] );
           }
           if( clipboardLed.value ) {
-            copyToClipboard( globals.shift.settings );
+            copyObjectToClipboard( globals.shift.settings );
           }
           date.setTime( date.getTime() + 365 * DAY_MS );
           document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date;
