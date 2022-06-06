@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2021 Killemov.
+ * © 2022 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -252,7 +252,7 @@ function handleFocus( e ) {
 }
 
 function isEmpty( s ) {
-  return undefined === s || null === s || s.length === 0 || Object.isEmpty( s );
+  return undefined === s || null === s || 0 === s.length || Object.isEmpty( s );
 }
 
 // riffwave by Pedro Ladaria <pedro.ladaria at Gmail dot com>
@@ -384,12 +384,15 @@ function newRequest( method, args, onSuccess, properties ) {
   if( properties ) {
     Object.extend( request, properties );
   }
+  if( isEmpty( request.parametersObject.arguments.ids ) ) {
+    delete request.parametersObject.arguments.ids;
+  }
   return request;
 }
 
 function newPeriodicalUpdater( method, interval, onSuccess, fields, ids ) {
   return newRequest( method, fields ? {
-    fields: fields, ids: ids ? ids : []
+    fields: fields, ids: ids
   } : null, onSuccess, {
     container: "torrentBody",
     frequency: interval,
@@ -703,7 +706,7 @@ function showWait() {
 }
 
 function getQueuePositions( removed ) {
-  if( globals.version < 2.4 ) {
+  if( globals.version < 14 ) { // 2.40
     if( removed ) {
       removed.each( removeTorrentById );
     }
@@ -838,7 +841,7 @@ function handleTorrentActionClick( e ) {
              return torrent.downloadDir === args.location;
           } );
 
-          if( ts[ 0 ].length > 0 ) {
+          if( !isEmpty( ts[ 0 ] ) ) {
             var b = {};
             if( ts[ 0 ].length == 1 ) {
               b = getBody( ts[ 0 ][ 0 ], "\nRelocated to:\n\"" + args.location + "\"" );
@@ -851,7 +854,7 @@ function handleTorrentActionClick( e ) {
             sendNotification( 2, "Relocation successful.", b );
           }
 
-          if( ts[ 1 ].length > 0 ) {
+          if( !isEmpty( ts[ 1 ] ) ) {
             var b = {};
             if( ts[ 1 ].length == 1 ) {
               b = getBody( ts[ 1 ][ 0 ], "\nCould not relocate to:\n\"" + args.location + "\"" );
@@ -1024,7 +1027,7 @@ var torrentColumns = {
       globals.currentTorrent = torrent;
       showPopup( "popupQueue", function( e ) {
         var action = e.target.id;
-        doRequest( "queue-move-" + action, { ids: filterDisplayed( getSelected() ).pluck( "id" ) }, getQueuePositions.curry( null ) );
+        doRequest( "queue-move-" + action, { ids: getSelected().pluck( "id" ) }, getQueuePositions.curry( null ) );
       }, e, function( popup, e ) {
         return e.shiftKey;
       } );
@@ -1909,7 +1912,7 @@ function updateFields( object ) {
 }
 
 function getErrorData( ids ) {
-  if( ids.isEmpty() ) {
+  if( isEmpty( ids ) ) {
     return;
   }
   doTorrentGet( [ "id", "error", "errorString" ], ids, function( response ) {
@@ -1921,7 +1924,7 @@ function getErrorData( ids ) {
 }
 
 function getFieldData( ids ) {
-  if( ids.isEmpty() ) {
+  if( isEmpty( ids ) ) {
     return;
   }
   doTorrentGet( globals.staticFields.concat( globals.updateFields ), ids, function( response ) {
@@ -1931,7 +1934,7 @@ function getFieldData( ids ) {
 }
 
 function getMagnetData( ids ) {
-  if( ids.isEmpty() ) {
+  if( isEmpty( ids ) ) {
     return;
   }
   doTorrentGet( [ "id", "hashString", "metadataPercentComplete" ], ids, updateTorrents );
@@ -2025,7 +2028,7 @@ function updateOrder( columnsObject, property ) {
 
 function sortTorrents( property, reverse ) {
   var torrents = globals.torrents;
-  if( torrents.isEmpty() ) {
+  if( isEmpty( torrents ) ) {
     return;
   }
 
@@ -2097,8 +2100,8 @@ function renderTorrents( refresh ) {
         }
         var render = c.render || torrentFields[ k ].render;
         if( false !== render ) {
-          var content = globals.shift.settings.screenshotMode && torrentFields[ k ].sss ? k.capitalize() + " " + torrent.id : torrent[ k ];
           var cell = row.down( "." + k );
+          var content = globals.shift.settings.screenshotMode && torrentFields[ k ].sss ? k.capitalize() + " " + torrent.id : torrent[ k ];
           updateElement( cell, undefined === render || true === render ? content : render( content, torrent, k, cell ) );
         }
       }
@@ -2769,7 +2772,7 @@ function showDetails( torrent ) {
           Object.without( t, [ "_dirty", "_display", "_index", "_node", "_selected", "id" ] );
           copyObjectToClipboard( t );
         }
-        if( !Object.isEmpty( data ) ) {
+        if( !isEmpty( data ) ) {
           if( data.hasOwnProperty( "downloadDir" ) ) {
             data[ "location" ] = data[ "downloadDir" ];
             delete data[ "downloadDir" ];
@@ -2969,7 +2972,7 @@ function showSessionTable() {
           if( clipboardLed.value ) {
             copyObjectToClipboard( globals.shift.session );
           }
-          if( !Object.isEmpty( data ) ) {
+          if( !isEmpty( data ) ) {
             Object.extend( globals.shift.session, data );
             doRequest( "session-set", data,  function( response ) {
               var m = { body: prettify( data ) };
@@ -3002,7 +3005,7 @@ var shiftFields = {
 
 function stopSeeding() {
   var minSeeders = $( "s_minSeeders" ).down( "input" ).value;
-  var status = globals.version < 2.4 ? 8 : 6;
+  var status = globals.version < 14 ? 8 : 6; // 2.40
   var seedingTorrents = globals.torrents.filter( function( torrent ) {
     return torrent.status == status;
   } );
@@ -3034,7 +3037,7 @@ function addTrackersToTorrents( ids, trackers ) {
       enableTrackerButton();
     }
     else { // Any torrent has all trackers means iterate all torrents.
-      ids = ids.length ? ids : globals.torrents.pluck( "id" );
+      ids = isEmpty( ids ) ? globals.torrents.pluck( "id" ) : ids;
       globals.torrentIndex = 0;
       request.onSuccess = function( response ) {
         if( globals.torrentIndex < ids.length ) {
@@ -3122,7 +3125,7 @@ function showShiftTable() {
       addTrackersToTorrents( [], trackers );
     } );
     t.body.down( "td#s_trackers" ).insert( trackerButton );
-    if( globals.version >= 2.4 ) {
+    if( globals.version >= 14 ) { // 2.40
       t.body.insert( rR().insert( rC().insert( "Set queue positions" ) ).insert( rC().insert(
         rB( { value: "Date" } ).observe( "click", setQueuePositionBy.curry( "addedDate" ) )
       ) ) );
@@ -3130,7 +3133,7 @@ function showShiftTable() {
     t.body.insert(
       rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function( e ) {
         var data = getKeyValuePairs( globals.shift.settings, "s_", shiftFields );
-        globals.shift.settingsChanged = !Object.isEmpty( data );
+        globals.shift.settingsChanged = !isEmpty( data );
         if( globals.shift.settingsChanged ) {
           var date = new Date();
           Object.extend( globals.shift.settings, data );
@@ -3628,7 +3631,7 @@ function loadFile( file, onSuccess ) {
 }
 
 function processFiles( files, target, paused ) {
-  if( !files.length ) {
+  if( isEmpty( files ) ) {
     return;
   }
 
@@ -3809,7 +3812,7 @@ function handleKeyDown( e ) {
     else if( 38 == kc || 40 == kc ) { // up, down
       preventDefault( e );
       var rows = $( "torrentBody" ).select( "tr" ).findAll( Element.visible );
-      if( rows.length > 0 ) {
+      if( !isEmpty( rows ) ) {
         rows.invoke( "toggleClassName", "active", false );
         globals.currentIndex += 38 == kc ? -1 : 1;
         globals.currentIndex = globals.currentIndex.limit( 0, rows.length - 1 );
@@ -3939,11 +3942,11 @@ document.observe( "dom:loaded", function() {
   globals.html.observe( "drop", function( e ) {
     e.stop();
     var files = Array.from( e.dataTransfer.files );
-    if( files.length > 0 ) {
-      processFiles( files );
+    if( isEmpty( files ) ) {
+      processURLs( [ e.dataTransfer.getData( "URL" ) ] );
     }
     else {
-      processURLs( [ e.dataTransfer.getData( "URL" ) ] );
+      processFiles( files );
     }
   } );
 
@@ -3963,18 +3966,21 @@ document.observe( "dom:loaded", function() {
   // Get first time session data and initialize page.
   doRequest( "session-get", {}, function( response ) {
     globals.shift.session = getArguments( response );
-    globals.version = parseFloat( globals.shift.session.version );
-    if( globals.version < 3.01 ) {
-      removeFields( [ "file-count", "primary-mime-type" ] );
+    globals.version = parseInt( globals.shift.session[ "rpc-version" ] );
+    if( globals.version < 17 ) { // 4.00
+      removeFields( [ "file-count", "group", "percentComplete", "primary-mime-type", "trackerList" ] );
     }
-    if( globals.version < 3.00 ) {
+    else {
+      removeFields( [ "trackerAdd", "trackerRemove", "trackerReplace" ] );
+    }
+    if( globals.version < 16 ) { // 3.00
       removeFields( [ "session-id", "labels", "editDate" ] );
     }
-    if( globals.version < 2.80 ) {
+    if( globals.version < 15 ) { // 2.80
       removeFields( [ "etaIdle" ] );
       fileMenuItems.remove( "Rename" );
     }
-    if( globals.version < 2.4 ) {
+    if( globals.version < 14 ) { // 2.40
       removeFields( [ "queuePosition", "isStalled" ] );
       torrentActionLabels.remove( "Start Now" );
       globals.torrentStatus = {
@@ -3991,7 +3997,7 @@ document.observe( "dom:loaded", function() {
       } );
       globals.staticFields.remove( "queuePosition" );
     }
-    if( globals.version < 1.7 ) {
+    if( globals.version < 6 ) { // 1.70
       torrentActionLabels.remove( "Relocate" );
     }
 
