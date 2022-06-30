@@ -3970,9 +3970,6 @@ document.observe( "dom:loaded", function() {
     if( globals.version < 17 ) { // 4.00
       removeFields( [ "file-count", "group", "percentComplete", "primary-mime-type", "trackerList" ] );
     }
-    else {
-      removeFields( [ "trackerAdd", "trackerRemove", "trackerReplace" ] );
-    }
     if( globals.version < 16 ) { // 3.00
       removeFields( [ "session-id", "labels", "editDate" ] );
     }
