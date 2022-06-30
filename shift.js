@@ -1460,7 +1460,7 @@ function renameFiles( renames ) {
     return;
   }
 
-  args.ids = globals.currentTorrent.id;
+  args.ids = [ globals.currentTorrent.id ];
   var node = args.node;
   delete args.node;
 
