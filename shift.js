@@ -3491,14 +3491,19 @@ function renderPage() {
           this.observe( "mousedown", function( e ) {
             var xs = e.pageX - header.offsetLeft;
             var ys = e.pageY - header.offsetTop;
+            var w = window.innerWidth - header.offsetWidth - 8;
+            var h = window.innerHeight - header.offsetHeight - 8;
             this.observe( "mousemove", function( e ) {
-              header.style.left = e.pageX - xs + "px";
-              header.style.top = e.pageY - ys + "px";
+              header.style.left = Math.max( 8, Math.min( e.pageX - xs, w ) ) + "px";
+              header.style.top = Math.max( 8, Math.min( e.pageY - ys, h ) ) + "px";
             } );
-            this.observe( "mouseup", function( e ) {
+            var stopHandler = function( e ) {
+              this.stopObserving( "mouseleave" );
               this.stopObserving( "mousemove" );
               this.stopObserving( "mouseup" );
-            } );
+            }
+            this.observe( "mouseleave", stopHandler );
+            this.observe( "mouseup", stopHandler );
           } );
         break;
         default:
