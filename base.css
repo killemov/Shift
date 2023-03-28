@@ -1,16 +1,72 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2021 Killemov.
+ * © 2023 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
  * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}
+
+html.base a {
+  color: purple;
+}
+
+html.base a#license {
+  bottom: 4px;
+  left: 8px;
+  position: absolute;
+}
+
 html {
   background-color: white;
   cursor: auto;
+}
+
+@keyframes fullcircle {
+  from {
+    filter: hue-rotate( 0deg );
+  }
+  to {
+    filter: hue-rotate( 360deg );
+  }
+}
+
+html.base {
+  animation: 3600s linear 0s infinite fullcircle;
+}
+
+html.base ::selection {
+  color: white;
+  background: purple;
+}
+
+html.dark {
+  -moz-filter: invert( 85% );
+  -ms-filter: invert( 85% );
+  -o-filter: invert( 85% );
+  -webkit-filter: invert( 85% );
+  filter: invert( 85% );
+}
+
+@keyframes fullcircle_dark {
+  from {
+    filter: hue-rotate( 0deg ) invert( 85% );
+  }
+  to {
+    filter: hue-rotate( 360deg ) invert( 85% );
+  }
+}
+
+html.base.dark {
+  animation-name: fullcircle_dark;
 }
 
 body {
@@ -43,8 +99,9 @@ ul#menu li:hover {
   cursor: pointer;
 }
 
-ul#menu li.selected {
-  color: purple;
+html.base ul#menu li.selected {
+  color: white;
+  background: purple;
 }
 
 .popup div.menuSpacer {
@@ -61,7 +118,7 @@ body.box div#filterContainer {
   margin: 8px;
 }
 
-div.filter, div.drop {
+div.filter {
   margin: 2px 8px;
   white-space: nowrap;
 }
@@ -78,8 +135,12 @@ label {
   width: 6em;
 }
 
-div.drop div {
+div.upload {
+  max-width: 600px;
   padding: 3px 4px 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 div.name {
@@ -112,7 +173,7 @@ div#popups {
   position: absolute;
 }
 
-.popup div {
+.popup > div {
   margin: 4px 0;
 }
 
@@ -152,10 +213,13 @@ div.dialog > div:last-child:after {
   padding-right: 4px;
 }
 
-.popup ul li:hover {
+html.base .popup ul li:hover {
+  cursor: pointer;
+}
+
+html.base .popup ul li:hover {
   background-color: lightgray;
   color: purple;
-  cursor: pointer;
 }
 
 div#popupAbout {
@@ -166,6 +230,39 @@ div#popupAdd input[readonly="readonly"].styled {
   cursor: pointer;
 }
 
+div#popupAdd span#labelDir {
+  padding-left: 18px;
+}
+
+html.base div#popupAdd div.pathselect {
+  width: 302px;
+}
+
+html.base div#popupDialog div.pathselect {
+  width: calc(100% - 32px);
+}
+
+div#popupBatchRename input.styled {
+  width: 32em;
+}
+
+div#popupBatchRename span.example {
+  width: 32em;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: clip;
+}
+
+div#popupBatchRename led {
+  margin-left: 8px;
+  margin-right: -1px;
+}
+
+html.base div#popupUpload > div:last-child led,
+html.base div#popupUpload > div:last-child button:first-of-type {
+  margin-left: 8px;
+}
+
 div#uploads {
   max-height: 20em;
   max-width: 48em;
@@ -173,13 +270,50 @@ div#uploads {
   overflow-x: hidden;
 }
 
-span#labelDir {
-  padding-left: 18px;
+div#paths {
+  display: block;
+  min-height: 8em;
+  min-width: 314px;
+  margin-bottom: 0px;
+  padding: 0px 4px;
+  line-height: 1.3em;
+  overflow: auto;
+  width: unset;
+  resize: both;
+  white-space: pre;
 }
 
-span#port-is-open {
+html.base div#paths {
+  background-attachment: local;
+  background-image: url('data:image/svg+xml;utf8,<svg width="4096" height="20" viewBox="0 0 4094 20" xmlns="http://www.w3.org/2000/svg"><path stroke="darkgray" d="M -1,19.6 h 4096" /></svg>');
+  background-position: -1px 0px;
+  line-height: 20px;
+}
+
+led#port-is-open {
   float: right;
-  margin-top: 6px;
+}
+
+html.base led#port-is-open {
+  margin-right: 0px;
+  margin-top: 4px;
+}
+
+div.additional span.label {
+  display: inline-block;
+  width: 2em;
+}
+
+html.base div.additional input {
+  width: calc(100% - 2em - 6px);
+}
+
+html.base div.additional select {
+  width: calc(100% - 2em);
+}
+
+html.base div.additional led {
+  margin-left: 10px;
 }
 
 li#high, li#normal, li#low, li#none {
@@ -188,21 +322,21 @@ li#high, li#normal, li#low, li#none {
 }
 
 .styled {
-  border: 1px solid lightgray;
-  font-size: inherit;
+  font: inherit;
   text-align: left;
 }
 
-.styled:focus {
+html.base .styled {
+  border: 1px solid lightgray;
+  outline-offset: -1px;
+}
+
+html.base .styled:focus {
   outline: 2px solid purple;
 }
 
-.keyvalue .styled {
-  border: unset;
-}
-
 .filter .styled {
-  margin-right: 2px;
+  margin-right: 1em;
 }
 
 input.styled.number {
@@ -211,13 +345,19 @@ input.styled.number {
 }
 
 button.styled {
+  background-color: lightgray;
   cursor: pointer;
   font: inherit;
   padding: 0.5em;
 }
 
+html.base button.styled {
+  outline-offset: -2px;
+}
+
 div.popup button.styled {
   float: right;
+  margin-left: 8px;
 }
 
 div#filterContainer input.styled[type=text] {
@@ -233,17 +373,16 @@ select.styled {
     linear-gradient( 45deg, transparent 50%, purple 50%),
     linear-gradient( 135deg, purple 50%, transparent 50%);
   background-position:
-    calc(100% - 16px) 0.5em,
-    calc(100% - 8px) 0.5em;
+    calc(1em - 8px) 0.5em,
+    1em 0.5em;
   background-size:
     8px 8px,
     8px 8px;
   background-repeat: no-repeat;
-  padding-right: 2em;
+  padding-left: 2em;
 }
 
 textarea.styled {
-  border: 1px solid lightgray;
   color: inherit;
   font-family: inherit;
   font-size: inherit;
@@ -251,131 +390,304 @@ textarea.styled {
   width: 100%;
 }
 
-span.led {
+led {
   background-color: purple;
   border: 1px solid white;
   color: lightgray;
   display: inline-block;
-  font-size: 1.1em;
-  font-weight: 900;
+  font-size: 12pt;
   height: 12px;
-  margin: 2px;
+  line-height: 11px;
+  margin: 4px;
   overflow: hidden;
-  vertical-align: text-bottom;
+  text-align: center;
+  vertical-align: text-top;
   width: 12px;
 }
 
-span.led:hover {
+led:hover {
   cursor: pointer;
 }
 
-span.led[readonly]:hover {
+led[readonly]:hover {
   cursor: auto;
 }
 
-span.led.high {
-  line-height: 10px;
-  text-align: center;
+html.base div.popup led:first-child,
+html.base td led:first-child {
+  margin-left: 0px;
 }
 
-span.led.low {
-  line-height: 9px;
-  text-align: left;
+html.base table.keyvalue led {
+  margin-bottom: 3px;
+}
+
+html.base led.added {
+  background-color: green;
+}
+
+html.base led.duplicate {
+  background-color: red;
+  font-size: 11pt;
+  line-height: 12px;
+}
+
+html.base led.loading {
+  font-size: 15pt;
+  line-height: 7px;
   text-indent: 2px;
 }
 
-span.led.none {
+led.low {
+}
+
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+led.loading,
+led.processing,
+led.uploading {
+  animation: blinker 1s linear infinite;
+}
+
+html.base led.loaded {
+  background-color: yellow;
+  color: black;
+  font-size: 11pt;
+  line-height: 11px;
+  text-indent: 0px;
+}
+
+html.base led.loading {
+  background-color: blue;
+}
+
+led.none {
   background-color: lightgray;
   color: purple;
 }
 
+html.base led.processing {
+  background-color: purple;
+  line-height: 0.9em;
+  text-indent: -1px;
+}
+
+html.base led.uploading {
+  background-color: purple;
+  font-size: 15pt;
+  line-height: 6px;
+}
+
+div.pathselect.styled {
+  border: medium none;
+  display: inline-block;
+  margin: 0px;
+  padding: 0px;
+  width: 100%
+}
+
+div.pathselect.styled > .styled {
+  margin: 0;
+}
+
+html.base div.pathselect.styled > input.styled {
+  width: calc(100% - 6px);
+}
+
+html.base table.keyvalue div.pathselect.styled > input.styled {
+  width: calc(100% - 8px);
+}
+
+div.pathselect.styled > select.styled {
+  width: 100%;
+}
+
 span.add {
   display: inline-block;
-  width: 32px;
+  width: 3em;
 }
 
 span.rename {
   display: inline-block;
-  width: 64px;
+  width: 5em;
 }
 
 table {
-  border: 1px solid lightgray;
   border-collapse: collapse;
   width: 100%;
 }
 
-table.keyvalue {
-  text-align: left;
+html.base table {
+  border: 1px solid lightgray;
 }
 
 col.menu, col.priority {
   width: 20px;
 }
 
-table#peerTable, table#webseedTable {
+table#pathTable {
+  width: unset;
+}
+
+html.base table#pathTable {
+  margin: -1px 0px -1px -5px;
+}
+
+html.base table#pathTable thead tr {
+  background-color: lightgray;
+}
+
+table#pathTable th.count {
+  text-align: right;
+}
+
+html.base table#pathTable td {
+  border-left: none;
+  border-right: none;
+}
+
+table#pathTable td.path {
+  white-space: nowrap;
+}
+
+table#pathTable td.count,
+table#pathTable td.free,
+table#pathTable td.total {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table#peerTable,
+table#webseedTable {
   margin-top: 2em;
 }
 
-table thead tr th {
-  border: 1px solid lightgray;
-  line-height: 25px;
-  padding: 0 4px;
+td,
+th {
+  padding: 0 ;
+  text-align: right;
+  white-space: nowrap;
+}
+
+th {
   text-align: left;
 }
 
-table#torrentTable thead tr th:not(:first-child) {
+html.base td,
+html.base th {
+  border: 1px solid lightgray;
+  padding: 0 4px;
+}
+
+table#torrentTable th:not(:first-child) {
   cursor: ns-resize;
 }
 
-table tbody tr td {
-  border: 1px solid lightgray;
-  line-height: 25px;
-  padding: 0 4px;
+table#torrentTable th#filterContainerCell {
+  font-weight: normal;
 }
 
-table#fileTable tbody tr td {
-  text-align: right;
+table#torrentTable th#filterContainerCell label {
+  font-weight: bold;
+}
+
+table.keyvalue {
+  text-align: left;
+}
+
+table.keyvalue td {
+  text-align: left;
+  white-space: normal;
+}
+
+table.keyvalue td.key {
   white-space: nowrap;
 }
 
-table#peerTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
+table.keyvalue td#s_download-dir,
+table.keyvalue td#s_incomplete-dir {
+  padding: 0px;
 }
 
-table#torrentTable tbody tr td {
-  text-align: right;
-  white-space: nowrap;
+html.base table.keyvalue td input.styled,
+html.base table.keyvalue td select.styled,
+html.base table.keyvalue td textarea.styled,
+html.base table#trackerTable textarea.styled {
+  border: unset;
+  margin: 0px -4px;
+  padding: 0px 4px;
 }
 
-td.announce, td.errorString, td.name, td.status {
+html.base table.keyvalue div.pathselect > .styled {
+  margin: 0px;
+}
+
+html.base table.keyvalue select.styled {
+  background-position: 4px 0.5em, 12px 0.5em;
+  padding-left: 24px !important;
+}
+
+td.address,
+td.clientName,
+td.flagStr {
+  text-align: left;
+}
+
+table#trackerTable tr.tier {
+  height: 8px;
+}
+
+table#trackerTable tr.tier td {
+}
+
+td.announce,
+td.errorString,
+td.name,
+td.status,
+td.announce {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
   text-align: left;
 }
 
-table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
-  text-align: left;
+html.base table.keyvalue button {
+  margin-left: -4px;
+}
+
+html.base table.keyvalue button + button {
+  margin-left: 0px;
 }
 
 table.keyvalue input {
   width: 100%;
 }
 
-table.keyvalue td#d_labels input {
+td#d_labels input {
   width: 8em;
 }
 
-table#fileTable tbody tr td.name {
-  text-align: left;
+html.base td#s_trackers led:first-of-type {
+  margin-left: 0px;
 }
 
-table#shiftTable button#tracker {
+td#s_styleSheet led,
+td#s_trackers led + led,
+td#s_trackers button {
+  margin-left: 1em;
+}
+
+html.base td#s_trackers textarea {
+  border-bottom: 1px solid lightgray;
+}
+
+table#fileTable td.name {
+  text-align: left;
+  padding-left: calc(0em + 4px); /* This is a template, the 0 gets replaced. */
+}
+
+button#tracker {
   width: 12em;
 }
 
@@ -399,10 +711,17 @@ body.fixed > div#content {
 }
 
 body.box div#header {
-  border: 1px solid lightgray;
   position: fixed;
   right: 9px;
   width: 372px;
+}
+
+html.base body.box div#header {
+  border: 1px solid lightgray;
+}
+
+table.keyvalue td#d_pieces {
+  padding: 0px;
 }
 
 body.box div#stats {
@@ -412,10 +731,32 @@ body.box div#stats {
   width: unset;
 }
 
-canvas.pieces {
-  color: purple;
-  margin-bottom: -4px;
+canvas {
+  border: 0px solid rgba(255, 255, 255, 0); /* marker for NO color, creates HSL gradient */
+  height: 1.1em;
+  margin: 0;
   width: 100%;
+}
+
+html.base canvas {
+  color: purple;
+  height: 1.35em;
+  margin: -1px 0px -4px 0px;
+}
+
+html.base canvas.gradient {
+  border-left: rgba(128, 0, 128, 0);
+  border-right: rgba(128, 0, 128, 1);
+}
+
+table#fileTable th#filePieces {
+  overflow-y: clip;
+  padding: 0;
+}
+
+html.base table#fileTable th canvas.pieces {
+  height: 1.3125em;
+  margin-bottom: -4px;
 }
 
 div#stats span {
@@ -428,25 +769,21 @@ div#stats span.label {
   width: 3.5em;
 }
 
-table#trackerTable tfoot tr td {
-  padding: 0 4px;
-}
-
-span.drop {
-  display: block;
-}
-
 td#d_downloadDir {
   overflow-x: hidden;
   white-space: nowrap;
 }
 
-td#d_downloadDir input {
-  width: calc(100% - 24px);
+html.base td#d_downloadDir div.pathselect {
+  width: calc(100% - 10px);
 }
 
-span#d_move {
-  margin-right: 8px;
+html.base td#d_downloadDir div.pathselect input.styled {
+  width: calc(100% - 12px);
+}
+
+html.base td#d_downloadDir div.pathselect select.styled {
+  width: calc(100% - 4px);
 }
 
 td#d_errorString {
@@ -462,53 +799,9 @@ div.torrents {
   white-space: nowrap;
 }
 
-div.drop div span.led {
-  font-weight: bold;
-  line-height: 1em;
-  margin: 0 4px 0 0;
-  overflow: hidden;
-  text-align: center;
-}
-
-@keyframes blinker {
-  50% { opacity: 0; }
-}
-
-div.drop div span.loading {
-  animation: blinker 1s linear infinite;
-  background-color: blue;
-}
-
-div.drop div span.loaded {
-  background-color: yellow;
-  color: black;
-}
-
-div.drop div span.processing {
-  animation: blinker 1s linear infinite;
-  background-color: purple;
-  line-height: 0.9em;
-  text-indent: -1px;
-}
-
-div.drop div span.uploading {
-  animation: blinker 1s linear infinite;
-  background-color: purple;
-  line-height: 0.9em;
-  text-indent: -1px;
-}
-
-div.drop div span.added {
-  background-color: green;
-}
-
-div.drop div span.duplicate {
-  background-color: red;
-  line-height: 0.7em;
-}
-
-table#torrentTable .labels {
+table#torrentTable span.labels {
   float: right;
+  white-space: nowrap;
 }
 
 .labels span.label {
@@ -523,21 +816,11 @@ table#torrentTable .labels {
 
 .labels span.label.example:before {
   background-image: url( "" );
-  content: '';
+  content: "";
   position: absolute;
   pointer-events: none;
 }
 
 table#detailsTable .labels .label {
   cursor: pointer;
-}
-
-button#addLabel {
-  height: 16px;
-  line-height: 4px;
-  min-width: 16px;
-  padding: 0;
-  text-align: center;
-  vertical-align: inherit;
-  width: 16px;
 }

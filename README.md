@@ -11,15 +11,17 @@ Shift is a web interface for transmission-daemon. It is a complete implementatio
 
 ## Installation.
 
+###### Prerequisite: You have a working installation of Transmission and you can access the web interface.
+
 * Download the zip file from github and unzip on your machine where transmission-daemon resides. (Or use git clone for future easy updating.)
-* Verify that transmission-daemon has proper access to the files. (See chmod and/or chown.)
+* Verify that transmission-daemon has proper access to the files. (See `chmod` and/or `chown`.)
 * Set the [TRANSMISSION_WEB_HOME](https://github.com/transmission/transmission/wiki/Environment-Variables) environment variable to the path to where you placed the Shift files.      Example:
 ```bash
 export TRANSMISSION_WEB_HOME=/my/path/to/the/unzipped/dir
 ```
 *   If transmission-daemon is executed from a script you should put the export command in there.
 *   If transmission-daemon is executed from systemd you should add an Environment line there.  Example:
-```
+```service
 [Service]
 ...
 Environment=TRANSMISSION_WEB_HOME=/my/path/to/the/unzipped/dir
@@ -28,17 +30,29 @@ Environment=TRANSMISSION_WEB_HOME=/my/path/to/the/unzipped/dir
 * (Re)start transmission-daemon.
 * Once started any changes to index.html, shift.js or any other file will be picked up after a page reload.
 
-## Drag & drop interface.
+## Drag & drop.
 
 You can drop multiple files and links anywhere on the Shift page. Currently supported are torrent files, torrent links, magnet links and text files containing torrent links or magnet links. Using the [FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader) for uploading torrents to transmission-daemon was invented here. See [Can I use](https://caniuse.com/#search=filereader) for browser compatibility.
 
-## Change less does more.
+## Files not found? Remove + re-add? Recycle!
 
-Why reload semi-static data each and every AJAX call? Shift tries to minimize the data consumption from transmission-daemon. This means using less bandwidth and less processing for transmission-daemon. Because of this saving the smaller requests can be made more often. Shift also works hard to not update cell data when it doesn't need to.
+In rare cases a started torrent that stopped before any files could be written to disk cannot be restarted by Transmission. You can only remove and re-add the torrent to continue downloading the payload. If you have configured the torrentLink properly and you can download a torrent file from the torrent details page a Recycle option will be available in the torrents context menu of the main torrents view.
 
 ## Move content server-side.
 
 You can (batch!) move your torrent content on the server with Shift. Select one or more torrents and select Relocate from the menu or go to the details page of a torrent and change the "downloadDir" property. The "Move" indicator needs to be active to actually move the data. Be aware that moving content across file-system boundaries takes resources away from other tasks on the server, including transmission-daemon itself. Beware of servercide.
+
+## Paths! Paths! Paths!
+
+For the few of us who use more than just the default download location enter the path selector. No more free-form error-prone typing of paths ... unless you still want to. Go to the Shift settings to edit the collection of paths. You can scrape previously used download locations from torrents. You can also use scrape to (de)select torrents from a specific location. After applying the changes the list of paths is used where torrent locations can be set. If you want to use a custom path select the &hellip; option (ellipsis) and work from the previously selected path. If you change your mind just clear the input box and the select box will reappear. Please note that the Shift configuration is stored in a cookie and that storage is limited to 4K. You can move paths to shift.json which does not have this limit.
+
+## Hello darkness ...
+
+You can join the dark side by selecting "Dark" next to the style sheet selector in the Shift settings. Or ... you will join automatically because Shift follows the browser which follows the OS. For own-rolled style sheets: A "dark" class is added to the "html" tag and then by default a negative filter is applied to the entire page. Style sheets that are dark by nature should override this style to do nothing.
+
+## Change less does more.
+
+Why reload semi-static data each and every AJAX call? Shift tries to minimize the data consumption from transmission-daemon. This means using less bandwidth and less processing for transmission-daemon. Because of this saving the smaller requests can be made more often. Shift also works hard to not update cell data when it doesn't need to.
 
 ## Column based sorting and filtering.
 
@@ -66,6 +80,7 @@ For testing purposes you could use transmission-daemon itself to serve the linke
 </figure>
 
 ## Future/feature proof-ish.
+
 The session configuration and shift configuration pages are dynamically generated from the data itself. So when developers add a simple field to the data, Shift will automagically display it and make it editable. Only if you, developer, need to hide a field, make it read-only or make it special/complex then you need to edit the shift.js file. If you activate "Copy to clipboard" and click "Apply", the data will be available in JSON format for pasting in any text editor.
 
 ## Session configuration
@@ -76,6 +91,7 @@ The session configuration and shift configuration pages are dynamically generate
 </figure>
 
 ## Shift configuration
+
 <figure>
 <img src="https://user-images.githubusercontent.com/932370/50279656-9d9e5080-044a-11e9-9d63-c73b7f9e0553.png" alt="Shift configuration"/>
 <figcaption>Shift configuration</figcaption>
@@ -94,9 +110,6 @@ Shift has some additional functionality on the Shift configuration page. The pag
 * **minSeeders** Stop seeding torrents that have more than a minimum number of seeders.
 * **trackers** Batch add tracker URLs to all torrents.
 * **Set queue positions** Every time Transmission is started the torrents are queued randomly. Clicking "Date" reorders the torrents queuePositions by addedDate.
-
-## Files not found? Remove + re-add? Recycle!
-In rare cases a started torrent that stopped before any files could be written to disk cannot be restarted by Transmission. You can only remove and re-add the torrent to continue downloading the payload. If you have configured the torrentLink properly and you can download a torrent file from the torrent details page a Recycle option will be available in the torrents context menu of the main torrents view.
 
 ## Keyboard navigation.
 
@@ -126,7 +139,7 @@ In rare cases a started torrent that stopped before any files could be written t
 | <kbd>**]**</kbd>                   | Restore selection                    |
 | <kbd>**\|**</kbd>                  | Select visible torrents              |
 
- ## Open for mutilation.
+## Open for mutilation.
 
 * "I really loved your old-skool green-on-black theme, just loved it!"
 No problemo, it is still around but has been renamed to terminal.css. You can change the Session/Shift/styleSheet attribute.
@@ -160,4 +173,4 @@ Ah, then you(!) have some 'splaining to do... and probably some work as well.
 <sup>\* Swap in your favorite browser here.</sup>
 
 This work is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
- [![enter image description here](https://licensebuttons.net/l/by-sa/3.0/88x31.png)](http://creativecommons.org/licenses/by-sa/4.0/)
+ [![enter image description here](https://licensebuttons.net/l/by-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-sa/4.0/)

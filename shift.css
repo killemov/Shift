@@ -1,21 +1,95 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2021 Killemov.
+ * © 2023 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
  * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
-a {
-  color: #5CA941;
+html ::selection {
+  color: white;
+  background: #5DA941;
+}
+
+html.dark ::selection {
+  color: black;
 }
 
 body {
   font-family: Arial, sans-serif;
   font-size: 11pt;
   margin: 2px;
+}
+
+a {
+  color: #5DA941;
+  text-decoration: none;
+}
+
+led {
+  background-color: #5DA941;
+  background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
+  border-color: #5DA941 #9BE281 #9BE281 #5DA941;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 8px;
+  color: #3F3F3F;
+  font-size: 1.1em;
+  font-weight: 900;
+  height: 12px;
+  margin: 2px;
+  text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
+  width: 12px;
+}
+
+led.added,
+led.high {
+  font-size: 12pt;
+  line-height: 12px;
+}
+
+led.duplicate {
+  line-height: 12px;
+  font-size: 10pt;
+}
+
+led.loaded {
+  font-size: 10pt;
+  line-height: 13px;
+  text-indent: 0px;
+}
+
+led.loading {
+  line-height: 0.6em;
+  text-indent: 0.15em;
+}
+
+led.low {
+  font-size: 12pt;
+  line-height: 10px;
+  text-indent: 0em;
+}
+
+led.none {
+  background-color: #EFEFEF;
+  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
+  border: 1px solid #D5D5D5;
+  color: #3F3F3F;
+}
+
+led.uploading {
+  font-size: 13pt;
+  line-height: 7px;
+}
+
+div.filter led {
+  margin-left: 4px;
+}
+
+led.clipboard {
+  margin-left: 1em;
 }
 
 input {
@@ -46,9 +120,9 @@ body.box ul#menu {
 }
 
 ul#menu li {
-  background-color: #60B044;
-  background-image: linear-gradient( -8deg, #60B044, #8ADD6D );
-  border-color: #5CA941 #8ADD6D #8ADD6D #5CA941;
+  background-color: #5DA941;
+  background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
+  border-color: #5DA941 #9BE281 #9BE281 #5DA941;
   border-style: solid;
   border-width: 1px;
   border-radius: 4px;
@@ -58,9 +132,17 @@ ul#menu li {
   text-shadow: 0 1px 0 rgba( 0, 0, 0, 0.15 );
 }
 
+html.dark ul#menu li {
+  color: #FFFFFF;
+}
+
 ul#menu li.selected {
   color: #FFFFFF;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
+}
+
+html.dark ul#menu li.selected {
+  color: #3F3F3F;
 }
 
 ul#menu li.sub {
@@ -79,11 +161,12 @@ body.box div#filterContainer {
   border-radius: 4px;
 }
 
-div.drop div {
+div.upload {
   border: 1px solid #D5D5D5;
-  border-radius: 4px;
+  border-radius: 2px;
   font-weight: normal;
-  line-height: 12px;
+  line-height: 1.2em;
+  margin-bottom: 4px;
 }
 
 .popup {
@@ -92,12 +175,16 @@ div.drop div {
   box-shadow: 8px 8px 16px #3F3F3F;
 }
 
+html.dark .popup {
+  box-shadow: 8px 8px 16px #FFFFFF;
+}
+
 .dialog {
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border-radius: 8px;
 }
 
-.dialog div:last-child .styled {
+.dialog > div:last-child .styled {
   margin-left: 8px;
 }
 
@@ -108,9 +195,9 @@ div.drop div {
 }
 
 .popup ul li:hover {
-  background-color: #60B044;
-  background-image: linear-gradient( -8deg, #60B044, #8ADD6D );
-  border: 1px solid #5CA941;
+  background-color: #5DA941;
+  background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
+  border: 1px solid #5DA941;
   color: #FFFFFF;
 }
 
@@ -118,8 +205,17 @@ div.drop div {
   border: 1px solid #D5D5D5;
 }
 
-span#labelDir {
-  padding-left: 18px;
+div#popupUpload > div:last-child led:first-of-type {
+  margin-left: 0px;
+}
+
+div#popupUpload > div:last-child led,
+div#popupUpload > div:last-child button:first-of-type {
+  margin-left: 8px;
+}
+
+led#port-is-open {
+  margin-right: -4px;
 }
 
 .styled {
@@ -129,7 +225,7 @@ span#labelDir {
 }
 
 .styled:focus {
-  outline: 2px solid #60B044;
+  outline: 2px solid #5DA941;
 }
 
 .filter .styled {
@@ -142,9 +238,9 @@ input.styled, textarea.styled {
 }
 
 button.styled {
-  background-color: #60B044;
-  background-image: linear-gradient( -8deg, #60B044, #8ADD6D );
-  border-color: #5CA941 #8ADD6D #8ADD6D #5CA941;
+  background-color: #5DA941;
+  background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
+  border-color: #5DA941 #9BE281 #9BE281 #5DA941;
   border-style: solid;
   border-width: 1px;
   color: #FFFFFF;
@@ -156,8 +252,9 @@ button.styled {
 
 select.styled {
   background-image:
-    linear-gradient( 45deg, transparent 50%, #60B044 50% ),
-    linear-gradient( 135deg, #60B044 50%, transparent 50% );
+    linear-gradient( 45deg, transparent 50%, #5DA941 50% ),
+    linear-gradient( 135deg, #5DA941 50%, transparent 50% );
+  background-position: calc(1em - 8px) 0.4em, 1em 0.4em;
   border: 1px solid #D5D5D5;
 }
 
@@ -166,46 +263,30 @@ select.styled option {
 }
 
 select.styled option:hover {
-  background-color: #60B044;
+  background-color: #5DA941;
+}
+
+.keyvalue select.styled {
+  border: unset;
+  background-position: 2px 0.4em, 10px 0.4em;
+  padding-left: 22px;
 }
 
 .keyvalue textarea.styled {
   border: 1px solid #D5D5D5;
 }
 
-span.led {
-  background-color: #60B044;
-  background-image: linear-gradient( -8deg, #60B044, #8ADD6D );
-  border-color: #5CA941 #8ADD6D #8ADD6D #5CA941;
-  border-style: solid;
-  border-width: 1px;
-  border-radius: 8px;
-  color: #3F3F3F;
-  font-size: 1.1em;
-  font-weight: 900;
-  height: 12px;
-  margin: 2px;
-  text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
-  width: 12px;
+div#popupAdd div.pathselect.styled {
+  width: 345px;
 }
 
-span.led.high {
-  line-height: 12px;
-  text-align: center;
+div#popupDialog div.pathselect.styled {
+  width: calc(100% - 30px);
 }
 
-span.led.low {
-  line-height: 10px;
-  padding-left: 1px;
-  text-align: left;
-  width: 11px;
-}
-
-span.led.none {
-  background-color: #EFEFEF;
-  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
-  border: 1px solid #D5D5D5;
-  color: #3F3F3F;
+div.upload span {
+  margin-bottom: 0px;
+  margin-right: 6px;
 }
 
 table {
@@ -227,7 +308,7 @@ table tbody tr:hover {
   background-color: rgba( 239, 239, 239, 0.5 );
 }
 
-table tbody tr td {
+table td {
   border: none;
   line-height: unset;
   padding: 0 4px;
@@ -241,8 +322,8 @@ col.address {
   width: 128px;
 }
 
-col.announce {
-  width: 384px;
+col.rateDownload, col.rateUpload {
+  width: 72px;
 }
 
 col.announce, col.clientName, col.name, col.value {
@@ -288,12 +369,6 @@ col.status {
   width: 120px;
 }
 
-td.announce, td.errorString, td.name, td.status {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 body.normal div#header {
   height: 74px;
 }
@@ -317,8 +392,16 @@ body.box div#header {
   width: 372px;
 }
 
-canvas.pieces {
-  color: #5CA941;
+html.dark body.box div#header {
+  box-shadow: 8px 8px 16px #FFFFFF;
+}
+
+canvas {
+  border-left: rgba(93, 169, 65, 0);
+  border-right: rgba(93, 169, 65, 1);
+  color: #5DA941;
+  height: 1.4em;
+  margin-bottom: -4px;
 }
 
 div#stats {
@@ -337,6 +420,47 @@ body.fixed div#stats {
   margin-right: 12px;
 }
 
-span.led.clipboard {
-  margin: 0 8px 0 16px;
+table.keyvalue div.pathselect {
+  margin-left: 4px;
+  width: calc(100% - 4px);
+}
+
+table.keyvalue div.pathselect.styled > input.styled {
+  width: calc(100% - 4px);
+}
+
+div#popupAdd  div.pathselect.styled > input.styled,
+div#popupDialog div.pathselect.styled > input.styled {
+  width: calc(100% - 5px);
+}
+
+td#d_downloadDir div.pathselect {
+  margin-left: 4px;
+  width: calc(100% - 18px);
+}
+
+td#d_downloadDir div.pathselect input.styled {
+  width: calc(100% - 4px);
+}
+
+table#trackerTable tr.tier {
+  height: 0px;
+}
+
+table#trackerTable tr.tier td {
+  border-top: 1px solid lightgray;
+}
+
+table#trackerTable tfoot tr td {
+  vertical-align: top;
+}
+
+table#trackerTable tfoot tr td textarea.styled {
+  height: 4.5em;
+  padding-top: 0px;
+  margin-top: 0;
+}
+
+table#trackerTable tfoot tr td textarea.styled.list {
+  height: 9em;
 }

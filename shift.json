@@ -1,6 +1,9 @@
 {
   "confirmRemove": false,
+  "confirmStartAll": true,
+  "confirmStopAll": false,
   "confirmTrash": true,
+  "dark": false,
   "enablePreloading": false,
   "fileLink": "http://localhost/downloads/",
   "fileLinkEnabled": false,
@@ -12,6 +15,8 @@
   "incompleteFolderLinkEnabled": false,
   "minSeeders": 8,
   "notificationLevel": 0,
+  "paths": [],
+  "pathsPersistent": false,
   "registerMagnetHandler": false,
   "screenshotMode": false,
   "showSpeedTitle": false,
@@ -21,5 +26,7 @@
   "styleSheet": [ "shift.css", "touch.css", "terminal.css", "base.css" ],
   "torrentLink": "http://localhost/torrents/",
   "torrentLinkEnabled": false,
+  "torrentLinkTemplate": "wget \"${torrentLink}\" -O \"${torrent.name}.torrent\"",
+  "torrentLinkTemplateEnabled": false,
   "trackers": ""
 }

@@ -1,18 +1,20 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2022 Killemov.
+ * © 2023 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
  * letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
+const nop = Function.prototype;
+
 try {
   console.assert( 1 );
 }
 catch( ex ) {
-  var _alert = function( msg ) {
+  const _alert = function( msg ) {
     alert( msg );
   }
   console = {
@@ -21,77 +23,46 @@ catch( ex ) {
   }
   [ "assert", "clear", "count", "debug", "dir", "dirxml", "group", "groupCollapsed", "groupEnd", "info", "log", "memoryProfile",
     "memoryProfileEnd", "profile", "profileEnd", "table", "time", "timeEnd", "timeStamp", "trace", "warn" ].each( function( k ) {
-      console[ k ] = function() {};
+      console[ k ] = nop;
   } );
 }
 
-function preventBubbling( e ) {
-  if( e ) {
-    e.stopPropagation();
-  }
-}
-
-function preventDefault( e ) {
-  if( e ) {
-    e.stop();
-  }
-}
-
-function createId( prefix, label ) {
-  return prefix + label.toLowerCase().replace( /\s/g, "_" ).underscore();
-}
-
-function rE( tag, attributes, content ) {
-  return new Element( tag, attributes ).insert( content );
-}
-
-function rA( href, text, attributes ) {
-  return rE( "a", Object.extend( { href: href, target: "_blank" }, attributes ), undefined === text ? unescape( href ) : text );
-}
-
-function rB( attributes ) {
-  attributes = Object.extend( { "class": "styled apply", type: "button", value: "Apply" }, attributes );
-  var value = attributes.value;
-  delete attributes.value;
-  return rE( "button", attributes, value );
-}
-
-var rC = rE.curry( "td" );
-var rD = rE.curry( "div" );
-function rI( value, attributes ) {
-  return rE( "input", Object.extend( { "class": "styled", type: "text", value: value }, attributes ) )
-    .observe( "keydown", preventBubbling )
-    .observe( "focus", handleFocus );
-}
-
-function rM( label, click, attributes ) {
-  attributes = Object.extend( { id: createId( "menu_", label ) }, attributes );
-  return rE( "li", attributes ).insert( label ).observe( "click", click );
-}
-var rR = rE.curry( "tr" );
-var rS = rE.curry( "span" );
-var rT = rE.curry( "textarea", { "class": "styled" } );
-
 Object.extend( Object, {
-  copyNestedProperties: function( source, target, keys, nestedKeys ) {
+  copyNestedProperties: function( o, target, keys, nestedKeys ) {
     keys.each( function( k ) {
-      if( !Object.prototype.hasOwnProperty.call( source, k ) ) {
+      if( !Object.prototype.hasOwnProperty.call( o, k ) ) {
         return;
       }
       if( nestedKeys ) {
-        Object.copyNestedProperties( source[ k ], target[ k ], nestedKeys );
+        Object.copyNestedProperties( o[ k ], target[ k ], nestedKeys );
       }
       else {
-        target[ k ] = source[ k ];
+        target[ k ] = o[ k ];
       }
     } );
     return target;
   },
-
+  diff: function( o, c ) {
+    const result = {}
+    for( var k in o ) {
+      if( !c.hasOwnProperty( k ) || JSON.stringify( o[ k ] ) !== JSON.stringify( c[ k ] ) ) {
+        result[ k ] = o[ k ];
+      }
+    }
+    return result;
+  },
+  filter: function( o, iterator ) {
+    const result = {};
+    for( var k in o ) {
+      if( iterator.call( iterator, o[ k ], k ) ) {
+        result[ k ] = o[ k ];
+      }
+    }
+    return result;
+  },
   isBoolean: function( o ) {
     return "boolean" === typeof o;
   },
-
   isEmpty: function( o ) {
     for( var k in o ) {
       if( Object.prototype.hasOwnProperty.call( o, k ) ) {
@@ -100,27 +71,26 @@ Object.extend( Object, {
     }
     return true;
   },
-
-  select: function( o, iterator ) {
-    var result = {};
-    for( var k in o ) {
-      if( iterator.call( iterator, o[ k ], k ) ) {
-        result[ k ] = o[ k ];
-      }
-    }
-    return result;
-  },
-
   sort: function( o ) {
-    var result = {};
-    Object.keys( o ).sort().forEach( function( k ) {
+    const result = {};
+    Object.keys( o ).sort().each( function( k ) {
       result[ k ] = o[ k ];
     } );
     return result;
   },
-
-  without: function( o, keys ) {
-    keys.each( function( k ) { delete o[ k ] } );
+  without: function() {
+    const keys = Array.prototype.slice.call( arguments ).flatten();
+    var o = keys.shift();
+    o && keys.each( function( k ) {
+      if( -1 === k.indexOf( "." ) ) {
+        delete o[ k ];
+      }
+      else {
+        k = k.split( "." );
+        const p = o[ k.shift() ];
+        p && Object.without( p, k );
+      }
+    } );
     return o;
   }
 } );
@@ -132,19 +102,12 @@ Object.extend( Number.prototype, {
 } );
 
 Object.extend( Array.prototype, {
-  concatUnique: function( element ) {
-    if( Object.isArray( element ) ) {
-      var self = this;
-      element.each( function( element ) {
-        self.pushUnique( element );
-      } )
+  concatUnique: function( e ) {
+    if( 1 < arguments.length ) {
+      e = Array.prototype.slice.call( arguments );
     }
-    else {
-      this.pushUnique( element );
-    }
-    return this;
+    return this.pushUnique( e );
   },
-
   insert: function( i ) {
     this.length = i > this.length ? i : this.length;
     i = i < 0 ? this.length : i;
@@ -152,70 +115,94 @@ Object.extend( Array.prototype, {
     this.splice.apply( this, [ i, 0 ].concat( Array.slice( arguments, 1 ) ) );
     return this;
   },
-
+  hideAll: Enumerable.invoke.curry( "hide" ),
   isEmpty: function() {
      return 0 === this.length;
   },
-
-  pushUnique: function( element ) {
-    if( !this.include( element ) ) {
-      this.push( element )
+  includes: Array.prototype.includes || Array.prototype.include,
+  pushUnique: function( e ) {
+    if( 1 < arguments.length ) {
+      e = Array.prototype.slice.call( arguments );
     }
-    return this;
-  },
-
-  remove: function( element ) {
-    if( Array.isArray( element ) ) {
-      for( var i = 0, len = element.length; i < len; ++i ) {
-         this.remove( element[ i ] );
+    if( Object.isArray( e ) ) {
+      for( var i = 0, len = e.length; i < len; ++i ) {
+        this.pushUnique( e[ i ] );
       }
       return this;
     }
-    var i = this.indexOf( element );
-    if( i >= 0 ) {
-        this.splice( i, 1 );
+
+    if( !this.includes( e ) ) {
+      this.push( e )
     }
     return this;
   },
+  remove: function( e ) {
+    if( Array.isArray( e ) ) {
+      for( var i = 0, len = e.length; i < len; ++i ) {
+         this.remove( e[ i ] );
+      }
+      return this;
+    }
 
+    var result = undefined;
+    const f = Object.isFunction( e );
+    const j = this.indexOf( f ? this.find( e ) : e )
+    if( -1 !== j ) {
+       result = this.splice( j, 1 )[ 0 ];
+    }
+    return f ? result : this;
+  },
   setLength: function( length ) {
     this.length = length;
     return this;
   },
-
+  showAll: Enumerable.invoke.curry( "show" ),
   sortByProperty: function( property, order, isString ) {
-    var _prepare = function( s ) {
-      return s ? s.replace( nowordRegexp, " " ) : s;
+    const _prepare = function( s ) {
+      return s ? s.replace( nowordRegExp, " " ) : s;
     }
 
-    // Counter unstable Array.sort with additional index. ( a.i == null ? 0 : a.i - b.i )
-    this.sort( isString ? function( a, b ) {
-      var aa = _prepare( a[ property ] );
-      var bb = _prepare( b[ property ] );
-      return aa == bb ? ( undefined === a.i ? 0 : a.i - b.i ) : undefined === bb ? -1 : bb.localeCompare( aa, { sensitivity: "base" } ) * ( order ? -1 : 1 );
+    this.sort( isString ? function( a, b ) { // Counter unstable Array.sort with additional index. ( a._i == null ? 0 : a._i - b._i )
+      const aa = _prepare( a[ property ] );
+      const bb = _prepare( b[ property ] );
+      return aa == bb ? ( undefined === a._i ? 0 : a._i - b._i ) : undefined === bb ? -1 : bb.localeCompare( aa, { sensitivity: "base" } ) * ( order ? -1 : 1 );
     } : function( a, b ) {
-      var aa = a[ property ];
-      var bb = b[ property ];
-      return aa == bb ? ( undefined === a.i ? 0 : a.i - b.i ) : undefined === bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
+      const aa = a[ property ];
+      const bb = b[ property ];
+      return aa == bb ? ( undefined === a._i ? 0 : a._i - b._i ) : undefined === bb || ( order ? aa < bb : bb < aa ) ? -1 : 1;
     } );
     return this;
+  },
+  squeak: function( e ) { // Like push but returns element instead of length.
+    this.push( e );
+    return e;
+  },
+  withoutArray( a ) {
+    return this.slice().remove( a );
   }
 } );
 
 Object.extend( String.prototype, {
-  include: function( s ) {
-    return this.indexOf( s ) > -1;
+  includes: String.prototype.includes || function( s ) {
+    return -1 !== this.indexOf( s );
   },
-
   toCSS: function() {
     return encodeURIComponent( this ).toLowerCase().replace( /\.|%[0-9a-z]{2}/gi, '_' );
   }
 } );
 
 Object.extend( Element.prototype, {
+  getComputedStyle: function( s ) {
+    const body = document.body;
+    const connected = this.isConnected || body.compareDocumentPosition( this ) & Node.DOCUMENT_POSITION_CONTAINS;
+    !connected && body.appendChild( this );
+    const result = window.getComputedStyle( this ).getPropertyValue( s );
+    !connected && body.removeChild( this );
+    return result;
+  },
   trigger: function( t ) {
     if( document.createEvent ) {
-      var e = document.createEvent( "HTMLEvents" );
+      const e = document.createEvent( "HTMLEvents" );
       e.initEvent( t, true, true );
       return this.dispatchEvent( e );
     }
@@ -231,6 +218,257 @@ Object.extend( Event.prototype, {
   }
 } );
 
+function preventBubbling( e ) {
+  if( e ) {
+    e.stopPropagation();
+  }
+}
+
+function preventDefault( e ) {
+  if( e ) {
+    e.stop();
+  }
+}
+
+function $S( selector ) {
+  const sheets = document.styleSheets;
+  if( sheets.length < 1 ) {
+    return null;
+  }
+
+  for( var i = 0, slen = sheets.length; i < slen; ++i ) {
+    const rules = sheets[ i ].cssRules;
+
+    for( var j = 0, rlen = rules.length; j < rlen; ++j ) {
+      if( rules[ j ].selectorText === selector ) {
+        return rules[ j ].style;
+      }
+    }
+  }
+  return null;
+}
+
+const magnetNameRegExp = /&dn=(.*?)&/;
+const noMatchRegExp = /\0/;
+const nowordRegExp = /\\W/ig;
+const torrentRegExp = /(\b(https?|ftp|magnet):\/?\/?[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
+const trackerRegExp = /(\b(https?|udp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
+
+function createId( prefix, label ) {
+  return prefix + label.toLowerCase().replace( /\s/g, "_" ).underscore();
+}
+
+function rE( tag, attributes, content ) {
+  attributes = Object.isString( attributes ) ? { class: attributes } : attributes;
+  if( attributes && attributes.style && !Object.isString( attributes.style ) ) {
+    attributes.style = Object.entries( attributes.style ).invoke( "join", ": " ).join( "; " );
+  }
+  return new Element( tag, attributes || {} ).insert( content );
+}
+
+function rA( href, text, attributes ) {
+  return rE( "a", Object.extend( { href: href, target: "_blank" }, attributes ), undefined === text ? unescape( href ) : text );
+}
+
+function rB( attributes ) {
+  attributes = Object.isString( attributes ) ? { value: attributes } : attributes;
+  attributes = Object.extend( { "class": "apply", type: "button", value: "Apply" }, attributes );
+  const value = attributes.value;
+  delete attributes.value;
+  return rE( "button", attributes, value ).addClassName( "styled" );
+}
+
+const rC = rE.curry( "td" );
+const rD = rE.curry( "div" );
+function rI( value, attributes ) {
+  value = undefined === value ? "" : value;
+  return rE( "input", Object.extend( { "class": "styled", type: "text", value: value }, attributes ) )
+  .observe( "keydown", preventBubbling )
+  .observe( "focus", function( e ) {
+    e.stop();
+    const target = e.target;
+    target.focus();
+    const l = target.value.length;
+    target.setSelectionRange( l, l );
+  } );
+}
+
+const rL = rE.curry( "label" );
+function rM( label, click, attributes ) {
+  attributes = Object.extend( { id: createId( "menu_", label ) }, attributes );
+  return rE( "li", attributes ).insert( label ).observe( "click", click );
+}
+const rR = rE.curry( "tr" );
+const rS = rE.curry( "span" );
+const rT = rE.curry( "textarea" );
+
+function rLed( v, attributes ) {
+  return Object.defineProperty( Object.extend( rE( "led", attributes ), {
+    _value: false,
+    setValue: function( v ) {
+      this.value = v
+      return this;
+    },
+    toggle: function() {
+      return this.setValue( !this._value );
+    },
+    makeToggle: function() {
+      return this.observe( "click", this.toggle );
+    },
+    _radioHandler: function( e ) {
+    },
+    _radio: function( e ) {
+      for( var i = 0, l = this._radios.length; i < l; ++i ) {
+        const r = this._radios[ i ];
+        r.value = r === e.target;
+        this._index = r === e.target ? i : ( this._index || 0 );
+      }
+      this._radioHandler( e );
+    },
+    _makeRadio: function( e ) {
+      return e.observe( "click", this._radio.bind( this ) );
+    },
+    addRadio: function( radio ) {
+      this._radios = this._radios || [ this._makeRadio( this ) ];
+      this._radios.pushUnique( this._makeRadio( radio ) );
+      return this;
+    },
+    getRadio: function() {
+      return this._radios[ this._index ];
+    },
+    setRadioHandler: function( handler ) {
+      this._radioHandler = handler;
+      return this;
+    }
+  } ), "value", {
+    get() {
+      return this._value;
+    },
+    set( v ) {
+      var found = false;
+      if( Object.isBoolean( v ) ) {
+        v = v ? "normal" : "none";
+      }
+      v = v ? v : "none";
+      this._value = v != "none";
+      for( var p in filePriority ) {
+        this.toggleClassName( p, v == p );
+        found |= v == p;
+      }
+      if( found ) {
+         return this.update( filePriority[ v ].label );
+      }
+      for( p in uploadStatus ) {
+        this.toggleClassName( p, v == p );
+        found |= v == p;
+      }
+      if( found ) {
+        return this.update( uploadStatus[ v ].label );
+      }
+      this.update( v );
+    }
+  } ).setValue( v );
+}
+
+function getTableElements() {
+  return {
+    columns: rE( "colgroup" ),
+    header: rE( "thead" ),
+    body: rE( "tbody" ),
+    footer: rE( "tfoot" )
+  }
+}
+
+function rTable( id, t ) {
+  return rE( "table", { id: id } ).insert( Object.values( t || getTableElements() ) );
+}
+
+function normalizeOptions( options ) {
+  const _vt = function( v, t ) {
+    return { value: v, text: t };
+  }
+  const normalized = [];
+  if( Object.isArray( options ) ) {
+    for( var i = 0, len = options.length; i < len; ++i ) {
+      normalized.push( _vt( options[ i ], options[ i ] ) );
+    }
+  }
+  else {
+    for( var k in options ) {
+      const i = +k;
+      k = isNaN( i ) ? k : i;
+      normalized.push( Object.isFunction( options[ k ] ) ? _vt( options[ k ], k ) : _vt( k, options[ k ] ) );
+    }
+  }
+  return normalized;
+}
+
+function renderSelect( options ) {
+  if( Object.isArray( options ) ) {
+    options = { options: normalizeOptions( options ) }
+  }
+  const select = rE( "select", options.select ).addClassName( "styled" );
+  if( options.options ) {
+    for( var i = 0, len = options.options.length; i < len; ++i ) {
+      const o = options.options[ i ];
+      select.insert( rE( "option", o ).update( o.text ? o.text : o.value ) );
+    }
+  }
+  if( options.select && options.select.value ) {
+    select.value = options.select.value;
+  }
+  select.selectedIndex = -1 === select.selectedIndex ? 0 : select.selectedIndex;
+
+  select.observe( "keydown", preventBubbling );
+  return select;
+}
+
+function renderPathSelect( path, cell ) {
+  var div = cell && cell.down( "div.pathselect" );
+  if( div ) {
+    div.down().value = path;
+    return div;
+  }
+  const l = "\u2026";
+  const paths = [].concatUnique( globals.shift.settings.paths );
+  const dir = globals.shift.session[ "download-dir" ];
+  paths.concatUnique( dir, path || dir );
+  paths.push( l );
+  const select = renderSelect( paths );
+  const input = rI( "" );
+  div = rD( "pathselect styled" ).update( select );
+  div.value = input.value = select.value = path || select.value;
+  const _change = function() {
+    if( l === this.value ) {
+      div.update( input );
+      input.observe( "blur", _blur );
+      input.value = div.value;
+      input.focus();
+    }
+    else {
+      div.value = input.value = this.value;
+    }
+  }
+  select.observe( "change", _change );
+  const _blur = function() {
+    if( 0 === this.value.trim().length ) {
+      div.update( select );
+      select.observe( "change", _change );
+      select.value = div.value;
+      select.focus();
+    }
+    else {
+      div.value = this.value;
+    }
+  }
+  input.observe( "blur", _blur );
+  return div;
+}
+
+function isEmpty( s ) {
+  return undefined === s || null === s || 0 === s.length || Object.isEmpty( s );
+}
+
 function copyToClipboard( s ) {
   document.observe( "copy", function( e ) {
     e.clipboardData.setData( "text/plain", s );
@@ -244,19 +482,23 @@ function copyObjectToClipboard( o ) {
   copyToClipboard( JSON.stringify( Object.sort( o ), null, 2 ) );
 }
 
-function handleFocus( e ) {
-  e.stop();
-  var target = e.target;
-  target.focus();
-  target.setSelectionRange( target.value.length, target.value.length );
+function cookiefy( data ) {
+  const date = new Date();
+  date.setTime( date.getTime() + 365 * DAY_MS );
+  document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date + "; SameSite=strict";
+  return data;
 }
 
-function isEmpty( s ) {
-  return undefined === s || null === s || 0 === s.length || Object.isEmpty( s );
+function persistPath( path ) {
+  const settings = globals.shift.settings;
+  const len = settings.paths.length;
+  settings.paths.pushUnique( path );
+  settings.paths.length !== len && settings.pathsPersistent && cookiefy( settings );
+  return path;
 }
 
 // riffwave by Pedro Ladaria <pedro.ladaria at Gmail dot com>
-var FastBase64 = {
+const FastBase64 = {
   chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
   encLookup: [],
 
@@ -271,7 +513,7 @@ var FastBase64 = {
     var dst = "";
     var i = 0;
     while( len > 2 ) {
-      n = src[ i ] << 16 | src[ i + 1 ] << 8 | src[ i + 2 ];
+      var n = src[ i ] << 16 | src[ i + 1 ] << 8 | src[ i + 2 ];
       dst+= this.encLookup[ n >> 12 ] + this.encLookup[ n & 0xFFF ];
       len-= 3;
       i+= 3;
@@ -360,19 +602,19 @@ function riffwave( data ) {
       16 == this.header.bitsPerSample ? split16bitArray( this.data ) : this.data
     );
     this.dataURI = "data:audio/wav;base64," + FastBase64.encode( this.wav );
-  };
+  }
 
   if( Array.isArray( data ) ) {
     this.make( data );
   }
-};
+}
 
-var COOKIE_KEY = "shift.settings=";
-var HEADER_TRANSMISSION = "X-Transmission-Session-Id";
-var DAY_MS = 24 * 60 * 60 * 1000;
+const COOKIE_KEY = "shift.settings=";
+const HEADER_TRANSMISSION = "X-Transmission-Session-Id";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function newRequest( method, args, onSuccess, properties ) {
-  var request = {
+  const request = {
     parametersObject: {
       method: method ? method : "",
       arguments: args ? args : {}
@@ -410,7 +652,12 @@ function success( response ) {
   return "success" == response.responseJSON.result;
 }
 
-var globals = {
+const columnKeys = [
+  "menu", "queuePosition", "status",
+  "errorString", "recheckProgress", "corruptEver",
+  "percentDone", "rateDownload", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name", "labels" ];
+
+const globals = {
   torrentStatus: {
     "-1": {
       label: "All",
@@ -420,85 +667,82 @@ var globals = {
     },
     0: {
       label: "Stopped",
-      columns: [ "menu", "queuePosition", "status", "errorString", "percentDone", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "errorString", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "error" ],
       keyCode: 83,
-      onChange: function() {
-        changeRequest( globals.shift.torrentUpdater, "torrent-get", {
-          ids: globals.torrents.select( function( torrent ) {
-              return torrent.status == globals.torrentStatusCurrent;
-            } ).pluck( "id" )
+      onChange: function() { // Do extra handling when this status is selected.
+        globals.shift.torrentUpdater.mod( {
+          fields: [ "id", "status", "error", "errorString" ],
+          ids: filterStatus().pluck( "id" )
         }, function( response ) {
-          setDefaultTorrentRequest();
+          globals.shift.torrentUpdater.default();
           globals.shift.updateTorrents.onSuccess( response );
         } )
       }
     },
     1: {
       label: "Check waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "corruptEver", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "percentDone", "corruptEver", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "corruptEver" ],
       keyCode: 67
     },
     2: {
       label: "Checking",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "recheckProgress", "corruptEver", "sizeWhenDone" ],
       keyCode: 67
     },
     3: {
       label: "Download waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone" ],
       keyCode: 68
     },
     4: {
       label: "Downloading",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone", "rateDownload", "rateUpload", "uploadedEver", "eta" ],
       keyCode: 68
     },
     5: {
       label: "Seed waiting",
-      columns: [ "menu", "queuePosition", "status", "percentDone", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "percentDone", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "percentDone" ],
       keyCode: 85
     },
     6: {
       label: "Seeding",
-      columns: [ "menu", "queuePosition", "status", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name", "labels" ],
+      columns: [ "menu", "queuePosition", "rateUpload", "uploadedEver", "uploadRatio", "sizeWhenDone", "name", "labels" ],
       fields: [ "id", "status", "rateUpload", "uploadedEver", "uploadRatio" ],
       keyCode: 85
     }
   },
-  torrentStatusDefault: 4,
   hashIndex: 0,
   headerState: 0,
   magnets: [],
-  torrents: [],
   removed: [],
-  torrentHash: {},
-  rpcUrl: "../rpc",
   requestHeaders: [ HEADER_TRANSMISSION, "" ],
+  rpcUrl: "../rpc",
+  selectedIds: [],
+  table: true,
+  torrents: [],
+  torrentHash: {},
+  torrentStatusDefault: 4,
 
   shift: {
     settings: {},
-    version: "1.0",
+    version: "1.1",
     updateTorrents: newPeriodicalUpdater( "torrent-get", 2, function( response ) {
-      var args = getArguments( response );
-
-      if( args.removed && args.removed.length > 0 ) {
-        getQueuePositions( args.removed );
-      }
+      const args = getArguments( response );
+      args.removed && getQueuePositions( args.removed );
       if( args.torrents ) {
-        updateTorrents( response );
-        filterTorrents();
+        filterTorrents( updateTorrents( response ) );
         if( "torrentTable" == globals.activeTableId ) {
           if( globals.torrentStatusChanged ) {
-            setTorrentsColumnsVisible( globals.torrentStatus[ globals.torrentStatusCurrent ].columns );
+            setTorrentsColumnsVisible( globals.torrentStatus[ globals.currentStatus ].columns );
           }
           sortTorrents();
-          renderTorrents( true );
+          renderTorrents();
         }
       }
     }, {}, "recently-active" ),
@@ -514,171 +758,387 @@ var globals = {
   },
   staticFields: [ "labels", "name", "percentDone", "queuePosition", "sizeWhenDone" ]
 }
-globals.torrentStatusCurrent = globals.torrentStatusDefault;
-globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
+globals.currentStatus = globals.torrentStatusDefault;
+globals.updateFields = globals.torrentStatus[ globals.currentStatus ].fields;
 
-var comparators = {
+const comparators = {
   "<": function( x, y ) { return x < y },
   "<=": function( x, y ) { return x <= y },
   "==": function( x, y ) { return x == y },
   ">=": function( x, y ) { return x >= y },
   ">": function( x, y ) { return x > y }
 }
-var defaultOptions = normalizeOptions( Object.keys( comparators ) );
+const defaultOptions = normalizeOptions( Object.keys( comparators ) );
 
-var filePriority = { "high": { label: "+" }, "normal": { label: " " }, "low": { label: "-" }, "none": { label: "" } };
-var filePriorityKeys = Object.keys( filePriority );
-var uploadStatus = { "loading": { label: "&gt;" }, "loaded": { label: "*" }, "uploading": { label: "^" }, "added": { label: "+" }, "duplicate": { label: "!" } };
-var uploadStatusKeys =  Object.keys( uploadStatus );
-var fileMenuItems = [ "Rename" ];
-var nowordRegexp = /\\W/ig;
-var torrentRegexp = /(\b(https?|ftp|magnet):\/?\/?[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
-var trackerRegexp = /(\b(https?|udp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
-var dropCount = 0;
+const filePriority = { "high": { label: "+" }, "normal": { label: " " }, "low": { label: "&ndash;" }, "none": { label: "" } };
+const filePriorityKeys = Object.keys( filePriority );
+function getPriority( f ){
+  return filePriorityKeys[ f.wanted ? 1 - f.priority : 3 ];
+}
+const uploadStatus = { "loading": { label: "&#9656;" }, "loaded": { label: "&#9991;" }, "uploading": { label: "&#9652;" }, "added": { label: "+" }, "duplicate": { label: "&#10006;" } };
+const fileMenuItems = [ "Rename" ];
 
-var sessionFields = {
-  "blocklist-size": { readOnly: true },
-  "config-dir": { readOnly: true },
-  "download-dir-free-space": { readOnly: true, render: renderSize },
+const sessionFields = {
+  "blocklist-size": { _ro: true },
+  "config-dir": { _ro: true },
+  "download-dir": { render: renderPathSelect },
+  "download-dir-free-space": { _ro: true, render: renderSize },
   "encryption": { values: normalizeOptions( [ "required", "preferred", "tolerated" ] ) },
-  // actions return true if handling should continue.
-  "peer-port": { action: function( row, keyCell, valueCell, o ) {
-    var l = rLed( false, { id: "port-is-open", title: "Checking", readonly: true } );
+  "incomplete-dir": { render: renderPathSelect },
+  "peer-port": { action: function( row, keyCell ) { // actions return true if handling should continue.
+    const l = rLed( false, { id: "port-is-open", title: "Checking", readonly: true } );
     keyCell.insert( l );
     doRequest( "port-test", {}, function( response ) {
       updateFields( getArguments( response ) );
     } );
-
     return true;
   } },
-  "rpc-version": { readOnly: true },
-  "rpc-version-minimum": { readOnly: true },
-  "units": { ignore: true },
-  "version": { readOnly: true }
+  "rpc-version": { _ro: true },
+  "rpc-version-minimum": { _ro: true },
+  "rpc-version-semver": { _ro: true },
+  "session-id": { _ro: true },
+  "units": { _ignore: true },
+  "version": { _ro: true }
 }
 
-var torrentActionLabels = [ "Select", "Details", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Recycle", "Remove", "Trash" ];
-var torrentActions = {};
+const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Recycle", "Remove", "Trash" ];
+const torrentActions = {};
 
 torrentActionLabels.concat( [ "add", "get", "set", "Rename" ] ).each( function( action ) {
-  var label = action;
+  const label = action;
   action = action.toLowerCase();
   torrentActions[ action ] = {
-     label: label,
-     method: "torrent-" + function( a ) {
-       switch( a ) {
-          case "check": return "verify";
-          case "relocate": return "set-location";
-          case "rename": return "rename-path";
-          default: return a.replace( " ", "-" );
-       }
-    } ( action ) };
+    label: label,
+    method: "torrent-" + function( a ) {
+      switch( a ) {
+        case "check": return "verify";
+        case "refresh": return "torrent-get";
+        case "relocate": return "set-location";
+        case "rename": return "rename-path";
+        default: return a.replace( " ", "-" );
+    }
+  } ( action ) };
 } );
 torrentActions[ "trash" ].method = torrentActions[ "remove" ].method;
 
-var torrentFields = {
+const torrentFields = {
   "activityDate": { render: renderDateTime },
   "addedDate": { render: renderDateTime },
+  "availability": {
+    render: renderAvailability,
+    sss: function( availability ) {
+      const a = [];
+      for( var i = 0, len = availability.length; i < len; ++i ) {
+        a[ i ] = Math.floor( Math.random() * 65 ) - 1;
+      }
+      return a;
+    }
+  },
   "bandwidthPriority": {
     edit: true,
     values: normalizeOptions( { "-1": "Low", "0": "Normal", "1": "High" } ).sortByProperty( "value" )
   },
   "comment": {
     render: function( comment ) {
-      return comment.replace( torrentRegexp, "<a href=\"$1\" target=\"_blank\">$1</a>" );
+      return comment.replace( torrentRegExp, "<a href=\"$1\" target=\"_blank\">$1</a>" );
     },
-    sss: true },
-  "corruptEver": { render: renderSize },
+    sss: true
+  },
+  "corruptEver": { _column: { label: "Corrupt", render:renderSizeCell }, render: renderSize },
   "creator": { sss: true },
   "dateCreated": { render: renderDateTime },
   "desiredAvailable": { render: renderSize },
   "doneDate": { render: renderDateTime },
-  "downloadDir": { edit: true },
+  "downloadDir": {
+    edit: true,
+    getValue: function( cell ) {
+      return cell.down( "div.pathselect" ).value;
+    },
+    render: renderPathSelect, sss: true },
   "downloadedEver": { render: renderSize },
   "downloadLimit": { edit: true },
   "downloadLimited": { edit: true },
   "editDate": { render: renderDateTime },
   "error": {},
-  "errorString": {},
+  "errorString": { _column: { label: "Error" } },
   "eta": {},
   "etaIdle": {},
   "file-count": {},
-  "files": { ignore: true, sss: true },
-  "fileStats": { ignore: true },
+  "files": {
+    "bytesCompleted": {},
+    "length": {},
+    "name": {},
+    _ignore: true,
+    sss: true
+  },
+  "fileStats": {
+    "bytesCompleted": {},
+    "priority": {},
+    "wanted": {},
+    _ignore: true },
+  "group": {},
   "hashString": { sss: true },
   "haveUnchecked": { render: renderSize },
   "haveValid": { render: renderSize },
   "honorsSessionLimits": { edit: true },
-  "id": { ignore: true },
+  "id": { _ignore: true },
   "isFinished": {},
   "isPrivate": {},
   "isStalled": {},
   "leftUntilDone": { render: renderSize },
-  "labels": { render: renderLabels, edit: true, getValue: function( cell ) {
+  "labels": {
+    _column: {
+      renderCell: "name",
+      filter: {
+        active: function() {
+          return !isEmpty( this.value );
+        },
+        cost: 10,
+        value: "",
+        renderNode: renderLabelFilter,
+        match: function( torrent ) {
+          if( this.exclude ) {
+            return isEmpty( torrent.labels ) || !torrent.labels.includes( this.value );
+          }
+          else {
+            return !isEmpty( torrent.labels ) && torrent.labels.includes( this.value );
+          }
+        }
+      }
+    },
+    edit: true,
+    getValue: function( cell ) {
       return cell.down( "span.labels" ).select( ".label" ).pluck( "innerHTML" ).sort();
-    }
+    },
+    render: renderLabels
   },
-  "location": { edit: true },
+  "location": { _ignore: true },
   "magnetLink": { render: function( link ) { return rA( link ) }, sss: true },
   "manualAnnounceTime": {},
   "maxConnectedPeers": {},
   "metadataPercentComplete": { render: renderPercentage },
-  "name": { sss: true },
+  "name": {
+    _column: {
+      render: renderName,
+      isString: true,
+      filter: {
+        active: function() {
+          return !isEmpty( this.value ) || this.value instanceof RegExp;
+        },
+        cost: 6,
+        value: "",
+        renderNode: renderNameFilter,
+        match: function( torrent ) {
+          return undefined === torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().includes( this.value ) );
+        }
+      }
+    },
+    sss: true
+  },
   "peer-limit": { edit: true },
-  "peers": { ignore: true },
+  "peers": { _ignore: true },
   "peersConnected": {},
-  "peersFrom": { ignore: true },
+  "peersFrom": { _ignore: true },
   "peersGettingFromUs": {},
   "peersSendingToUs": {},
-  "percentDone": { render: renderPercentage },
+  "percentComplete": { render: renderPercentage },
+  "percentDone": {
+    _column: {
+      label: "Done",
+      render: renderPercentDone,
+      defaultOrder: false,
+      filter: {
+        active: function() { // 0.0 <= this.value <= 1.0
+          return 0.0 < this.value && this.value < 1.0 ||
+            0.0 === this.value && [ comparators[ "==" ], comparators[ "<=" ], comparators[ ">" ] ].includes( this.comparator ) ||
+            1.0 === this.value && [ comparators[ "==" ], comparators[ ">=" ], comparators[ "<" ] ].includes( this.comparator );
+        },
+        cost: 2,
+        comparatorLabel: "<=",
+        comparator: comparators[ "<=" ],
+        value: 1.0,
+        renderNode: renderPercentDoneFilter,
+        match: function( torrent ) {
+          return undefined === torrent.percentDone || this.comparator( torrent.percentDone, this.value );
+        }
+      }
+    },
+    render: renderPercentage
+  },
   "pieces": { render: renderPieces },
   "pieceCount": {},
   "pieceSize": { render: renderSize },
   "primary-mime-type": {},
-  "priorities": { ignore: true },
-  "queuePosition": { edit: true },
-  "rateDownload": { render: renderSpeed },
-  "rateUpload": { render: renderSpeed },
-  "recheckProgress": { render: renderPercentage },
+  "priorities": { _ignore: true },
+  "queuePosition": {
+    _column: {
+      label: "Q",
+      listHandler: function( e, torrent ) {
+        globals.currentTorrent = torrent;
+        showPopup( "popupQueue", function( e ) {
+          const action = e.target.id;
+          doRequest( "queue-move-" + action, { ids: getSelected().pluck( "id" ) }, getQueuePositions.curry( null ) );
+        }, e, function( popup, e ) {
+          return e.shiftKey;
+        } );
+      }
+    },
+    edit: true
+  },
+  "rateDownload": { _column: { label: "Down", render: renderSpeed }, render: renderSpeed, value: 0 },
+  "rateUpload": { _column: { label: "Up", render: renderRateUpload }, render: renderSpeed, value: 0 },
+  "recheckProgress": { _column: { label: "Checked", render:renderPercentage }, render: renderPercentage },
   "secondsDownloading": {},
   "secondsSeeding": {},
   "seedIdleLimit": { edit: true },
   "seedIdleMode": { edit: true },
   "seedRatioLimit": { edit: true },
   "seedRatioMode": { edit: true },
-  "sizeWhenDone": { render: renderSize },
+  "sizeWhenDone": {
+    _column: { // 0 <= this.value
+      label: "Size",
+      render: renderSizeCell,
+      filter: {
+        active: function() {
+          return !( 0 === this.value && this.comparator == comparators[ ">=" ] );
+        },
+        cost: 2,
+        comparatorLabel: ">=",
+        comparator: comparators[ ">=" ],
+        value: 0,
+        renderNode: renderSizeFilter,
+        match: function( torrent ) {
+          return undefined === torrent.sizeWhenDone || this.comparator( torrent.sizeWhenDone, this.value );
+        }
+      }
+    },
+    render: renderSize
+  },
   "startDate": { render: renderDateTime },
-  "status": { render: renderStatus },
+  "status": {
+    render: renderStatus,
+    _column: {
+      render: renderStatus,
+      filter: {
+        active: function() {
+          return -1 !== this.value;
+        },
+        cost: 1,
+        visible: true,
+        value: globals.currentStatus,
+        renderNode: renderStatusFilter,
+        match: function( torrent ) {
+          return undefined === torrent.status || this.value == torrent.status
+        }
+      }
+    }
+  },
   "torrentFile": {
     render: function( file ) {
       file = file.substring( file.lastIndexOf( "/" ) + 1 );
-      return globals.shift.settings.torrentLinkEnabled ? rA( globals.shift.settings.torrentLink + file , file ) : file;
+
+      const settings = globals.shift.settings;
+      if( !settings.torrentLinkEnabled && !settings.torrentLinkTemplateEnabled ) {
+        return file;
+      }
+
+      const hash = 3.00 <= globals.version;
+      const t = globals.currentTorrent;
+      var url = settings.torrentLink + file;
+      file = hash ? ( settings.screenshotMode ? file : t.name ) + ".torrent" : file;
+      const l = rA( url, file );
+      if( settings.torrentLinkTemplateEnabled ) {
+        const _replacer = function( m ) {
+          const keys = m.substring( 2, m.length - 1 ).split( '.' );
+          switch( keys[ 0 ] ) {
+            case "torrentLink":
+              return url;
+            case "torrent":
+              return settings.screenshotMode ? keys[ 1 ].capitalize() : t[ keys[ 1 ] ];
+            default:
+              return m;
+          }
+        }
+        url = l.href;
+        l.href = "javascript:void(0)";
+        l.target = "_top";
+        l.title = "Click to copy to clipboard.";
+        l.observe( "click", function( e ) {
+          copyToClipboard( settings.torrentLinkTemplate.replaceAll( /\$\{.*?\}/g, _replacer ) );
+          return false;
+        } );
+      }
+      else if( hash ) {
+        l.download = file;
+      }
+      return l;
     },
     sss: true
   },
   "totalSize": { render: renderSize },
-  "trackers": { ignore: true },
-  "trackerAdd": { ignore: true, edit: true },
-  "trackerRemove": { ignore: true, edit: true },
-  "trackerReplace": { ignore: true, edit: true },
-  "trackerStats": { ignore: true },
-  "uploadedEver": { render: renderSize },
+  "trackers": {
+    "announce": {},
+    "id": {},
+    "scrape": {},
+    "sitename": {},
+    "tier": {},
+    _ignore: true
+  },
+  "trackerAdd": { edit: true, _ignore: true },
+  "trackerList": { _ignore: true },
+  "trackerRemove": { edit: true, _ignore: true },
+  "trackerReplace": { edit: true, _ignore: true },
+  "trackerStats": {
+    "announce": {},
+    "announceState": {},
+    "downloadCount": {},
+    "hasAnnounced": {},
+    "hasScraped": {},
+    "host": {},
+    "id": {},
+    "isBackup": {},
+    "lastAnnouncePeerCount": {},
+    "lastAnnounceResult": {},
+    "lastAnnounceStartTime": {},
+    "lastAnnounceSucceeded": {},
+    "lastAnnounceTime": { render: renderDateTime },
+    "lastAnnounceTimedOut": {},
+    "lastScrapeResult": {},
+    "lastScrapeStartTime": {},
+    "lastScrapeSucceeded": {},
+    "lastScrapeTime": { render: renderDateTime },
+    "lastScrapeTimedOut": {},
+    "leecherCount": {},
+    "nextAnnounceTime": {},
+    "nextScrapeTime": { render: renderDateTime },
+    "scrape": {},
+    "scrapeState": {},
+    "seederCount": {},
+    "sitename": {},
+    "tier": {},
+    _ignore: true
+  },
+  "uploadedEver": { _column: { label: "Uploaded", render: renderSizeCell }, render: renderSize },
   "uploadLimit": { edit: true },
   "uploadLimited": { edit: true },
-  "uploadRatio": { render: renderPercentage },
-  "wanted": { ignore: true },
-  "webseeds": { ignore: true },
+  "uploadRatio": { _column: { label: "Karma", render: renderUploadRatio }, render: renderPercentage },
+  "wanted": { _ignore: true },
+  "webseeds": { _ignore: true },
   "webseedsSendingToUs": {}
-};
+}
 
-var torrentFieldKeys = [];
-var torrentDetailsUpdateKeys = [];
+const torrentFieldKeys = [];
+const torrentDetailsUpdateKeys = [];
+const TorrentDefaults = {
+  _selected: false,
+  _displayed: false
+}
 
 function updatePostSession() {
-  torrentFieldKeys = Object.keys( torrentFields );
-  torrentDetailsUpdateKeys = Object.keys( Object.select( torrentFields, function( value ) {
-    value.readOnly = value.readOnly || !value.edit;
-    return !value.ignore;
+  Array.prototype.push.apply( torrentFieldKeys, Object.keys( torrentFields ) );
+  Array.prototype.push.apply( torrentDetailsUpdateKeys, Object.keys( Object.filter( torrentFields, function( value ) {
+    value._ro = value._ro || !value.edit;
+    return !value._ignore;
   } ) ).without(
     "addedDate",
     "comment",
@@ -694,7 +1154,14 @@ function updatePostSession() {
     "pieceSize",
     "torrentFile",
     "totalSize"
-  ).pushUnique( "id" );
+  ).pushUnique( "id" ) );
+  torrentFieldKeys.reduce( function( o, k ) {
+    const v = torrentFields[ k ].value;
+    if( undefined !== v ) {
+      o[ k ] = v;
+    }
+    return o;
+  }, TorrentDefaults );
 }
 
 function showDone() {
@@ -706,21 +1173,24 @@ function showWait() {
 }
 
 function getQueuePositions( removed ) {
-  if( globals.version < 14 ) { // 2.40
-    if( removed ) {
-      removed.each( removeTorrentById );
+  removed && removed.each( function( id ) {
+    globals.removed.pushUnique( id );
+
+    const t = getTorrent( id );
+    if( t ) {
+      t._node.remove();
+      globals.torrents.remove( t );
+      sendNotification( 3, "Torrent removed.", getBody( t ) );
     }
-    return;
-  }
-  doTorrentGet( [ "id", "queuePosition" ], undefined, function( response ) {
-    if( removed ) {
-      removed.each( removeTorrentById );
-    }
-    updateTorrents( response );
-    filterTorrents();
-    sortTorrents();
-    renderTorrents( true );
+    delete torrentHash[ id ];
   } );
+
+  if( globals.version >= 14 ) { // 2.40
+    globals.shift.torrentUpdater.default( [ "queuePosition" ], function( response ) {
+      globals.shift.torrentUpdater.default();
+      globals.shift.updateTorrents.onSuccess( response );
+    } );
+  }
 }
 
 function postTorrentRemove( action, response ) {
@@ -729,71 +1199,107 @@ function postTorrentRemove( action, response ) {
   }
 }
 
+function getTorrent( id, setGlobal ) {
+  const result = globals.torrentHash[ id ];
+  if( setGlobal ) {
+    globals.currentTorrent = result;
+  }
+  return result;
+}
+
 function getTorrents( ids ) {
-  return ids.collect( function( id ) { return globals.torrentHash[ id ]; } );
+  return ids.map( getTorrent );
+}
+
+function arrayBufferToString( ab ) {
+  const CHUNK_SIZE = 65532;
+
+  var s = "";
+  var left = ab.byteLength;
+  for (var i = 0, len = left; i < len; i += CHUNK_SIZE ) {
+    s += String.fromCharCode.apply( null, new Uint8Array( ab, i, Math.min( CHUNK_SIZE, left ) ) );
+    left -= CHUNK_SIZE;
+  }
+  return s;
 }
 
 function recycleTorrents( torrents ) {
-  var t = torrents.shift();
-  if( undefined === t ) {
-    return;
+  var _handler, r, s, t;
+
+  const _next = function() {
+    t = torrents.shift();
+    if( undefined === t ) {
+      return null;
+    }
+    r = new XMLHttpRequest();
+    Event.observe( r, "load", _handler );
+    r.open( "GET", globals.shift.settings.torrentLink + getFilePart( t.torrentFile ) );
+    r.responseType = "arraybuffer";
+    r.send( null );
   }
-  var req = new XMLHttpRequest();
-  req.open( "GET", globals.shift.settings.torrentLink + getFilePart( t.torrentFile ) );
-  req.responseType = "arraybuffer";
 
-  req.onload = function( e ) {
-    var next = function( e ) {
-      if( req.status != 200 ) {
-        sendNotification( 1, "Recycling error. Status " + req.status + ": " + req.statusText + ".", getBody( t ) );
-        return true;
-      }
-      if( !req.response ) {
-        sendNotification( 1, "Recycling error. No response data.", getBody( t ) );
-        return true;
-      }
-
-      var s = String.fromCharCode.apply( null, new Uint8Array( req.response ) );
-      if( !s.startsWith( "d8:announce" ) && !s.startsWith( "d13:announce-list" ) ) {
-        sendNotification( 1, "Recycling error. File is not a torrent.", getBody( t ) );
-        return true;
-      }
-
-      globals.removed.concatUnique( t.id );
-      doRequest( "torrent-remove", { ids: [ t.id ] }, function( response ) {
-        if( !success( response ) ) {
-          sendNotification( 1, "Recycling error. Could not remove torrent.", getBody( t ) );
-          s = null;
-          recycleTorrents( torrents );
-          return;
-        }
-        doRequest( "torrent-add", {
-          "download-dir": globals.shift.session[ "download-dir" ],
-          "metainfo": window.btoa( s ),
-          "dummy": function() {
-            s = null;
-            return undefined;
-          }()
-        },
-        function( response ) {
-          if( !success( response ) ) {
-            sendNotification( 1, "Recycling error. Could not add torrent.", getBody( t ) );
-          }
-          recycleTorrents( torrents );
-        } );
+  const _isValid = function() {
+    if( r.status != 200 ) {
+      t.update( {
+        error: r.status,
+        errorString: r.status + " " + r.statusText
       } );
+      sendNotification( 1, "Recycling error. Status " + r.status + ": " + r.statusText + ".", getBody( t ) );
       return false;
     }
-    if( next( e ) ) {
-      req.response = null;
-      recycleTorrents( torrents );
+
+    if( !r.response ) {
+      t.update( {
+        error: 3,
+        errorString: "No data in response."
+      } );
+      sendNotification( 1, "Recycling error. No response data.", getBody( t ) );
+      return false;
     }
+
+    s = arrayBufferToString( r.response )
+    if( !s.startsWith( "d8:announce" ) && !s.startsWith( "d13:announce-list" ) ) {
+      t.update( {
+        error: 3,
+        errorString: "Junk in response."
+      } );
+      sendNotification( 1, "Recycling error. File is not a torrent.", getBody( t ) );
+      return false;
+    }
+
+    return true;
   }
-  req.send( null );
+
+  _handler = function() {
+    if( !_isValid() ) {
+      _next();
+      return;
+    }
+
+    globals.removed.concatUnique( t.id );
+    doRequest( "torrent-remove", { ids: [ t.id ] }, function( response ) {
+      if( !success( response ) ) {
+        sendNotification( 1, "Recycling error. Could not remove torrent.", getBody( t ) );
+        _next();
+        return;
+      }
+      addTorrent( window.btoa( s ), function( response ) {
+        if( success( response ) ) {
+          filterTorrents();
+          sortTorrents();
+        }
+        else {
+          sendNotification( 1, "Recycling error. Could not add torrent.", getBody( t ) );
+        }
+        _next();
+      } );
+    } );
+  }
+  _next();
 }
 
 function handleTorrentActionClick( e ) {
-  var action = e.target.id;
+  const action = e.target.id;
 
   closePopup();
 
@@ -808,46 +1314,50 @@ function handleTorrentActionClick( e ) {
     return;
   }
 
-  var selected = getSelected();
-  var selectedMagnetIds = [];
-  var preRequest = function( request ) { return request };
+  const selected = getSelected();
+  const preRequest = function( request ) { return request }
   var postRequest = preRequest;
   var postResponse = null;
 
-  var args = {
+  const args = {
     ids: selected.pluck( "id" )
   }
 
-  var d = globals.dialogs[ action ];
+  const d = globals.dialogs[ action ];
   switch( action ) {
     case "recycle":
-      doTorrentGet( [ "id", "torrentFile" ], args.ids, function( response ) {
+      fetchTorrents( [ "id", "torrentFile" ], args.ids, function( response ) {
         recycleTorrents( updateTorrents( response ) );
       } );
       return;
 
+    case "refresh":
+      fetchTorrents( globals.staticFields.concat( globals.updateFields ), args.ids, function( response ) {
+        filterTorrents( updateTorrents( response, true ) );
+      } );
+      return;
+
     case "relocate":
-      args.location = d.target.value;
+      args.location = persistPath( d.paths.value );
       args.move = d.move.value;
-      postResponse = function( response ) {
-        doTorrentGet( [ "id", "downloadDir" ], args.ids, function( response ) {
-          var update = getArguments( response ).torrents;
-          var oldPaths = {};
-          var ts = getTorrents( update.pluck( "id" ) ).each( function( torrent ) {
+      fetchTorrents( [ "id", "downloadDir" ], args.ids );
+      postResponse = function() {
+        fetchTorrents( [ "id", "downloadDir" ], args.ids, function( response ) {
+          const oldPaths = {};
+          const ts = updateTorrents( response, false, function( torrent ) {
             oldPaths[ torrent.id ] = torrent.downloadDir;
-          } );
-          updateTorrents( response );
-          ts = ts.partition( function( torrent ) {
+          } ).partition( function( torrent ) {
              return torrent.downloadDir === args.location;
           } );
 
+          var b;
           if( !isEmpty( ts[ 0 ] ) ) {
-            var b = {};
+            b = {};
             if( ts[ 0 ].length == 1 ) {
               b = getBody( ts[ 0 ][ 0 ], "\nRelocated to:\n\"" + args.location + "\"" );
             }
             else {
-              b.body = "Relocated\n" + ts[ 0 ].collect( function( torrent ) {
+              b.body = "Relocated\n" + ts[ 0 ].map( function( torrent ) {
                 return "\"" + oldPaths[ torrent.id ] + torrent.name + "\"";
               } ).join( "\n" ) + "\nto\n\"" + args.location + "\"";
             }
@@ -855,12 +1365,12 @@ function handleTorrentActionClick( e ) {
           }
 
           if( !isEmpty( ts[ 1 ] ) ) {
-            var b = {};
+            b = {};
             if( ts[ 1 ].length == 1 ) {
               b = getBody( ts[ 1 ][ 0 ], "\nCould not relocate to:\n\"" + args.location + "\"" );
             }
             else {
-              b.body = "Could not relocate\n" + ts[ 1 ].collect( function( torrent ) {
+              b.body = "Could not relocate\n" + ts[ 1 ].map( function( torrent ) {
                 return "\"" + torrent.downloadDir + torrent.name + "\"";
               } ).join( "\n" ) + "\nto\n\"" + args.location + "\"";
             }
@@ -871,26 +1381,27 @@ function handleTorrentActionClick( e ) {
       break;
 
     case "rename":
-      var rename = {
+      const rename = {
          path: getTargetPath(),
          name: d.fileName.value
       }
       if( -1 == globals.pathDepth ) {
         rename.node = globals.currentFile.node.down( "td.name" );
       }
-
       renameFiles( [ rename ] );
       return;
 
     case "trash":
-      var partitioned = selected.partition( isMagnet );
-      args.ids = partitioned[ 1 ].pluck( "id" );
-      selectedMagnetIds = partitioned[ 0 ].pluck( "id" );
+      const partitioned = selected.partition( function( torrent ) {
+        return torrent.isMagnet();
+      } );
+      var selectedMagnetIds = partitioned[ 0 ].pluck( "id" );
 
+      args.ids = partitioned[ 1 ].pluck( "id" );
       if( args.ids.length > 0 ) {
         args[ "delete-local-data" ] = true;
         if( selectedMagnetIds.length > 0 ) {
-          postResponse = function( response ) {
+          postResponse = function() {
             doRequest( torrentActions[ action ].method, { ids: selectedMagnetIds }, postTorrentRemove ).curry( action );
             globals.removed.concatUnique( selectedMagnetIds );
           }
@@ -909,11 +1420,10 @@ function handleTorrentActionClick( e ) {
   }
 
   selected.invoke( "deselect" );
-  postResponse = postResponse || function( response ) {
-    setTimeout( getErrorData.curry( args.ids ), 1000 );
+  postResponse = postResponse || function() {
+    setTimeout( getErrorData, 1000 );
   }
 
-  // If the array of ids is empty, Transmission assumes ALL.
   if( args.ids.length > 0 ) {
     var request = preRequest( newRequest( torrentActions[ action ].method, args, postResponse ) );
     request = postRequest( request );
@@ -930,8 +1440,8 @@ function handleTorrentMenuClick( e ) {
   }
 
   var popup = false;
-  var selected = getSelected();
-  var d = globals.dialogs;
+  const selected = getSelected();
+  const d = globals.dialogs;
   var input = null;
   d.additional.update();
 
@@ -942,32 +1452,33 @@ function handleTorrentMenuClick( e ) {
 
     case "relocate":
       popup = true;
-      d.additional.insert( d.relocate.insert );
-      input = d.relocate.target;
+      d.relocate.paths = renderPathSelect();
+      d.additional.insert( [
+        rS( "label" ).insert( "To" ), d.relocate.paths, "<br/>",
+        rS( "label" ), d.relocate.move, " Move" ] );
+      input = d.relocate.paths;
       break;
 
     case "remove":
       popup = globals.shift.settings.confirmRemove;
-      d.additional.insert( [ d.remove.trash.set( false ), "Trash" ] );
+      d.additional.insert( d.remove.trash.setValue( false ), "Trash" );
       break;
 
     case "trash":
       popup = globals.shift.settings.confirmTrash;
-      d.additional.insert( [ d.remove.trash.set( true ), "Trash" ] );
+      d.additional.insert( d.remove.trash.setValue( true ), "Trash" );
       break;
   }
   globals.selected = selected;
   if( popup ) {
     closePopup( e )
-    var l = torrentActions[ globals.action ].label;
-    var p = showPopup( "popupDialog" );
+    const l = torrentActions[ globals.action ].label;
+    const p = showPopup( "popupDialog" );
     p.down( "h1" ).update( l );
     p.down( "span" ).update( globals.action );
     d.torrents.update( "\"" + selected.pluck( "name" ).join( "\",<br>\n\"" ) + "\"" );
     d.action.update( l ).setAttribute( "id", globals.action );
-    if( input ) {
-      input.focus();
-    }
+    input && input.focus();
     return;
   }
   handleTorrentActionClick( e );
@@ -975,10 +1486,10 @@ function handleTorrentMenuClick( e ) {
 
 function selectTorrents( action ) {
   var select = "select visible" == action;
-  var visible = select || "deselect visible" == action;
+  const visible = select || "deselect visible" == action;
   select = select || "select all" == action;
   globals.torrents.each( function( torrent ) {
-    torrent.set( !visible || visible && torrent.isDisplayed() ? select : torrent.isSelected() );
+    torrent.selected = !visible || visible && torrent.displayed ? select : torrent.selected;
   } );
 }
 
@@ -988,15 +1499,22 @@ function storeSelection() {
 
 function restoreSelection() {
   globals.torrents.each( function( torrent ) {
-    torrent.set( globals.selectedIds.include( torrent.id ) );
+    torrent.selected = globals.selectedIds.includes( torrent.id );
   } );
 }
 
-var torrentColumns = {
+const torrentColumns = columnKeys.reduce( function( o, k ) {
+  const f = torrentFields[ k ];
+  const v = f && f._column;
+  if( undefined !== v ) {
+    o[ k ] = v;
+  }
+  return o;
+}, {
   "menu": {
     label: rLed().observe( "click", function( e ) {
       showPopup( "popupGeneral", function( e ) {
-        var action = e.target.id;
+        const action = e.target.id;
         switch( action ) {
           case "store selection":
             storeSelection();
@@ -1016,166 +1534,72 @@ var torrentColumns = {
     },
     listHandler: function( e, torrent ) {
       globals.currentTorrent = torrent;
-      [ $( "recycle" ) ].invoke( globals.shift.settings.torrentLinkEnabled && torrent.error == 3 ? "show" : "hide" );
+      $( "recycle" )[ globals.shift.settings.torrentLinkEnabled && torrent.error >= 3 ? "show" : "hide" ]();
       showPopup( "popupTorrent", handleTorrentMenuClick, e );
     }
-  },
-
-  "queuePosition": {
-    label: "Q",
-    listHandler: function( e, torrent ) {
-      globals.currentTorrent = torrent;
-      showPopup( "popupQueue", function( e ) {
-        var action = e.target.id;
-        doRequest( "queue-move-" + action, { ids: getSelected().pluck( "id" ) }, getQueuePositions.curry( null ) );
-      }, e, function( popup, e ) {
-        return e.shiftKey;
-      } );
-    }
-  },
-
-  "status": {
-    filter: {
-      active: true,
-      visible: true,
-      value: globals.torrentStatusCurrent,
-      renderNode: renderStatusFilter,
-      match: function( torrent ) {
-        return undefined === torrent.status || -1 == this.value || this.value == torrent.status
-      }
-    }
-  },
-
-  "errorString": {
-    label: "Error"
-  },
-
-  "recheckProgress": {
-    label: "Checked"
-  },
-
-  "corruptEver": {
-    label: "Corrupt"
-  },
-
-  "percentDone": {
-    label: "Done",
-    render: renderPercentDone,
-    defaultOrder: false,
-    filter: {
-      active: true,
-      comparatorLabel: "<=",
-      comparator: comparators[ "<=" ],
-      value: 1.0,
-      renderNode: renderPercentDoneFilter,
-      match: function( torrent ) {
-        return undefined === torrent.percentDone || this.comparator( torrent.percentDone, this.value );
-      }
-    }
-  },
-
-  "rateDownload": {
-    label: "Down"
-  },
-
-  "rateUpload": {
-    label: "Up", render: renderRateUpload
-  },
-
-  "uploadedEver": {
-    label: "Uploaded", render: renderSizeCell
-  },
-
-  "uploadRatio": {
-    label: "Karma", render: renderUploadRatio
-  },
-
-  "sizeWhenDone": {
-    label: "Size",
-    render: renderSizeCell,
-    filter: {
-      active: true,
-      comparatorLabel: ">=",
-      comparator: comparators[ ">=" ],
-      value: 0,
-      renderNode: renderSizeFilter,
-      match: function( torrent ) {
-        return undefined === torrent.sizeWhenDone || this.comparator( torrent.sizeWhenDone, this.value );
-      }
-    }
-  },
-
-  "name": {
-    render: renderName,
-    isString: true,
-    filter: {
-      active: true,
-      value: "",
-      renderNode: renderNameFilter,
-      match: function( torrent ) {
-        return undefined === torrent.name || ( this.isRegExp ? this.value.test( torrent.name ) : torrent.name.toLowerCase().include( this.value ) );
-      }
-    }
-  },
-
-  "labels": {
-    column: false,
-    actualColumn: "name",
-    render: false,
-    filter: {
-      active: true,
-      value: "",
-      renderNode: renderLabelFilter,
-      match: function( torrent ) {
-        if( this.exclude ) {
-          if ( this.value.length === 0 ) {
-            return undefined === torrent.labels || torrent.labels.length;
-          }
-          return torrent.labels.length === 0 || !torrent.labels.include( this.value );
-        }
-        else {
-          if ( undefined === torrent.labels || this.value.length === 0 ) {
-            return true;
-          }
-          return torrent.labels.length > 0 && torrent.labels.include( this.value );
-        }
-      }
-    }
   }
-}
-
-globals.torrentColumnHash = Object.values( torrentColumns ).select( function( columnDefinition ) {
-  return columnDefinition.column !== false;
 } );
+
+globals.torrentColumnHash = columnKeys.reduce( function( a, k ) {
+  return a.pushUnique( torrentColumns[ k ] );
+}, [] );
+globals.sortProperty = updateOrder( torrentColumns );
 
 Object.copyNestedProperties( torrentFields, torrentColumns, Object.keys( torrentColumns ), [ "sss" ] );
 
-var filters = Object.values( torrentColumns ).pluck( "filter" ).compact();
+( function() {
+  for( var key in globals.torrentStatus ) {
+    const s = globals.torrentStatus[ key ];
+    s.columns = Object.copyNestedProperties( torrentColumns, {}, s.columns );
+  }
+}() );
 
-function filterTorrents() {
-  return globals.torrents.select( function( torrent ) {
-    return torrent._display = filters.all( function( filter ) { return !filter.active || filter.match( this ) }, torrent );
+const filters = Object.values( torrentColumns ).pluck( "filter" ).compact().sort( function( a, b ) { return a.cost < b.cost } );
+
+function filterTorrents( torrents ) {
+  const f = filters.filter( function( filter ) {
+    return Object.isFunction( filter.active ) ? filter.active() : filter.active;
+  } ).reverse();
+
+  torrents = torrents || globals.torrents;
+  return torrents.filter( function( torrent ) {
+    var display = true;
+    for( var i = 0, len = f.length; i < len && display; ++i ) {
+      display = f[ i ].match( torrent );
+    }
+    return torrent.displayed = display;
   } );
 }
 
 function filterDisplayed( torrents ) {
    return torrents.filter( function( torrent ) {
-     return torrent.isDisplayed();
+     return torrent.displayed;
   } );
 }
 
 function filterSelected( torrents ) {
   return torrents.filter( function( torrent ) {
-    return torrent.isSelected();
+    return torrent.selected;
+  } );
+}
+
+function filterStatus( status ) {
+  status = status === undefined ? globals.currentStatus : status;
+  if( -1 == status ) {
+    return globals.torrents;
+  }
+
+  return globals.torrents.filter( function( torrent ) {
+    return status == torrent.status;
   } );
 }
 
 function getSelected() {
-  var selected = filterDisplayed( filterSelected( globals.torrents ) );
+  const selected = filterDisplayed( filterSelected( globals.torrents ) );
   return selected.isEmpty() ? [ globals.currentTorrent ] : selected;
 }
 
-var fileColumns = {
+const fileColumns = {
   "priority": { label: rLed().observe( "click", function( e ) {
     e.stop();
     showPopup( "popupFiles", function( e ) {
@@ -1193,7 +1617,7 @@ var fileColumns = {
   "name": { defaultOrder: false, sss: true }
 }
 
-var peerColumns = {
+const peerColumns = {
   "menu": { label: rLed(), render: rLed },
   "address": { label: "Peer", defaultOrder: false, sss: true },
   "port": {},
@@ -1204,7 +1628,7 @@ var peerColumns = {
   "clientName": { label: "Client" }
 }
 
-var peerFlags = {
+const peerFlags = {
   "D": "Currently downloading (interested, unchoked)",
   "d": "Your client wants to download, but peer doesn't want to send (interested, choked)",
   "E": "Peer is using Protocol Encryption (all traffic)",
@@ -1225,7 +1649,9 @@ var peerFlags = {
   "?": "Your client unchoked the peer but the peer is not interested"
 }
 
-var trackerColumns = {
+const trackerFields = [ "id", "trackers", "trackerList" ];
+
+const trackerColumns = {
   "menu": {
     label: rLed(),
     render: rLed,
@@ -1235,7 +1661,7 @@ var trackerColumns = {
         globals.action = e.target.id;
         switch( globals.action ) {
           case "remove":
-            doRequest( "torrent-set", { ids: [ globals.currentTorrent.id ], trackerRemove: [ globals.currentTracker ] } );
+            fixTorrents( { ids: [ globals.currentTorrent.id ], trackerRemove: [ globals.currentTracker ] } );
         }
       }, e );
     } },
@@ -1248,64 +1674,68 @@ var trackerColumns = {
   "lastScrapeTime": { label: "Scraped", render: renderDateTimeShort },
   "nextScrapeTime": { label: "Next", render: renderDateTimeShort }
 }
-
-var webseedColumns = {
-  "webseeds": { label: "Webseeds" }
-}
-
-globals.trackerColumnHash = Object.values( trackerColumns ).select( function( column ) {
+globals.trackerColumnHash = Object.values( trackerColumns ).filter( function( column ) {
   return column.render;
 } );
 
-var detailsColumns = {
+const webseedColumns = {
+  "webseeds": { label: "Webseeds" }
+}
+
+const detailsColumns = {
   "key": {},
   "value": {}
 }
 
-var peersFromColumns = detailsColumns;
-var sessionColumns = detailsColumns;
-var shiftColumns = detailsColumns;
+const peersFromColumns = detailsColumns;
+const sessionColumns = detailsColumns;
+const shiftColumns = detailsColumns;
 
-var Torrent = Class.create( {
-  initialize: function( torrent ) {
-    this._selected = false;
-    this._display = false;
-    this.update( torrent );
-  },
-  isDisplayed: function() {
-    return this._display;
+const renderSizeOk = function( size ) {
+  return size === undefined ? "?" : renderSize( size );
+}
+
+const pathColumns = {
+  "path": {},
+  "free": { render: renderSizeOk },
+  "total": { render: renderSizeOk },
+  "count": { label: "#" },
+  "menu": { label: "", render: function() { return rLed().makeToggle() } }
+}
+
+const Torrent = Class.create( {
+  initialize: function( torrent, keys ) {
+    Object.extend( this, TorrentDefaults );
+    this.update( torrent, keys );
   },
   isMagnet: function() {
-    return ( undefined === this.metadataPercentComplete || 1.0 > this.metadataPercentComplete ) && 0.0 == this.percentDone && 0.0 == this.sizeWhenDone;
+    return ( undefined === this.metadataPercentComplete || 1.0 > this.metadataPercentComplete ) && 0.0 == this.percentDone && 0.0 == this.sizeWhenDone && !this.isSeeding();
   },
-  isSelected: function() {
-    return this._selected;
+  isSeeding: function() {
+    return ( globals.version < 14 ? 8 : 6 ) === this,status;
   },
   select: function() {
-    return this.set( true );
+    return this.setValue( true );
   },
   deselect: function() {
-    return this.set( false );
+    return this.setValue( false );
   },
   toggleSelect: function( select ) {
-    return this.set( undefined === select ? !this._selected : select );
+    return this.setValue( undefined === select ? !this.selected : select );
   },
-  set: function( selected ) {
-    if( this._selected != selected ) {
-      this._selected = selected;
-      if( this._node ) {
-        this._node.toggleClassName( "selected", this._selected );
-        this._node.down( ".led" ).set( selected );
-      }
-    }
+  setValue: function( s ) {
+    this.selected = s;
     return this;
   },
-  update: function( torrent ) {
+  update: function( torrent, keys ) {
+    const array = Object.isArray( torrent );
     this._dirty = this._dirty || [];
-    for( var k in torrent ) {
-      var o = this[ k ];
-      var v = torrent[ k ];
-      if( this[ k ] != v ) {
+    keys = keys || Object.keys( torrent );
+    for( var i = 0; i < keys.length; ++i ) {
+      const k = keys[ i ];
+      const o = this[ k ];
+      const v = torrent[ array ? i : k ];
+      if( o != v ) {
         switch( k ) {
           case "id":
             this[ k ] = v;
@@ -1319,7 +1749,7 @@ var Torrent = Class.create( {
             switch( globals.torrentStatus[ v ].label ) {
               case "Seed waiting":
               case "Seeding":
-                if( undefined !== this[ k ] && "Downloading" == globals.torrentStatus[ this[ k ] ].label ) {
+                if( undefined !== o && "Downloading" == globals.torrentStatus[ o ].label ) {
                   this.done();
                 }
             }
@@ -1338,74 +1768,46 @@ var Torrent = Class.create( {
   }
 } );
 
-function rLed( k, attributes ) {
-  return Object.extend( rS( Object.extend( { "class": "led" }, attributes ) ), {
-    value: false,
-    set: function( k ) {
-      var found = false;
-      if( Object.isBoolean( k ) ) {
-        k = k ? "normal" : "none";
-      }
-      k = k ? k : "none";
-      this.value = k != "none";
-      for( p in filePriority ) {
-        this.toggleClassName( p, k == p );
-        found |= k == p;
-      }
-      if( found ) {
-         return this.update( filePriority[ k ].label );
-      }
-      for( p in uploadStatus ) {
-        this.toggleClassName( p, k == p );
-        found |= k == p;
-      }
-      if( found ) {
-         return this.update( uploadStatus[ k ].label );
-      }
-      return this.update( k );
-    },
-    toggle: function() {
-      this.set( !this.value );
-    },
-    makeToggle: function() {
-      return this.observe( "click", this.toggle );
-    }
-  } ).set( k );
-}
-
-function $S(className) {
-  var sheets = document.styleSheets;
-  if( sheets.length < 1 ) {
-    return null;
-  }
-
-  for( var i = 0, slen = sheets.length; i < slen; ++i ) {
-    var rules = sheets[ i ].cssRules;
-
-    for( var j = 0, rlen = rules.length; j < rlen; ++j ) {
-      if( rules[ j ].selectorText == className ) {
-        return rules[ j ].style;
+Object.defineProperty( Torrent.prototype, "selected", {
+  get() {
+    return this._selected;
+  },
+  set( s ) {
+    if( this._selected != s ) {
+      this._selected = s;
+      if( this._node ) {
+        this._node.toggleClassName( "selected", this._selected );
+        this._node.down( "led" ).value = s;
       }
     }
   }
-  return null;
-}
+} );
 
-var nameClass = $S( "div.name" );
+Object.defineProperty( Torrent.prototype, "displayed", {
+  get() {
+    return this._displayed;
+  },
+  set( d ) {
+    this._displayed = d;
+  }
+} );
 
 function showPopup( popup, handler, e, keepOpen ) {
   popup = $( popup );
-  var popups = $( "popups" );
-  var outside = $( "outside" );
-  var elements = [ outside, popups, popup ];
+  const popups = $( "popups" );
+  const outside = $( "outside" );
+  const elements = [ outside, popups, popup ];
+
+  // Prevent stacking visually.
+  popups.select( ".popup" ).hideAll();
 
   popups.close = function( e ) {
     if( keepOpen && keepOpen( popup, e ) ) {
       return;
     }
-    elements.invoke( "hide" ).invoke( "stopObserving", "click" );
+    elements.hideAll().invoke( "stopObserving", "click" );
     delete popups.close;
-  };
+  }
 
   popup.observe( "click", preventBubbling );
   outside.observe( "click", popups.close );
@@ -1431,17 +1833,34 @@ function showPopup( popup, handler, e, keepOpen ) {
 }
 
 function closePopup( e ) {
-  var popups = $( "popups" );
-  if( popups.close ) {
-    popups.close( e );
+  const popups = $( "popups" );
+  popups.close && popups.close( e );
+}
+
+function showAddPopup( e ) {
+  e && e.stop();
+  showPopup( "popupAdd" );
+  const label = $( "labelDir" );
+  const input = label.next();
+  input && input.remove();
+  label.insert( { after: renderPathSelect() } );
+  const d = globals.dialogs.add;
+  if( torrentRegExp.test( d.url.value ) ) {
+    return;
+  }
+  if( navigator.clipboard && navigator.clipboard.readText ) {
+    navigator.clipboard.readText().then( function( text ) {
+      d.url.value = text.match( torrentRegExp );
+      d.url.value && d.isUrl.click();
+    } );
   }
 }
 
 function getTorrentFileNames( torrent ) {
   torrent = torrent || globals.currentTorrent;
-  doTorrentGet( [ "id", "files", "name" ], [ torrent.id ], function( response ) {
+  fetchTorrents( [ "id", "files", "name" ], [ torrent.id ], function( response ) {
     if( success( response ) ) {
-      updateTorrents( response );
+      filterTorrents( updateTorrents( response ) );
       $( "fileBody" ).update();
       renderFiles( torrent );
     }
@@ -1449,33 +1868,38 @@ function getTorrentFileNames( torrent ) {
 }
 
 function renameFiles( renames ) {
-  var args = renames.shift();
-  if( undefined === args ) {
-    getTorrentFileNames();
-    return;
-  }
+  var a;
 
-  if( getFilePart( args.path ) == args.name ) {
-    renameFiles( renames );
-    return;
-  }
+  const _next = function() {
+    a = renames.shift();
+    if( undefined === a ) {
+      getTorrentFileNames();
+      return;
+    }
 
-  args.ids = [ globals.currentTorrent.id ];
-  var node = args.node;
-  delete args.node;
+    if( getFilePart( a.path ) == a.name ) {
+      _next();
+      return;
+    }
 
-  doRequest( "torrent-rename-path", args, function( response ) {
-    var args = getArguments( response );
-    if( success( response ) ) {
-      if( node ) {
-        node.update( args.name );
+    a.ids = [ globals.currentTorrent.id ];
+    const node = a.node;
+    delete a.node;
+
+    doRequest( "torrent-rename-path", a, function( response ) {
+      const args = getArguments( response );
+      if( success( response ) ) {
+        if( node ) {
+          node.update( args.name );
+        }
       }
-    }
-    else {
-      sendNotification( 1, "Renaming error.", { body: "Could not rename\n\"" + getFilePart( args.path ) + "\nto\n\"" + args.name + "\"" } );
-    }
-    renameFiles( renames );
-  } );
+      else {
+        sendNotification( 1, "Renaming error.", { body: "Could not rename\n\"" + getFilePart( args.path ) + "\nto\n\"" + args.name + "\"" } );
+      }
+      _next();
+    } );
+  }
+  _next();
 }
 
 function renderDateTime( seconds ) {
@@ -1484,9 +1908,9 @@ function renderDateTime( seconds ) {
 
 function renderDateTimeShort( seconds ) {
   if( seconds > 0 ) {
-    var s = renderDateTime( seconds );
+    const s = renderDateTime( seconds );
     seconds *= 1000;
-    var now = new Date().getTime()
+    const now = new Date().getTime()
     return seconds < now - DAY_MS || seconds > now + DAY_MS ? s.substr( 0, 10 ) : s.substr( 11, 8 )
   }
   return "-";
@@ -1494,20 +1918,21 @@ function renderDateTimeShort( seconds ) {
 
 function renderFlags( flags, peer, attribute, cell ) {
   if( cell ) {
-     cell.title = flags.toArray().collect( function( flag ) { return flag + " = " + peerFlags[ flag ] } ).join( "\n" );
+    cell.title = flags.toArray().map( function( flag ) { return flag + " = " + peerFlags[ flag ] } ).join( "\n" );
   }
   return flags;
 }
 
-var pctClassNames = [ "pct0", "pct25", "pct50", "pct75", "pct100" ];
+const pctClassNames = [ "pct0", "pct25", "pct50", "pct75", "pct100" ];
 
-function setPercentageClass( element, percentage, multiplier ) {
-  multiplier = typeof multiplier === "undefined" ? 1.0 : multiplier;
+function setPercentageClass( e, percentage, multiplier ) {
+  multiplier = multiplier || 1.0;
   percentage *= multiplier;
-  percentage = Math.max( 0.0, Math.min( 1.0, percentage ) );
+  percentage = percentage.limit( 0.0, 1.0 );
   for( var i = 0, len = pctClassNames.length; i < len; ++i ) {
-    element.toggleClassName( pctClassNames[ i ], i == Math.floor( percentage * ( len - 1 ) ) );
+    e.toggleClassName( pctClassNames[ i ], i == Math.floor( percentage * ( len - 1 ) ) );
   }
+  return e;
 }
 
 function renderPercentDone( percentage, torrent, attribute, cell ) {
@@ -1523,64 +1948,161 @@ function renderPercentDone( percentage, torrent, attribute, cell ) {
   return renderPercentage( percentage );
 }
 
-function renderPieces( pieces, cell ) {
-  var canvas = cell.down( "canvas.pieces" );
-  var w = cell.getWidth();
-  var h = cell.getHeight();
+function getRGBA( rgba ) {
+  const s = "background-color";
+  var index = rgba.indexOf( "rgb" );
+  if( -1 === rgba.indexOf( "rgb" ) ) {
+    const style = {};
+    style[ s ] = rgba;
+    rgba = rD().hide().setStyle( style ).getComputedStyle( s );
+  }
+  index = rgba.indexOf( "rgb" );
+  rgba = rgba.substring( index );
+  rgba += -1 === rgba.indexOf( "rgba") ? ",1" : "";
+  return rgba.match( /[\.\d]+/g ).map( function( a ) { return +a } );
+}
 
-  if( !canvas ) {
-    canvas = rE( "canvas", { "class": "pieces" } ).hide();
-    canvas.height = h;
-    canvas.width = w;
-    globals.percentDone = null;
-    // workaround for getComputedStyle being made "browser consistent"
-    globals.body.insert( canvas );
-    globals.piecesColor = canvas.getStyle( "color" );
-    canvas.remove();
-    canvas.show();
+function c32( r, g, b, a ) {  // ABGR
+  if( Object.isString( r ) ) {
+    r = getRGBA( r );
+  }
+  if( Object.isArray( r ) ) {
+    a = r[ 3 ] || 1.0;
+    b = r[ 2 ] || 0;
+    g = r[ 1 ] || 0;
+    r = r[ 0 ] || 0;
+  }
+  return r | g << 8 | b << 16 | a * 255 << 24;
+}
+
+function createCanvas( property ) {
+  const canvas = rE( "canvas", { "class": property } );
+  canvas.height = 1;
+  canvas.width = globals.pieceCount;
+  return canvas;
+}
+
+var availabilityColors;
+function renderAvailability( availability, cell ) {
+  const steps = 16;
+  const torrent = globals.currentTorrent;
+  if( torrent.pieceCount > globals.maxPieceCount ) {
+    return;
+  }
+  var canvas = cell.down( "canvas.availability" ) || createCanvas( "availability" );
+
+  const _HSL = function( hStart, hEnd ) {
+    const colors = [];
+
+    var hue = hStart;
+    var delta = ( hEnd - hStart ) / steps;
+    for( var i = 0; i < steps; ++i ) {
+      colors.push( c32( [ "hsl(",hue,",100%,50%)" ].join( "" ) ) );
+      hue += delta;
+    }
+    return colors;
   }
 
-  if( !globals.currentTorrent.pieceCount || w == canvas.width && globals.percentDone == globals.currentTorrent.percentDone ) {
+  const _RGBA = function() {
+    const _marked = function( color ) {
+      return "0px solid rgba(255, 255, 255, 0)" === color;
+    }
+    canvas.addClassName( "gradient" );
+    var start = canvas.getComputedStyle( "border-left" );
+    var end = canvas.getComputedStyle( "border-right" );
+    canvas.removeClassName( "gradient" );
+    if( _marked( start ) || _marked( end ) ){
+      return undefined;
+    }
+    start = getRGBA( start );
+    end = getRGBA( end );
+    const opacityStep = ( end[ 3 ] * 100 - start[ 3 ] * 100 ) / steps;
+    const colors = [];
+    var alpha = 0;
+    var opacity = start[ 3 ] * 100;
+
+    for( var i = 0; i < steps; ++i ) {
+      alpha += 1.0 / steps;
+      opacity += opacityStep;
+
+      colors.push( c32(
+        Math.round( end[0] * alpha + (1 - alpha) * start[0] ),
+        Math.round( end[1] * alpha + (1 - alpha) * start[1] ),
+        Math.round( end[2] * alpha + (1 - alpha) * start[2] ),
+        opacity / 100
+      ) );
+    }
+    return colors;
+  }
+
+  availabilityColors =
+    availabilityColors ||
+    _RGBA() ||
+    _HSL( 0, 120 );
+
+  if( !torrent.pieceCount || globals.percentDone == torrent.percentDone ) {
     return canvas;
   }
-  canvas.width = w;
-  globals.percentDone = globals.currentTorrent.percentDone;
 
-  var ppp = globals.currentTorrent.pieceCount / w; // pieceCount per pixel
-
-  var ctx = canvas.getContext( "2d" );
-  ctx.strokeStyle = globals.piecesColor;
-  ctx.clearRect( 0, 0, w, h );
-  pieces = window.atob( pieces );
-
-  var bitIndex = 0.0;
-  var sb, eb, db;
-  var b, c;
-  var j = 0;
-  for( var i = 0, len = pieces.length; i < len; ++i ) {
-    b = b << 8 | pieces.charCodeAt( i );
-    bitIndex += 8.0;
-    sb = Math.round( bitIndex );
-    while( bitIndex > ppp ) {
-      bitIndex -= ppp;
-      eb = Math.round( bitIndex );
-      db = sb - eb;
-
-      c = b >> eb;
-      c <<= 32 - db;
-      c = c - ( c >> 1 & 0x55555555 );
-      c = ( c & 0x33333333 ) + ( c >> 2 & 0x33333333 );
-      c = ( c + ( c >> 4 ) & 0x0F0F0F0F ) * 0x01010101 >> 24;
-
-      ctx.globalAlpha = c / db;
-      ctx.beginPath();
-      ctx.moveTo( j, 0 );
-      ctx.lineTo( j++, h );
-      ctx.stroke();
-
-      sb = eb;
-    }
+  canvas.style.imageRendering = cell.getWidth() < globals.pieceCount ? "optimizequality" : "optimizespeed";
+  const ctx = canvas.getContext( "2d" );
+  const image = ctx.createImageData( globals.pieceCount, 1 );
+  const ra = new Uint32Array( image.data.buffer );
+  var bitIndex;
+  for( var i = 0, len = globals.pieceCount; i < len; ++i ) {
+    const a = availability[ i ];
+    ra[ i ] = -1 === a ? 0 : availabilityColors[ a.limit( 0, steps - 1 ) ];
   }
+  try {
+    ctx.putImageData( image, 0, 0 );
+  }
+  catch( e ) {
+    console.warn( formatException( e ) );
+    globals.maxPieceCount = torrent.pieceCount - 1;
+  }
+
+  return canvas;
+}
+
+function formatException( e ) {
+  return e.name + " " + "0x" + e.result.toString( 16 ) + " " + e.message + "\n(" + e.stack.split( "\n" )[ 0 ] + ") ";
+}
+
+function renderPieces( pieces, cell ) {
+  const torrent = globals.currentTorrent;
+  if( torrent.pieceCount > globals.maxPieceCount ) {
+    return;
+  }
+
+  const canvas = cell.down( "canvas.pieces" ) || createCanvas( "pieces" );
+  globals.piecesColor = globals.piecesColor || c32( canvas.getComputedStyle( "color" ) );
+
+  if( !torrent.pieceCount || globals.percentDone === torrent.percentDone ) {
+    return canvas;
+  }
+
+  canvas.style.imageRendering = cell.getWidth() < globals.pieceCount ? "optimizequality" : "optimizespeed";
+  const ctx = canvas.getContext( "2d" );
+  const image = ctx.createImageData( globals.pieceCount, 1 );
+  const ra = new Uint32Array( image.data.buffer );
+  const p = window.atob( pieces );
+  var bitIndex;
+  for( var i = 0, len = globals.pieceCount; i < len; ++i ) {
+    bitIndex = i % 8;
+    if( 0 === bitIndex ) {
+      b = p.charCodeAt( i / 8 );
+    }
+    bitIndex = 128 >> bitIndex;
+    ra[ i ] = globals.piecesColor & 0x00ffffff | ( ( b & bitIndex ) > 0 ? 0xff : 0x00 ) << 24;
+  }
+  try {
+    ctx.putImageData( image, 0, 0 );
+  }
+  catch( e ) {
+    console.warn( formatException( e ) );
+    globals.maxPieceCount = torrent.pieceCount - 1;
+  }
+
   return canvas;
 }
 
@@ -1599,13 +2121,13 @@ function renderInterval( seconds ) {
 }
 
 function renderLabels( labels ) {
-  return rS( {  class: "labels" }, labels.map( function( label ) {
+  return rS( "labels", labels.map( function( label ) {
     return rS( { class: "label " + label.toCSS(), title: label }, label );
   } ) );
 }
 
 function renderName( name, torrent, ignore, cell ) {
-  var s = ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
+  const s = ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
   if( cell && torrent.labels && torrent.labels.length ) {
     cell.update( renderLabels( torrent.labels ) );
     cell.insert( s );
@@ -1620,7 +2142,7 @@ function renderPercentage( percentage, decimals ) {
 }
 
 function renderRateUpload( rateUpload, torrent, ignore, cell ) {
-  if( cell ) {
+  if( cell && Object.isNumber( torrent.uploadedEver ) ) {
     cell.title = renderSize( torrent.uploadedEver );
   }
   return isNaN( rateUpload ) ? "" : renderSpeed( rateUpload );
@@ -1646,133 +2168,101 @@ function renderSpeed( size ) {
 }
 
 function renderStatus( status ) {
-  return globals.torrentStatus[ status ].label;
-}
-
-function normalizeOptions( options ) {
-  var normalized = [];
-  if( Object.isArray( options ) ) {
-    for( var i = 0, len = options.length; i < len; ++i ) {
-      normalized.push( { value: options[ i ], text: options[ i ] } );
-    }
-  }
-  else {
-    for( var k in options ) {
-      var i = parseInt( k );
-      k = isNaN( i ) ? k : i;
-      normalized.push( Object.isFunction( options[ k ] ) ? { value: options[ k ], text: k } : { value: k, text: options[ k ] } );
-    }
-  }
-  return normalized;
+  return undefined !== status && globals.torrentStatus[ status ].label;
 }
 
 function renderFilter( label ) {
-  var f = rD( { "class": "filter"} ).hide();
-  f.insert( rE( "label", null, label + ":" ) );
+  const f = rD( { "class": "filter"} ).hide();
+  f.insert( rL( null, label + ":" ) );
   f.insert( rS( { "class" : "filterInput" } ) );
   return f;
 }
 
-function renderSelect( options ) {
-  var select = rE( "select", options.select );
-  if( options.options ) {
-    for( var i = 0, len = options.options.length; i < len; ++i ) {
-      var o = options.options[ i ];
-      select.insert( rE( "option", o ).update( o.text ? o.text : o.value ) );
-    }
-  }
-  if( options.select ) {
-    select.value = options.select.value;
-  }
-  select.observe( "keydown", preventBubbling );
-  return select;
-}
-
 function renderStatusFilter() {
-  var f = renderFilter( "Status" );
+  const f = renderFilter( "Status" );
   f.down( "span.filterInput" ).insert(
-    renderSelect( { select: { id: "statusSelect", value: globals.torrentStatusCurrent, "class": "styled" },
-    options: Object.keys( globals.torrentStatus ).collect( function( k ) {
-      return { value: k, text: globals.torrentStatus[ k ].label };
-    } ) } ).observe( "change", function( e ) {
-      torrentColumns.status.filter.value = this.value;
-      filterTorrents();
+    renderSelect( {
+      select: { id: "statusSelect", value: globals.currentStatus },
+      options: Object.keys( globals.torrentStatus ).map( function( k ) {
+        return { value: k, text: globals.torrentStatus[ k ].label };
+      } )
+    } ).observe( "change", function() {
+      torrentColumns.status.filter.value = +this.value;
       globals.torrentStatusChanged = true;
-      globals.torrentStatusCurrent = this.value;
-      $( "torrentBody" ).select( "tr" ).findAll( Element.visible ).invoke( "toggleClassName", "active", false );
+      globals.currentStatus = this.value;
+      filterTorrents();
+      $( "torrentBody" ).select( "tr" ).filter( Element.visible ).invoke( "toggleClassName", "active", false );
       globals.currentIndex = -1;
-      globals.updateFields = globals.torrentStatus[ globals.torrentStatusCurrent ].fields;
-      if( globals.torrentStatus[ globals.torrentStatusCurrent ].onChange ) {
-        globals.torrentStatus[ globals.torrentStatusCurrent ].onChange();
+      globals.updateFields = globals.torrentStatus[ globals.currentStatus ].fields;
+      if( globals.torrentStatus[ globals.currentStatus ].onChange ) {
+        globals.torrentStatus[ globals.currentStatus ].onChange();
       }
       else {
-        setDefaultTorrentRequest();
+        globals.shift.torrentUpdater.default();
       }
+      sortTorrents( undefined, true );
+      renderTorrents();
     } )
   );
   return f;
 }
 
 function normalizePercentage( value ) {
-  value = parseFloat( value );
-  return isNaN( value ) || value > 100.00 ? 100.00 : value < 0.00 ? 0.00 : value / 100.00;
+  return isNaN( value = parseFloat( value ) ) || value > 100.00 ? 100.00 : value < 0.00 ? 0.00 : value;
 }
 
 function normalizeInteger( value ) {
-  value = parseInt( value );
-  return isNaN( value ) || value < 0 ? 0 : value;
+  return isNaN( value = parseInt( value ) ) || value < 0 ? 0 : value;
 }
 
 function renderPercentDoneFilter() {
-  var filter = torrentColumns.percentDone.filter;
-  var select = renderSelect( { select: { "class": "styled", value: filter.comparatorLabel }, options: defaultOptions } );
-  var input = rI( renderPercentage( filter.value ), { "class": "styled number" } );
+  const filter = torrentColumns.percentDone.filter;
+  const select = renderSelect( { select: { value: filter.comparatorLabel }, options: defaultOptions } );
+  const input = rI( renderPercentage( filter.value ), { "class": "styled number" } );
 
-  var _handler = function( e ) {
+  const _handler = function() {
     filter.comparator = comparators[ select.value ];
-    filter.value = normalizePercentage( input.value );
+    filter.value = normalizePercentage( input.value ) / 100.00;
     input.value = renderPercentage( filter.value );
     filterTorrents();
-  };
+  }
 
   select.observe( "change", _handler );
   input.observe( "change", _handler );
   input.observe( "blur", _handler );
 
-  var f = renderFilter( "Done" );
+  const f = renderFilter( "Done" );
   f.down( "span.filterInput" ).insert( select ).insert( input );
   return f;
 }
 
 function renderSizeFilter() {
-  var filter = torrentColumns.sizeWhenDone.filter;
-  var select = renderSelect( { select: { "class": "styled", value: filter.comparatorLabel }, options: defaultOptions } );
-  var input = rI( filter.value, { "class": "styled number" } );
+  const filter = torrentColumns.sizeWhenDone.filter;
+  const select = renderSelect( { select: { value: filter.comparatorLabel }, options: defaultOptions } );
+  const input = rI( filter.value, { "class": "styled number" } );
 
-  var _handler = function( e ) {
+  const _handler = function() {
     filter.comparator = comparators[ select.value ];
     filter.value = normalizeInteger( input.value );
     input.value = filter.value;
     filterTorrents();
-  };
+  }
 
   select.observe( "change", _handler );
   input.observe( "change", _handler );
   input.observe( "blur", _handler );
 
-  var f = renderFilter( "Size" );
+  const f = renderFilter( "Size" );
   f.down( "span.filterInput" ).insert( select ).insert( input );
   return f;
 }
 
-var noMatchRegExp = new RegExp( "\0" );
-
 function renderNameFilter() {
-  var filter = torrentColumns.name.filter;
-  var input = rI( filter.value );
-  var regExpLed = rLed().makeToggle();
+  const filter = torrentColumns.name.filter;
+  const input = rI( filter.value );
+  const regExpLed = rLed().makeToggle();
 
-  var _handler = function( e ) {
+  const _handler = function() {
     filter.value = input.value.toLowerCase();
     if( filter.isRegExp = regExpLed.value ) {
       try {
@@ -1783,47 +2273,35 @@ function renderNameFilter() {
       }
     }
     filterTorrents();
-  };
+  }
 
   input.observe( "change", _handler );
   input.observe( "blur", _handler );
   regExpLed.observe( "click", _handler );
 
-  var f = renderFilter( "Name" );
-  f.down( "span.filterInput" ).insert( input ).insert( " RegExp: " ).insert( regExpLed );
+  const f = renderFilter( "Name" );
+  f.down( "span.filterInput" ).insert( input ).insert( regExpLed ).insert( "RegExp" );
   return f;
 }
 
 function renderLabelFilter() {
-  var filter = torrentColumns.labels.filter;
-  var input = rI( filter.value );
-  var inputExclude = rLed().makeToggle();
+  const filter = torrentColumns.labels.filter;
+  const input = rI( filter.value );
+  const inputExclude = rLed().makeToggle();
 
-  var _handler = function( e ) {
+  const _handler = function() {
     filter.value = input.value;
-    filter.exclude =  inputExclude.value;
+    filter.exclude = inputExclude.value;
     filterTorrents();
-  };
+  }
 
   input.observe( "change", _handler );
   input.observe( "blur", _handler );
   inputExclude.observe( "click", _handler );
 
-  var f = renderFilter( "Label" );
-  f.down( "span.filterInput" ).insert( input ).insert( " Exclude: " ).insert( inputExclude );
+  const f = renderFilter( "Label" );
+  f.down( "span.filterInput" ).insert( input ).insert( inputExclude ).insert( "Exclude" );
   return f;
-}
-
-function removeTorrentById( id ) {
-  globals.removed.pushUnique( id );
-
-  var t = globals.torrentHash[ id ];
-  if( t ) {
-    t._node.remove();
-    globals.torrents.remove( t );
-    sendNotification( 3, "Torrent removed.", getBody( t ) );
-  }
-  delete globals.torrentHash[ id ];
 }
 
 function onFailure( response ) {
@@ -1841,10 +2319,10 @@ function onFailure( response ) {
 
 function doRequest( method, args, onSuccess, properties ) {
   showWait();
-  var requestBase = Object.isString( method ) ? newRequest( method, args, onSuccess, properties ) :  method;
+  const requestBase = Object.isString( method ) ? newRequest( method, args, onSuccess, properties ) :  method;
   requestBase.parameters = requestBase.parameters ? requestBase.parameters : Object.toJSON( requestBase.parametersObject );
 
-  var request = Object.extend( {
+  const request = Object.extend( {
     url: globals.rpcUrl,
     method: "post",
     requestHeaders: globals.requestHeaders,
@@ -1856,21 +2334,77 @@ function doRequest( method, args, onSuccess, properties ) {
         doRequest( requestBase );
       }
     },
-    onComplete: function( response ) {
+    onComplete: function() {
       showDone();
     }
   }, requestBase );
 
-  return request.frequency && request.frequency > 0 ?
+  return globals.lastRequest = request.frequency > 0 ?
     new Ajax.PeriodicalUpdater( "items", request.url, request ) :
     new Ajax.Request( request.url, request );
-};
+}
 
-function doTorrentGet( fields, ids, onSuccess ) {
-  doRequest( "torrent-get", { fields: fields, ids: ids }, onSuccess );
-};
+function addTorrent( data, handler, target, paused, notify ) {
+  var reader;
 
-var renderers = {
+  const _upload = function() {
+    data = reader ? reader.result : data;
+    const search = "base64,"
+    const index = data.indexOf( search );
+    data = -1 === index ? data : data.substring( index + search.length );
+
+    const args = {
+      "download-dir": target || globals.shift.session && globals.shift.session[ "download-dir" ] || undefined,
+      "metainfo": data
+    }
+    if( undefined !== paused ) {
+      args[ "paused" ] = paused;
+    }
+    if( data.includes( ":" ) ) {
+      delete args[ "metainfo" ];
+      args[ "filename" ] = decodeURIComponent( data ).replace( new RegExp( "&amp;", "g" ), "&" );
+    }
+    const req = doRequest( "torrent-add", args, function( response ) {
+      if( success( response ) ) {
+        const args = getArguments( response );
+        args.torrents = [ args[ "torrent-added" ] || args[ "torrent-duplicate" ] ];
+        filterTorrents( updateTorrents( response, true ) );
+        sortTorrents();
+        renderTorrents();
+      }
+      handler && handler( response );
+    } );
+    notify && notify( req );
+  }
+
+  switch( data.constructor ) {
+  case Blob:
+  case File:
+    reader = Events.observe( new FileReader(), "load", _upload );
+    reader.readAsDataURL( data );
+    break;
+  case ArrayBuffer:
+    data = window.btoa( arrayBufferToString( data ) );
+  case String:
+    _upload();
+  default:
+  }
+}
+
+function fetchTorrents( fields, ids, handler ) {
+  if( ids && ids.length > globals.torrents.length / 2 ) {
+    ids = undefined;
+  }
+  const args = { fields: fields, ids: ids };
+  if( globals.table && ( ids === undefined || ids.length > 1 ) ) {
+    args.format = "table";
+  }
+  doRequest( "torrent-get", args, handler || updateTorrents );
+}
+
+const fixTorrents = doRequest.curry( "torrent-set" );
+
+const renderers = {
   "downloadSpeed": renderSpeed,
   "uploadSpeed": renderSpeed,
   "downloadedBytes": renderSize,
@@ -1878,27 +2412,27 @@ var renderers = {
   "download-dir-free-space": renderSize
 }
 
-var updaters = {
-  "port-is-open": function( element, value ) {
-    element.set( value ).writeAttribute( "title", value ? "Open" : "Closed" )
+const updaters = {
+  "port-is-open": function( e, value ) {
+    e.writeAttribute( "title", value ? "Open" : "Closed" ).value = value;
   }
 }
 
 function updateFields( object ) {
   for( var k in object ) {
-    if( object.hasOwnProperty( k ) ) {
-      var o = object[ k ];
-      var element = $( k );
+    if( k in object ) {
+      const o = object[ k ];
+      const e = $( k );
 
       if( updaters[ k ] ) {
-        return updaters[ k ]( element, o );
+        return updaters[ k ]( e, o );
       }
 
       if( Object.isString( o ) || Object.isNumber( o ) || Object.isBoolean( o ) ) {
-        var renderer = renderers[ k ];
+        const renderer = renderers[ k ];
 
-        if( element ) {
-          updateElement( element, renderer ? renderer( o ) : o );
+        if( e ) {
+          updateElement( e, renderer ? renderer( o ) : o );
         }
         else if( renderer ) {
           renderer( o );
@@ -1912,14 +2446,24 @@ function updateFields( object ) {
 }
 
 function getErrorData( ids ) {
+  if( globals.currentStatus > 0 ) {
+    return;
+  }
+
+  ids = ids || globals.torrents.filter( function( torrent ) {
+    return 0 === torrent.status && 0 !== torrent.error;
+  } ).pluck( "id" );
+
   if( isEmpty( ids ) ) {
     return;
   }
-  doTorrentGet( [ "id", "error", "errorString" ], ids, function( response ) {
-    updateTorrents( response ).each( function( torrent ) {
+
+  fetchTorrents( [ "id", "error", "errorString" ], ids, function( response ) {
+    filterTorrents( updateTorrents( response ).each( function( torrent ) {
       sendNotification( 2, "Torrent error.", { body: "\"" + torrent.name + "\":\n" + torrent.errorString } );
-    } );
-    filterTorrents();
+    } ) )
+    sortTorrents();
+    renderTorrents();
   } );
 }
 
@@ -1927,9 +2471,10 @@ function getFieldData( ids ) {
   if( isEmpty( ids ) ) {
     return;
   }
-  doTorrentGet( globals.staticFields.concat( globals.updateFields ), ids, function( response ) {
-    updateTorrents( response );
-    filterTorrents();
+  fetchTorrents( globals.staticFields.concat( globals.updateFields ), ids, function( response ) {
+    filterTorrents( updateTorrents( response ) );
+    sortTorrents();
+    renderTorrents();
   } );
 }
 
@@ -1937,40 +2482,42 @@ function getMagnetData( ids ) {
   if( isEmpty( ids ) ) {
     return;
   }
-  doTorrentGet( [ "id", "hashString", "metadataPercentComplete" ], ids, updateTorrents );
+  fetchTorrents( [ "id", "hashString", "metadataPercentComplete" ], ids );
 }
 
-function createTorrent( torrent ) {
-  var t = new Torrent( torrent );
-  globals.torrents.push( t );
-  globals.torrentHash[ t.id ] = t;
-  return t;
-}
+function updateTorrents( response, refresh, pre ) {
+  const torrents = [];
+  const ids = [];  // Ids of torrents to be updated
+  const eids = []; // Ids of torrents with errors
+  const mids = []; // Ids of magnets for special handling
 
-function updateTorrents( response ) {
-  var torrents = [];
-  var ids = [];  // Ids of torrents to be updated
-  var eids = []; // Ids of torrents with errors
-  var mids = []; // Ids of magnets for special handling
+  const ts = getArguments( response ).torrents;
+  const table = Object.isArray( ts[ 0 ] );
+  const keys = table ? ts.shift() : Object.keys( ts[ 0 ] );
+  ts.each( function( torrent, index ) {
+    const id = torrent[ table ? keys.indexOf( "id" ) : "id" ];
+    console.assert( id !== undefined, "Torrent.id should never be undefined!" );
 
-  getArguments( response ).torrents.each( function( torrent ) {
-    if( globals.removed.include( torrent.id ) ) {
+    if( globals.removed.includes( id ) ) {
       return;
     }
 
-    var t = globals.torrentHash[ torrent.id ];
+    var t = getTorrent( id );
     if( t ) {
-      t.update( torrent );
-      if( t.error !== 0 && isEmpty( t.errorString ) ) {
+      pre && pre( t );
+      t.update( torrent, keys );
+      if( 0 === t.status && 0 !== t.error && isEmpty( t.errorString ) ) {
         eids.push( t.id )
       }
     }
     else {
-      t = createTorrent( torrent );
+      t = new Torrent( torrent, keys );
+      globals.torrents.push( t );
+      globals.torrentHash[ t.id ] = t;
     }
     torrents.push( t );
 
-    if( globals.magnets.include( t.id ) ) {
+    if( globals.magnets.includes( t.id ) ) {
       if( !t.isMagnet() ) {
         t._dirty.pushUnique( "name" );
         ids.push( t.id );
@@ -1981,6 +2528,9 @@ function updateTorrents( response ) {
       if( t.isMagnet() ) {
         mids.push( t.id );
       }
+    }
+    if( refresh ) {
+      t._dirty.concatUnique( keys );
     }
   } );
 
@@ -1993,12 +2543,13 @@ function updateTorrents( response ) {
   return torrents;
 }
 
-function updateOrder( columnsObject, property ) {
-  var noReverse = undefined === property;
+function updateOrder( columns, property ) {
+  const noReverse = undefined === property;
+  var c;
 
   if( !property ) {
-    for( var k in columnsObject ) {
-      if( columnsObject[ k ].order != null ) {
+    for( var k in columns ) {
+      if( columns[ k ].order != null ) {
         property = k;
         break;
       }
@@ -2006,85 +2557,90 @@ function updateOrder( columnsObject, property ) {
   }
 
   if( !property ) {
-    for( var k in columnsObject ) {
-      if( columnsObject[ k ].defaultOrder != null ) {
-        columnsObject[ k ].order = columnsObject[ k ].defaultOrder;
+    for( var k in columns ) {
+      c = columns[ k ];
+      if( c.defaultOrder != null ) {
+        c.order = c.defaultOrder;
         return k;
       }
     }
     return null;
   }
 
-  for( var k in columnsObject ) {
+  for( var k in columns ) {
+    c = columns[ k ];
     if( k == property ) {
-      columnsObject[ k ].order = undefined === columnsObject[ k ].order ? false : noReverse ? columnsObject[ k ].order : !columnsObject[ k ].order;
+      c.order = undefined === c.order ? false : noReverse === c.order;
     }
     else {
-      delete columnsObject[ k ].order;
+      delete c.order;
     }
   }
   return property;
 }
 
-function sortTorrents( property, reverse ) {
-  var torrents = globals.torrents;
+function sortTorrents( property, orderChanged ) {
+  const torrents = globals.torrents;
   if( isEmpty( torrents ) ) {
     return;
   }
 
-  property = updateOrder( torrentColumns, property );
+  const columns = globals.torrentStatus[ globals.currentStatus ].columns;
+  property = updateOrder( columns, property ) || updateOrder( columns, "percentDone" );
 
   for( var i = 0, len = torrents.length; i < len; ++i ) {
-    torrents[ i ].i = i;
+    torrents[ i ]._i = i;
   }
 
-  var column = torrentColumns[ property ];
+  const column = torrentColumns[ property ];
 
   torrents.sortByProperty( property, column.order, column.isString );
 
-  var setSortClass = function( element ) {
-    element.removeClassName( "asc" ).removeClassName( "desc" );
-    if( element.className.include( property ) ) {
-        element.addClassName( column.order ? "asc" : "desc" );
+  const _set = function( e ) {
+    e.removeClassName( "asc" ).removeClassName( "desc" );
+    if( e.className.includes( property ) ) {
+        e.addClassName( column.order ? "asc" : "desc" );
     }
-  };
-  $$( "#torrentTable col" ).each( setSortClass );
-  $$( "#torrentTable th" ).each( setSortClass );
+  }
+  $$( "#torrentTable col" ).each( _set );
+  $$( "#torrentTable th" ).each( _set );
 
   globals.shift.newOrderIds = globals.torrents.pluck( "id" ).join( "" );
-  var orderChanged = globals.shift.orderIds != globals.shift.newOrderIds;
+  orderChanged = orderChanged || globals.shift.orderIds != globals.shift.newOrderIds;
   globals.shift.orderIds = globals.shift.newOrderIds;
-  var currentNode = $( "torrentBody" ).down();
 
-  var process = orderChanged && currentNode;
-  for( var i = 0, len = torrents.length; i < len; ++i ) {
-    var torrent = torrents[ i ];
-    if( process && torrent._node ) {
-      if( torrent.i != i ) {
-        currentNode.insert( { after: torrent._node } );
-      }
-      currentNode = torrent._node;
-    }
-    delete torrent.i;
-  }
-}
-
-function isMagnet( torrent ) {
-  return torrent.isMagnet();
-}
-
-function renderTorrents( refresh ) {
-  var torrentBody = $( "torrentBody" );
-
-  if( null === torrentBody ) {
+  if( !orderChanged ) {
     return;
   }
 
-  var ids = [];  // Ids of torrents to be updated
+  const body = $( "torrentBody" );
+  if( null === body ) {
+    return;
+  }
+
+  filterStatus().each( function( torrent ) {
+    torrent._node && body.appendChild( torrent._node );
+  } );
+}
+
+function renderTorrentRow( torrent ) {
+  torrent._node = renderRow( torrent, torrentColumns, torrent.id ).hide();
+  torrent._node.zzz = true;
+  return torrent._node;
+}
+
+function renderTorrents() {
+  const body = $( "torrentBody" );
+
+  if( null === body ) {
+    return;
+  }
+
+  const ids = [];  // Ids of torrents to be updated
   globals.torrents.each( function( torrent ) {
     var row = torrent._node;
 
-    if( !torrent.isDisplayed() || globals.removed.include( torrent.id ) ) {
+    if( !torrent.displayed || globals.removed.includes( torrent.id ) ) {
       if( row ) {
         row.hide();
       }
@@ -2092,64 +2648,56 @@ function renderTorrents( refresh ) {
     }
 
     if( row ) {
+      if( row.zzz ) {
+        delete row.zzz;
+        ids.push( torrent.id );
+      }
       for( var i = 0, len = torrent._dirty.length; i < len; ++i ) {
-        var k = torrent._dirty[ i ];
-        var c = torrentColumns[ k ];
-        if( !c || c.column === false ) {
+        const k = torrent._dirty[ i ];
+        const c = torrentColumns[ k ];
+        if( !c || c._column === false ) {
           continue;
         }
-        var render = c.render || torrentFields[ k ].render;
-        if( false !== render ) {
-          var cell = row.down( "." + k );
-          var content = globals.shift.settings.screenshotMode && torrentFields[ k ].sss ? k.capitalize() + " " + torrent.id : torrent[ k ];
-          updateElement( cell, undefined === render || true === render ? content : render( content, torrent, k, cell ) );
-        }
+        renderCell( torrent, c, k, row.down( "." + k ), function() { return k.capitalize() + " " + torrent.id } );
       }
       torrent._dirty = [];
       row.style.display = "";
       row.show();
     }
     else {
+      row = renderTorrentRow( torrent );
+      body.insert( row );
+      delete row.zzz;
       ids.push( torrent.id );
-      row = renderRow( torrent, torrentColumns, rR( { id: torrent.id } ) );
-      refresh ? row.hide() : row.show();
-      torrent._node = row;
-      torrentBody.insert( row );
-      row.observe( "dblclick", function( e ) {
-        globals.currentTorrent = globals.torrentHash[ e.currentTarget.id ];
-        $( "menu_files" ).click();
-      } );
     }
   } );
-
-  if( refresh ) {
-    getFieldData( ids );
-  }
+  getFieldData( ids );
 }
 
-function getTable( id, target, columnDefinitions, renderer, click ) {
-  var table = $( id );
+function getTable( id, target, columnDefinitions, keys, renderer, click ) {
+  const table = $( id );
   if( table ) {
     return table;
   }
-  var t = {
-    columns: rE( "colgroup" ),
-    header: rE( "thead" ),
-    body: rE( "tbody" ),
-    footer: rE( "tfoot" )
+  const t = getTableElements();
+
+  const _head = function( c, k ) {
+    return rS( { id: "l_" + k, "class": k } ).insert( undefined === c.label ? k.capitalize() : c.label );
   }
-  t.table = rE( "table", { id: id } ).insert( Object.values( t ) );
+
+  t.table = rTable( id, t );
   if( columnDefinitions ) {
-    var header = rR();
+    const header = rR();
     t.header.insert( header );
-    for( var k in columnDefinitions ) {
-      var c = columnDefinitions[ k ];
-      if( c.column !== false ) {
+    keys = keys || Object.keys( columnDefinitions );
+    for( var i = 0, len = keys.length; i < len; ++i ) {
+      const k = keys[ i ];
+      const c = columnDefinitions[ k ];
+      if( c._column !== false ) {
         t.columns.insert( rE( "col", { "class": k } ) );
-        var cell = rE( "th", { id: "h_" + k, "class": k } ).insert( rS( { id: "l_" + k, "class": k } ).insert( c.label || k.capitalize() ) );
-        if( c.click || click ) {
-          cell.observe( "click", c.click ? c.click : click );
-        }
+        const cell = rE( "th", { id: "h_" + k, "class": k } ).insert( _head( c, k ) );
+        click = c.click || click;
+        click && cell.observe( "click", click );
         header.insert( cell );
       }
     }
@@ -2157,128 +2705,127 @@ function getTable( id, target, columnDefinitions, renderer, click ) {
     for( var k in columnDefinitions ) {
       var c = columnDefinitions[ k ];
       if( c.actualColumn ) {
-        var cell = t.header.down( "th#h_" + c.actualColumn );
+        const cell = t.header.down( "th#h_" + c.actualColumn );
         if( cell ) {
-          cell.insert( rS( { id: "l_" + k, "class": k } ).insert( c.label || k.capitalize() ) );
+          cell.insert( _head( c, k ) );
         }
       }
     }
 
     updateOrder( columnDefinitions );
   }
-  if( target ) {
-    target.insert( t.table );
-  }
-  if( renderer ) {
-    renderer( t );
-  }
+  target && target.insert( t.table );
+  renderer && renderer( t );
   return t.table;
 }
 
-function renderRow( object, columnDefinitions, row ) {
-  row = row || rR();
-
-  for( var k in columnDefinitions ) {
-    var render = columnDefinitions[ k ].render;
-    if( undefined === render || false !== render ) {
-      var cell = rC( Object.extend( { "class": k }, columnDefinitions[ k ].attributes ), "" );
-      var content = globals.shift.settings.screenshotMode && columnDefinitions[ k ].sss ? k.capitalize() : object[ k ];
-      updateElement( cell, undefined === render || true === render ? content : render( content, object, k, cell ) );
-      row.insert( cell );
-    }
-  }
-  return row;
-}
-
-function updateElement( element, content ) {
+function updateElement( e, content ) {
   if( undefined === content ) {
     return;
   }
-  if( content != element.innerHTML || content === 0 ) {
-    element.update( content );
+  if( content != e.innerHTML || 0 === content ) {
+    e.update( content );
   }
 }
 
-function updateRow( object, columnDefinitions, row ) {
+function renderCell( o, d, k, cell, ssspecial ) {
+  const render = d.render;
+  if( false === render ) {
+    return undefined;
+  }
+
+  const content = globals.shift.settings.screenshotMode && d.sss ? true === d.sss ? ssspecial
+    ? ssspecial( o, k ) : k.capitalize() : d.sss( o, k ) : o[ k ];
+
+  const newCell = cell === undefined;
+  cell = cell || rC( Object.extend( { "class": k }, d.attributes ), "" );
+  updateElement( cell, Object.isFunction( render ) ? render( content, o, k, cell ) : content );
+  return newCell ? cell : undefined;
+}
+
+function renderRow( object, columnDefinitions, row ) {
+  row = undefined === row ? rR() : Object.isElement( row ) ? row : rR( { id: row } );
+
   for( var k in columnDefinitions ) {
-    var render = columnDefinitions[ k ].render;
-    if( undefined === render || false !== render ) {
-      var cell = row.down( "." + k );
-      var content = globals.shift.settings.screenshotMode && columnDefinitions[ k ].sss ? k.capitalize() : object[ k ];
-      updateElement( cell, undefined === render || true === render ? content : render( content, object, k, cell ) );
-    }
+    row.insert( renderCell( object, columnDefinitions[ k ], k, row.down( "." + k ) ) );
   }
   return row;
 }
 
 function showTorrentTable() {
+  const torrent = globals.currentTorrent;
   if( showContent( "torrentTable" ) ) {
-    centerVertically( globals.currentTorrent ? globals.currentTorrent._node : null );
+    torrent && centerVertically( torrent._node );
     return;
   }
 
-  var torrentTable = getTable( "torrentTable", globals.content, torrentColumns, function( t ) {
+  const torrentTable = getTable( "torrentTable", globals.content, torrentColumns, columnKeys, function( t ) {
     t.body.id = "torrentBody";
+    t.body.innerHTML = rE( "tbody" ).insert( globals.torrents.map( renderTorrentRow ) ).innerHTML;
 
     Object.keys( torrentColumns ).each( function( k ) {
       var style = $S( "." + k );
       if( !style ) {
-        var sheet = document.styleSheets[ 0 ];
+        const sheet = document.styleSheets[ 0 ];
         sheet.insertRule( "." + k + " {}", 0 );
-        var rules = sheet.rules || sheet.cssRules;
+        const rules = sheet.rules || sheet.cssRules;
         style = rules[ 0 ].style;
       }
       torrentColumns[ k ].style = style;
     } );
 
-    t.table.observe( "click", function( e ) {
-      var cell = e.findElement( "td" );
-      if( cell ) {
-        var row = cell.up( "tr" );
-        var column = globals.torrentColumnHash[ row.childElements().indexOf( cell ) ];
-        var torrent = globals.currentTorrent = globals.torrentHash[ row.id ];
-
-        var rows = $( "torrentBody" ).select( "tr" ).findAll( Element.visible );
-        rows.invoke( "toggleClassName", "active", false );
-        row.toggleClassName( "active", true );
-        globals.currentIndex = rows.indexOf( row );
-
-        if( column && column.listHandler ) {
-          column.listHandler( e, torrent );
-        }
-        else {
-          torrent.toggleSelect();
-        }
+    t.body.observe( "click", function( e ) {
+      const cell = e.findElement( "td" );
+      if( !cell ) {
+        return;
       }
-    } ).observe( "mousedown", function( e ) {
+      const row = cell.up( "tr" );
+      const column = globals.torrentColumnHash[ row.childElements().indexOf( cell ) ];
+
+      const rows = $( "torrentBody" ).select( "tr" ).filter( Element.visible );
+      rows.invoke( "toggleClassName", "active", false );
+      row.toggleClassName( "active", true );
+      globals.currentIndex = rows.indexOf( row );
+
+      const torrent = getTorrent( row.id, true );
+      if( column && column.listHandler ) {
+        column.listHandler( e, torrent );
+      }
+      else {
+        torrent.toggleSelect();
+      }
+    } ).observe( "dblclick", function( e ) {
+      const row = e.findElement( "tr" );
+      if( row ) {
+        $( getTorrent( row.id, true ).isMagnet() ? "menu_trackers" : "menu_files" ).click();
+      }
+    } ).observe( "mousedown", function() {
       t.mousedown = 1;
     } ).observe( "mousemove", function( e ) {
       if( t.mousedown ) {
         if( t.mousedown > 3 ) {
-          var cell = e.findElement( "td" );
+          const cell = e.findElement( "td" );
           if( cell ) {
-            var row = cell.up( "tr" );
-            var torrent = globals.torrentHash[ row.id ];
-            torrent.select();
+            getTorrent( cell.up( "tr" ).id ).select();
           }
         }
         t.mousedown++;
       }
-    } ).observe( "mouseup", function( e ) {
+    } ).observe( "mouseup", function() {
       t.mousedown = 0;
     } );
 
-    var c = rD( { id: "filterContainer" } ).hide();
-    var h = rE( "th", { id: "filterContainerCell" } ).insert( c );
+    const c = rD( { id: "filterContainer" } ).hide();
+    const h = rE( "th", { id: "filterContainerCell" } ).insert( c );
     t.header.insert( rR().insert( h ) );
 
-    var _show = function() {
-      [ c, h ].invoke( $A( c.children ).select( Element.visible ).length ? "show" : "hide" );
+    const _show = function() {
+      [ c, h ].invoke( $A( c.children ).filter( Element.visible ).length ? "show" : "hide" );
     }
 
     for( var k in torrentColumns ) {
-      var column = torrentColumns[ k ];
-      var f = column.filter;
+      const column = torrentColumns[ k ];
+      const f = column.filter;
       if( f ) {
         if( f._node ) {
           c.insert( f._node );
@@ -2290,36 +2837,32 @@ function showTorrentTable() {
           continue;
         }
 
-        var l = rLed( f.visible ).observe( "click", function( e ) {
-          var f = torrentColumns[ this.up().id.substring( 2 ) ].filter;
-          this.set( f.visible = !f.visible );
+        const l = rLed( f.visible ).observe( "click", function( e ) {
+          const f = torrentColumns[ this.up().id.substring( 2 ) ].filter;
+          this.value = f.visible = !f.visible;
           f.visible ? f._node.show() : f._node.hide();
           _show()
           e.stop();
         } );
-
-        if( f.visible ) {
-          f._node.show();
-        }
-
+        f.visible && f._node.show();
         $( "l_" + k ).insert( { bottom: l } );
       }
     }
     h.writeAttribute( "colSpan", globals.torrentColumnHash.length );
     _show()
   },
-  function( e ) {
+  function() {
     sortTorrents( this.id.substring( 2 ) );
   } );
-  centerVertically( globals.currentTorrent ? globals.currentTorrent._node : null );
+  torrent && centerVertically( torrent._node );
 }
 
 function setTorrentsColumnsVisible( columns ) {
   var columnCount = 0;
   for( var c in torrentColumns ) {
-    var style = torrentColumns[ c ].style;
-    if( columns.include( c ) ) {
-      if( torrentColumns[ c ].column !== false ) {
+    const style = torrentColumns[ c ].style;
+    if( c in columns ) {
+      if( false !== torrentColumns[ c ]._column ) {
         style.display = "";
         columnCount++;
       }
@@ -2354,20 +2897,20 @@ function getEditableFileName() {
 }
 
 function getSelectedFiles( files, id, depth ) {
-  var path = getPathPart( files.find( function( file ) {
+  const path = getPathPart( files.find( function( file ) {
     return file.index == id;
   } ), depth );
 
-  return files.findAll( function( file ) {
+  return files.filter( function( file ) {
     return path == getPathPart( file, depth );
   } ).pluck( "index" );
 }
 
 function setFilesPriority( id, files, priority ) {
-  var request = newRequest( "torrent-set", { ids: [ id ] }, function( response ) {
+  const request = newRequest( "torrent-set", { ids: [ id ] }, function( response ) {
     if( success( response ) ) {
       files.each( function( fileIndex ) {
-        $( "f_" + fileIndex ).down( ".led" ).set( priority );
+        $( "f_" + fileIndex ).down( "led" ).value = priority;
       } );
     }
   } );
@@ -2379,91 +2922,16 @@ function setFilesPriority( id, files, priority ) {
   doRequest( request );
 }
 
-function handleFileMenuClick( e ) {
-  var row = e.findElement( "tr" );
-  var id = row.id.split( "_" );
-  showPopup( "popupFile", function( e ) {
-    var torrent = globals.currentTorrent;
-    globals.action = e.findElement( "li" ).id;
-    var isFile = "f" == id[ 0 ] ;
-    id[ 1 ] = parseInt( id[ 1 ] );
-
-    var d = globals.dialogs[ globals.action ];
-    switch( globals.action ) {
-      case "rename":
-        e.currentTarget.stopObserving( "click" ).hide();
-        globals.currentFile = torrent.files.find( function( file ) {
-          return file.index == id[ 1 ];
-        } );
-        globals.pathDepth = isFile ? -1 : parseInt( id[ 2 ] );
-        d.fileName.value = getFilePart( getTargetPath() );
-        showPopup( "popupRename" );
-        d.fileName.focus();
-        break;
-      default:
-        var selected = isFile ? [ id[ 1 ] ] : getSelectedFiles( torrent.files, id[ 1 ], parseInt( id[ 2 ] ) );
-        setFilesPriority( torrent.id, selected, globals.action );
-    }
-  }, e );
-}
-
-function handleFileClick( e ) {
-  var row = e.findElement( "tr" );
-
-  var id = row.id.split( "_" );
-  id[ 1 ] = parseInt( id[ 1 ] );
-
-  var selected = "f" == id[ 0 ] ? [ id[ 1 ] ] : null;
-
-  if( selected ) {
-    setFilesPriority( globals.currentTorrent.id, selected, row.down( ".led" ).value ? "none" : "normal" );
-  }
-}
-
-function rMulti( target, elementName, inserts, args ) {
-  for( var i = 0, len = inserts ? inserts.length : args ? args.length : 0; i < len; ++i ) {
-    var element = rE( elementName, args ? Object.isString( args[ i ] ) ? { id: args[ i ] } : args[ i ] : null );
-    if( inserts && inserts[ i ] ) {
-      element.insert( inserts[ i ] );
-    }
-    target.insert( element );
-  }
-  return target;
-}
-
-function changeRequest( request, method, args, onSuccess ) {
-  var options = request.options;
-  if( method ) {
-    options.parametersObject.method = method;
-  }
-  if( args ) {
-    for( var k in args ) {
-      options.parametersObject.arguments[ k ] = args[ k ];
-    }
-  }
-  options.parameters = Object.toJSON( options.parametersObject );
-  if( onSuccess ) {
-    options.onSuccess = onSuccess;
-  }
-}
-
-function setDefaultTorrentRequest() {
-  changeRequest( globals.shift.torrentUpdater, "torrent-get", {
-    fields: globals.updateFields,
-    ids: "recently-active"
-  }, globals.shift.updateTorrents.onSuccess );
-}
-
 function playDoneSound() {
   if( globals.shift.settings.soundEnabled ) {
-    var s = globals.shift.doneSound;
+    const s = globals.shift.doneSound;
     s.volume = globals.shift.settings.soundVolume;
     s.play();
   }
 }
 
 function prettify( o ) {
-  return $H( o ).toArray().collect( function( a ) { return a.join( " = " ) } ).join( "\n" );
+  return $H( o ).toArray().map( function( a ) { return a.join( " = " ) } ).join( "\n" );
 }
 
 function sendNotification( level, title, options ) {
@@ -2475,9 +2943,9 @@ function sendNotification( level, title, options ) {
       options = options || {};
       options.icon = options.icon || globals.icon;
       if( globals.shift.settings.notificationLevel >= level ) {
-        var notification = new Notification( title, options );
+        const notification = new Notification( title, options );
       }
-    };
+    }
   } else if( "mozNotification" in navigator ) { // Gecko < 22
     sendNotification = function( level, title, options ) {
       if( Notification.permission !== "granted" ) {
@@ -2486,42 +2954,102 @@ function sendNotification( level, title, options ) {
       options = options || {};
       options.icon = options.icon || globals.icon;
       if( globals.shift.settings.notificationLevel >= level ) {
-        var notification = navigator.mozNotification.createNotification( title, options.body, options.icon );
+        const notification = navigator.mozNotification.createNotification( title, options.body, options.icon );
         notification.show();
       }
-    };
+    }
   } else {
-    sendNotification = function( level, title, options ) {
-    };
+    sendNotification = function( level, title, options ) {}
   }
   sendNotification( level, title, options );
-};
+}
+
+function rFile( file ) {
+  const s = globals.shift.settings;
+  const fileDone = file.bytesCompleted === file.length;
+  const base = fileDone ? s.fileLinkEnabled && s.fileLink : s.incompleteFolderLinkEnabled && s.incompleteFolderLink;
+  const extension = globals.shift.session[ "rename-partial-files" ] ? ".part" : "";
+  const fileName = s.screenshotMode ? "File " + file.index : file.name.split( "/" ).last();
+  return base ? rA( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName;
+}
 
 function rFolder( base, fileParts, filePartIndex, index ) {
-  var result = globals.shift.settings.screenshotMode ? "Folder " + index : fileParts[ filePartIndex ] + "&sol;";
+  const _f = function( i ) {
+    return globals.shift.settings.screenshotMode ? "Folder " + index : fileParts[ i ];
+  }
+  var result = _f( filePartIndex ) + "&sol;";
   if( base ) {
     for( var i = 0; i <= filePartIndex; ++i ) {
-      base += globals.shift.settings.screenshotMode ? "Folder " + index : fileParts[ i ] + "/";
+      base += _f( i ) + "/";
     }
     result = rA( base, result );
   }
   return result;
 }
 
-function renderFiles( torrent ) {
-  var torrentDone = 1 == torrent.percentDone;
+var indentDeclaration;
+const indentSelector = "table#fileTable td.name";
+const indentStyle = "padding-left";
+const indentValue = "calc(0em + 4px);"
+const complete = renderPercentage( 1 );
 
-  var folderLink = globals.shift.settings.folderLinkEnabled ? globals.shift.settings.folderLink : null;
+function renderFiles( torrent ) {
+  const torrentDone = 1.0 === torrent.percentDone;
+
+  const s = globals.shift.settings;
+  var folderLink = s.folderLinkEnabled ? s.folderLink : null;
   if( !torrentDone && globals.shift.session[ "incomplete-dir-enabled" ] ) {
-    folderLink = globals.shift.settings.incompleteFolderLinkEnabled ? globals.shift.settings.incompleteFolderLink : null;
+    folderLink = s.incompleteFolderLinkEnabled ? s.incompleteFolderLink : null;
   }
 
-  var fileLink = globals.shift.settings.fileLinkEnabled ? globals.shift.settings.fileLink : null;
-  var incompleteFileLink = globals.shift.settings.incompleteFolderLinkEnabled ? globals.shift.settings.incompleteFolderLink : null;
-  var extension = globals.shift.session[ "rename-partial-files" ] ? ".part" : "";
+  const _id = function( row ) {
+    const id = row.id.split( "_" );
+    id[ 1 ] = +id[ 1 ];
+    return id;
+  }
 
-  var currentNode = $( "fileBody" ).down();
-  var dummyNode = null == currentNode ? rR() : null;
+  const fbody = $( "fileBody" ).observe( "click", function( e ) {
+    const target = e.findElement( "led" );
+    if( !target ) {
+      return;
+    }
+    const row = target.up( "tr" );
+    const id = _id( row )
+    showPopup( "popupFile", function( e ) {
+      const torrent = globals.currentTorrent;
+      globals.action = e.findElement( "li" ).id;
+      const isFile = "f" == id[ 0 ] ;
+
+      const d = globals.dialogs[ globals.action ];
+      switch( globals.action ) {
+        case "rename":
+          e.currentTarget.stopObserving( "click" ).hide();
+          globals.currentFile = torrent.files.find( function( file ) {
+            return file.index == id[ 1 ];
+          } );
+          globals.pathDepth = isFile ? -1 : +id[ 2 ];
+          d.fileName.value = getFilePart( getTargetPath() );
+          showPopup( "popupRename" );
+          d.fileName.focus();
+          break;
+        default:
+          const selected = isFile ? [ id[ 1 ] ] : getSelectedFiles( torrent.files, id[ 1 ], +id[ 2 ] );
+          setFilesPriority( torrent.id, selected, globals.action );
+      }
+    }, e )
+  } ).observe( "dblclick", function( e ) {
+    const row = e.findElement( "tr" );
+    if( !row ) {
+      return;
+    }
+    const id = _id( row )
+    const selected = "f" == id[ 0 ] ? [ id[ 1 ] ] : null;
+    if( selected ) {
+      setFilesPriority( globals.currentTorrent.id, selected, row.down( "led" ).value ? "none" : "normal" );
+    }
+  } );
+  var currentNode = fbody.down();
+  const dummyNode = null == currentNode ? rR() : null;
 
   if( dummyNode ) {
     $( "fileBody" ).insert( dummyNode );
@@ -2531,60 +3059,59 @@ function renderFiles( torrent ) {
   var lastFileParts = [];
   var row;
 
+  function _style() {
+    const styles = $S( indentSelector );
+    return indentStyle + ":" + ( styles ? styles[ indentStyle ] : indentValue );
+  }
+
+  function _indent( i ) {
+    indentDeclaration = indentDeclaration || _style();
+    return indentDeclaration.replace( "0", i );
+  }
+
   torrent.files.each( function( file, index ) {
     file.index = undefined === file.index ? index : file.index;
-    var fileParts = file.name.split( "/" );
+    const fileParts = file.name.split( "/" );
 
-    var fileStyle = fileParts.length > 1 ? "padding-left: " + ( fileParts.length * 24 - 24 ) + "px" : "";
+    const fileStyle = fileParts.length > 1 ? _indent( fileParts.length - 1 ) : "";
 
-    var folderNodes = [];
+    const folderNodes = [];
     for( var i = 0, len = fileParts.length - 1; i < len; ++i ) {
       if( fileParts[ i ] == lastFileParts[ i ] ) {
         continue;
       }
-      var rowId = "d_" + file.index + "_" + i;
+      const rowId = "d_" + file.index + "_" + i;
       row = $( rowId );
       if( row && file.folderNodes ) {
         file.folderNodes.remove( row );
       }
       else {
         row = rR( { id: rowId } )
-          .insert( rC( {}, rLed().observe( "click", handleFileMenuClick ) ) )
-          .insert( rC( { colspan: 2 } ) )
-          .insert( rC( { "class": "name", style: "padding-left: " + i * 24 + "px" } )
-            .insert( rFolder( folderLink, fileParts, i, index ) )
-            .observe( "dblclick", handleFileClick ) );
+        .insert( rC( {}, rLed() ) )
+        .insert( rC( { colspan: 2 } ) )
+        .insert( rC( { "class": "name", style: _indent( i ) } ).insert( rFolder( folderLink, fileParts, i, index ) ) );
       }
       folderNodes.push( row );
       currentNode.insert( { after: row } );
       currentNode = row;
     }
-    if( file.folderNodes ) {
-      file.folderNodes.invoke( "remove" );
-    }
+    file.folderNodes && file.folderNodes.invoke( "remove" );
     file.folderNodes = folderNodes;
     lastFileParts = fileParts;
 
-    var fileDone = file.bytesCompleted == file.length;
-    var fileName = globals.shift.settings.screenshotMode ? "File " + index : fileParts.last();
-    var base = fileDone ? fileLink : incompleteFileLink;
-
+    Object.extend( file, torrent.fileStats[ file.index ] );
     if( file.node ) {
-      if( globals.shift.settingsChanged ) {
-        file.node.down( "td.name" ).update( base ? rA( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName );
+      if( globals.shift.settingsChanged || file.bytesCompleted === file.length ) {
+        file.node.down( "td.name" ).update( rFile( file ) );
       }
     }
     else {
-      Object.extend( file, torrent.fileStats[ file.index ] );
       file.filePercentDone = file.length == 0 ? 1 : file.bytesCompleted / file.length;
-      file.node = rR( { id: "f_" + file.index } );
-      var cell = rC( { "class": "filePercentDone" } , renderPercentage( file.filePercentDone ) );
-      setPercentageClass( cell, file.filePercentDone );
-      file.node
-        .insert( rC( {}, rLed( filePriorityKeys[ file.wanted ? 1 - file.priority : 3 ] ).observe( "click", handleFileMenuClick ) ) )
-        .insert( cell )
+      file.node = rR( { id: "f_" + file.index } )
+        .insert( rC( {}, rLed( getPriority( file ) ) ) )
+        .insert( setPercentageClass( rC( "filePercentDone", renderPercentage( file.filePercentDone ) ), file.filePercentDone ) )
         .insert( rC( { "class": "length", title: file.length + " B" }, renderSize( file.length ) ) )
-        .insert( rC( { "class": "name", style: fileStyle }, base ? rA( base + file.name + ( fileDone ?  "" : extension ), fileName ) : fileName ).observe( "dblclick", handleFileClick ) );
+        .insert( rC( { "class": "name", style: fileStyle }, rFile( file ) ) );
     }
     currentNode.insert( { after: file.node } );
     currentNode = file.node;
@@ -2598,56 +3125,59 @@ function renderFiles( torrent ) {
 }
 
 function showFiles( torrent ) {
-  var fileTable = getTable( "fileTable", globals.content, fileColumns,
-    function( t ) {
-      t.table.addClassName( "torrent" );
-      t.body.id = "fileBody";
-      if( torrent.pieces ) {
-        var cell = rE( "th", { id: "filePieces", colspan: "4", style: "height: 2em; padding: 0;" } );
-        t.header.insert( { top: rR().insert( cell ) } );
-        cell.insert( renderPieces( torrent.pieces, cell ) );
-      }
-      for( var i = 0, len = torrent.files.length; i < len; ++i ) {
-        torrent.files[ i ].folderNodes = [];
-      }
-      renderFiles( torrent );
-    },
-    function( e ) {
-      for( var i = 0, len = torrent.files.length; i < len; ++i ) {
-        torrent.files[ i ].i = i;
-      }
-      var property = updateOrder( fileColumns, this.id.substring( 2 ) );
-      var column = fileColumns[ property ];
-      var o = column.order;
-
-      if( property == "name" ) {
-        torrent.files.sortByProperty( o ? "name" : "index", true, o );
-      }
-      else {
-        torrent.files.sortByProperty( property, o, column.isString );
-      }
-      renderFiles( torrent );
+  const fileTable = getTable( "fileTable", globals.content, fileColumns, undefined, function( t ) {
+    globals.pieceCount = torrent.pieceCount;
+    t.table.addClassName( "torrent" );
+    t.body.id = "fileBody";
+    if( torrent.pieces ) {
+      const cell = rE( "th", { id: "filePieces", colspan: "4" } );
+      t.header.insert( { top: rR().insert( cell ) } );
+      cell.insert( renderPieces( torrent.pieces, cell ) );
     }
-  );
+    for( var i = 0, len = torrent.files.length; i < len; ++i ) {
+      torrent.files[ i ].folderNodes = [];
+    }
+    renderFiles( torrent );
+  },
+  function() {
+    for( var i = 0, len = torrent.files.length; i < len; ++i ) {
+      torrent.files[ i ]._i = i;
+    }
+    const property = updateOrder( fileColumns, this.id.substring( 2 ) );
+    const column = fileColumns[ property ];
+    const o = column.order;
+
+    if( "name" === property ) {
+      torrent.files.sortByProperty( o ? "name" : "index", true, o );
+    }
+    else {
+      torrent.files.sortByProperty( property, o, column.isString );
+    }
+    renderFiles( torrent );
+  } );
 
   if( torrent.pieces ) {
     renderPieces( torrent.pieces, $( "filePieces" ) );
   }
 
   torrent.files.each( function( file ) {
-    var index = file.index;
-    var row = $( "f_" + index );
-    var fileStat = torrent.fileStats[ index ];
-    if( fileStat.bytesCompleted != file.bytesCompleted ) {
-      file.filePercentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length
-      var cell = row.down( "td.filePercentDone" );
-      setPercentageClass( cell, file.filePercentDone );
-      updateElement( cell, renderPercentage( file.filePercentDone ) );
-    }
-    if( fileStat.wanted != file.wanted || fileStat.priority != file.priority ) {
-      row.down( ".led" ).set( filePriorityKeys[ fileStat.wanted ? 1 - fileStat.priority : 3 ] );
-    }
+    const row = $( "f_" + file.index );
+    const fileStat = torrent.fileStats[ file.index ];
+    const updateBytes = fileStat.bytesCompleted != file.bytesCompleted;
+    const updatePriority = fileStat.priority != file.priority;
+    const updateWanted = fileStat.wanted != file.wanted;
+
     Object.extend( file, fileStat );
+    if( updateBytes ) {
+      if( globals.shift.settingsChanged || fileStat.bytesCompleted === file.length ) {
+        file.node.down( "td.name" ).update( rFile( file ) );
+      }
+      file.filePercentDone = file.length == 0 ? 1 : fileStat.bytesCompleted / file.length;
+      updateElement( setPercentageClass( row.down( "td.filePercentDone" ), file.filePercentDone ), renderPercentage( file.filePercentDone ) );
+    }
+    if( updatePriority || updateWanted ) {
+      row.down( "led" ).value = getPriority( fileStat );
+    }
   } );
 }
 
@@ -2659,35 +3189,35 @@ function showPeers( torrent ) {
     globals.content.insert( peersDiv );
   }
 
-  var peersFromTable = getTable( "peersFromTable", peersDiv, peersFromColumns, function( t ) {
+  const peersFromTable = getTable( "peersFromTable", peersDiv, peersFromColumns, undefined, function( t ) {
     renderKeyValuePairs( t.body, torrent.peersFrom, null, false );
     t.table.addClassName( "peersFrom keyvalue" );
   } );
   updateKeyValuePairs( peersFromTable.down( "tbody" ), torrent.peersFrom );
 
-  var peerTable = getTable( "peerTable", peersDiv, peerColumns, function( t ) {
+  const peerTable = getTable( "peerTable", peersDiv, peerColumns, undefined, function( t ) {
     renderKeyValuePairs( t.body, torrent.peersFrom );
   },
   function( e ) {
     torrent.peers.sortByProperty( e.target.id.substring(2) );
   } );
 
-  var peerBody = peerTable.down( "tbody" );
-  var currentPeers = torrent.peers.pluck( "address" );
+  const peerBody = peerTable.down( "tbody" );
+  const currentPeers = torrent.peers.pluck( "address" );
   peerBody.childElements().each( function( row ) {
-    if( !currentPeers.include( row.id.substring( 2 ) ) ) {
+    if( !currentPeers.includes( row.id.substring( 2 ) ) ) {
       row.remove();
     }
   } );
 
   torrent.peers.sortByProperty().each( function( peer ) {
-    var id = "p_" + peer.address;
-    var row = $( id );
+    const id = "p_" + peer.address;
+    const row = $( id );
     if( row ) {
       updateRow( peer, peerColumns, row );
     }
     else {
-      peerBody.insert( renderRow( peer, peerColumns, rR( { id: id } ) ) );
+      peerBody.insert( renderRow( peer, peerColumns, id ) );
     }
   } );
   globals.oldPeers = torrent.peers;
@@ -2701,60 +3231,100 @@ function showTrackers( torrent ) {
     globals.content.insert( trackerDiv );
   }
 
-  var trackerTable = getTable( "trackerTable", trackerDiv, trackerColumns, function( t ) {
+  const trackerTable = getTable( "trackerTable", trackerDiv, trackerColumns, undefined, function( t ) {
     t.body.observe( "click", function( e ) {
-      var cell = e.findElement( "td" );
+      const cell = e.findElement( "td" );
       if( cell ) {
-        var row = cell.up( "tr" );
-        var id = parseInt( row.id.split( "_" )[ 1 ] );
-        var column = globals.trackerColumnHash[ row.childElements().indexOf( cell ) ];
+        const row = cell.up( "tr" );
+        const id = +row.id.split( "_" )[ 1 ];
+        const column = globals.trackerColumnHash[ row.childElements().indexOf( cell ) ];
         if( column && column.listHandler ) {
           column.listHandler( e, id );
         }
       }
     } );
 
-    var trackerArea = rT();
-    var trackerLed = rLed().observe( "click", function( e ) {
+    const tl = undefined !== torrent.trackerList;
+    const trackerArea = rT( "styled " + ( tl ? "list" : "add" ) );
+    tl && trackerArea.update( torrent.trackerList );
+
+    const trackerLed = rLed().observe( "click", function( e ) {
+      tl ?
+      showPopup( "popupTrackerUpdate", function( e ) {
+        globals.action = e.target.id;
+        switch( globals.action ) {
+          case "update":
+            fixTorrents( { ids: [ torrent.id ], trackerList: trackerArea.value } );
+        }
+      }, e ) :
       showPopup( "popupTrackerAdd", function( e ) {
         globals.action = e.target.id;
         switch( globals.action ) {
           case "add":
-            var trackers = trackerArea.value.match( trackerRegexp );
-            addTrackersToTorrents( [ torrent.id ], trackers );
+            const trackers = trackerArea.value.match( trackerRegExp );
+            addTrackers( [ torrent.id ], trackers, nop );
         }
       }, e );
     } );
-    t.footer.insert( rR().insert( rC().insert( trackerLed ) ).insert( rC().insert( trackerArea ) ) );
+    t.footer.insert( rR().insert( rC().insert( trackerLed ) ).insert( rC( { "colspan": 8 } ).insert( trackerArea ) ) );
   } );
 
-  var webseedTable = getTable( "webseedTable", trackerDiv, webseedColumns, function( t ) {
+  const webseedTable = getTable( "webseedTable", trackerDiv, webseedColumns, undefined, function( t ) {
     torrent.webseeds.each( function( webseed ) {
-      t.body.insert( rR().insert( rD().insert( webseed ) ) );
+      t.body.insert( rR().insert( rC().insert( rD().insert( webseed ) ) ) );
     } )
   } );
 
   trackerBody = trackerTable.down( "tbody" );
-  var currentTrackers = torrent.trackerStats.pluck( "id" );
+  const currentTrackers = torrent.trackerStats.pluck( "id" );
   trackerBody.childElements().each( function( row ) {
-    if( !currentTrackers.include( row.id.substring( 2 ) ) ) {
+    if( !currentTrackers.includes( row.id.substring( 2 ) ) ) {
       row.remove();
     }
   } );
+
+  var tier = 0;
+  const _tier = function() {
+    trackerBody.insert( rR( "tier" ).insert( rC( { colspan: Object.keys( trackerColumns ).length } ) ) );
+  }
   torrent.trackerStats.each( function( tracker ) {
     if( !$( "t_" + tracker.id ) ) {
-      trackerBody.insert( renderRow( tracker, trackerColumns, rR( { id: "t_" + tracker.id } ) ) );
+      if( tier !== tracker.tier ) {
+        _tier();
+        tier = tracker.tier;
+      }
+      trackerBody.insert( renderRow( tracker, trackerColumns, "t_" + tracker.id ) );
     }
   } );
+  _tier();
   globals.oldTrackerStats = torrent.trackerStats;
 }
 
+function renderFooter( click, noScreenshotModeCheck ) {
+  const clipboardLed = rLed().makeToggle().addClassName( "clipboard" );
+  clipboardLed.copy = function( data ) {
+    if( this.value ) {
+      copyObjectToClipboard( data );
+    }
+  };
+  return rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function() {
+    if( true !== noScreenshotModeCheck ) {
+      if( globals.shift.settings.screenshotMode ) {
+        return;
+      }
+    }
+    click && click( clipboardLed );
+  } ) ).insert( clipboardLed ).insert( "Copy to clipboard" ) );
+}
+
 function showDetails( torrent ) {
-  var detailsTable = getTable( "detailsTable", globals.content, detailsColumns, function( t ) {
+  const detailsTable = getTable( "detailsTable", globals.content, detailsColumns, undefined, function( t ) {
+    globals.percentDone = null;
+    globals.pieceCount = torrent.pieceCount;
     t.table.addClassName( "torrent keyvalue" );
     renderKeyValuePairs( t.body, torrent, "d_", torrentFields );
-    var downloadDir = t.table.down( "#d_downloadDir" );
-    var moveLed = rLed( true );
+    const downloadDir = t.table.down( "#d_downloadDir" );
+    const moveLed = rLed( true );
     if( downloadDir ) {
        moveLed.setAttribute( "id", "d_move" );
        moveLed.setAttribute( "title", "Move" );
@@ -2762,88 +3332,105 @@ function showDetails( torrent ) {
        downloadDir.insert( { top: moveLed } );
     }
 
-    var clipboardLed = rLed().makeToggle().addClassName( "clipboard" );
-    t.body.insert(
-      rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function( e ) {
-        showWait();
-        var data = getKeyValuePairs( torrent, "d_", torrentFields );
-        if( clipboardLed.value ) {
-          var t = Object.extend( Object.clone( torrent ), data );
-          Object.without( t, [ "_dirty", "_display", "_index", "_node", "_selected", "id" ] );
-          copyObjectToClipboard( t );
+    t.footer.insert( renderFooter( function( clipboard ) {
+      showWait();
+      const data = getKeyValuePairs( torrent, "d_", torrentFields );
+      if( clipboard.value ) {
+        const t = Object.extend( Object.clone( torrent ), data );
+        Object.without( t, [ "_dirty", "_displayed", "_index", "_node", "_selected", "id" ] );
+        clipboard.copy( t );
+      }
+      if( !isEmpty( data ) ) {
+        const f = "downloadDir";
+        const l = "location";
+        const locationChanged = f in data;
+        if( locationChanged ) {
+          data[ l ] = data[ f ];
+          delete data[ f ];
         }
-        if( !isEmpty( data ) ) {
-          if( data.hasOwnProperty( "downloadDir" ) ) {
-            data[ "location" ] = data[ "downloadDir" ];
-            delete data[ "downloadDir" ];
-            doRequest( "torrent-set-location", { ids: [ torrent.id ], location: data[ "location" ], move: moveLed.value } );
-          }
-          doRequest( "torrent-set", Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
-            var m = { body: prettify( data ) };
+
+        const _update = function() {
+          fetchTorrents( [ "id", f ], [ torrent.id ], function( response ) {
             if( success( response ) ) {
-              sendNotification( 3, "Torrent settings changed.", m );
-              if( data.hasOwnProperty( "location" ) ) {
-                data[ "downloadDir" ] = data[ "location" ];
-                delete data[ "location" ];
-              }
               torrent.update( data );
-            }
-            else {
-              sendNotification( 1, "Failed changing torrent settings.", m );
+              torrent = updateTorrents( response, true )[ 0 ];
+              updateKeyValuePairs( Object.copyNestedProperties( torrent, {}, torrent._dirty ), "d_", torrentFields );
             }
           } );
         }
-      } ) ).insert( clipboardLed ).insert( "Copy to clipboard" ) )
-    );
+
+        fixTorrents( Object.extend( { ids: [ torrent.id ] }, data ), function( response ) {
+          if( locationChanged ) {
+            data[ f ] = data[ l ];
+            delete data[ l ];
+          }
+          const m = { body: prettify( data ) };
+          if( success( response ) ) {
+            sendNotification( 3, "Torrent settings changed.", m );
+            if( locationChanged ) {
+              doRequest( "torrent-set-location", { ids: [ torrent.id ], location: data[ f ], move: moveLed.value }, _update );
+              return;
+            }
+            _update();
+          }
+          else {
+            sendNotification( 1, "Failed changing torrent settings.", m );
+          }
+        } );
+      }
+    } ) );
   } );
   updateKeyValuePairs( Object.copyNestedProperties( torrent, {}, torrent._dirty ), "d_", torrentFields );
+  globals.percentDone = torrent.percentDone;
   torrent._dirty = [];
 }
 
-function getKeyValuePairs( elements, idPrefix, fields ) {
-  var data = {};
-  for( var k in elements ) {
+function getKeyValuePairs( object, idPrefix, fields ) {
+  const data = {};
+  for( var k in object ) {
     if( k[ 0 ] === '_' ) {
       continue;
     }
-    var f = fields[ k ];
-    if( elements.hasOwnProperty( k ) && !( f && f.readOnly ) ) {
-      var o = elements[ k ];
-      var cell = $( idPrefix + k );
-      var v = null;
+    const f = fields[ k ];
+    if( f && f._ro ) {
+      continue;
+    }
 
-      if( f && f.locked ) {
-        delete f.locked;
-      }
+    const o = object[ k ];
+    const cell = $( idPrefix + k );
+    var v = null;
 
-      if( !cell ) {
-        continue;
-      }
+    if( f && f.locked ) {
+      delete f.locked;
+    }
 
-      if( f && f.getValue ) {
-        v = f.getValue( cell );
-      }
-      else if( fields[ k ] && fields[ k ].values ) {
-        v = fields[ k ].values[ cell.down( "select" ).selectedIndex ].value;
-      }
-      else if( Object.isArray( o ) ) {
-        v = Array.apply( null, cell.down( "select" ).options ).sort( function( a, b ) { return a.selected < b.selected } ).pluck( "value" );
-      }
-      else if( Object.isBoolean( o ) ) {
-        v = cell.down( "span.led" ).value;
-      }
-      else if( Object.isNumber( o ) ) {
-        v = parseInt( cell.down( "input" ).value );
-      }
-      else if( Object.isString( o ) ) {
-        v = cell.down( "input" ).value;
-      }
-      else {
-        continue;
-      }
-      if( v != null && v != elements[ k ] ) {
-        data[ k ] = v;
-      }
+    if( !cell && !( f && f.getValue ) ) {
+      continue;
+    }
+
+    if( f && f.getValue ) {
+      v = f.getValue( cell );
+    }
+    else if( fields[ k ] && fields[ k ].values ) {
+      v = fields[ k ].values[ cell.down( "select" ).selectedIndex ].value;
+    }
+    else if( Object.isArray( o ) ) {
+      v = Array.apply( null, cell.down( "select" ).options ).sort( function( a, b ) { return a.selected < b.selected } ).pluck( "value" );
+    }
+    else if( Object.isBoolean( o ) ) {
+      v = cell.down( "led" ).value;
+    }
+    else if( Object.isNumber( o ) ) {
+      v = +cell.down( "input" ).value;
+    }
+    else if( Object.isString( o ) ) {
+      v = ( cell.down( "input" ) || cell.down( "div.pathselect" ) ).value;
+    }
+    else {
+      continue;
+    }
+    if( v != null && v != object[ k ] ) {
+      data[ k ] = v;
     }
   }
   return data;
@@ -2854,102 +3441,108 @@ function lock( fields, k ) {
   fields[ k ].locked = true;
 }
 
-function renderKeyValuePairs( target, elements, idPrefix, fields ) {
+function renderKeyValuePairs( target, object, idPrefix, fields ) {
   idPrefix = idPrefix || "";
-  Object.keys( elements ).sort().each( function( k ) {
-    var f = fields ? fields[ k ] : false === fields ? false : null;
-    if( k[ 0 ] === '_' || f && f.ignore ) {
+  Object.keys( object ).sort().each( function( k ) {
+    const f = fields ? fields[ k ] : false === fields ? false : null;
+    if( k[ 0 ] === '_' || f && f._ignore ) {
       return;
     }
-    if( elements.hasOwnProperty( k ) ) {
-      var o = elements[ k ];
-      var createInput = false !== f;
-      var row = rR();
-      var keyCell = rC( {}, k );
-      var ro = f && f.readOnly;
-      var content = globals.shift.settings.screenshotMode && f && f.sss ? k.capitalize() : o;
-      var valueCell = rC( { id: idPrefix + k } );
 
-      var a = f && f.action;
-      if( null == a || false === a || a( row, keyCell, valueCell, content ) ) {
-        row.insert( keyCell ).insert( valueCell );
-      }
-      target.insert( row );
+    const createInput = false !== f;
+    const row = rR();
+    const keyCell = rC( "key", k );
+    const ro = f && f._ro;
+    const valueCell = rC( { id: idPrefix + k } );
 
-      if( f && f.render ) {
-        content = f.render( content, valueCell );
-      }
-      else if( f && f.values ) {
-        if( !ro ) {
-          content = renderSelect( { select: { "class": "styled" }, options: f.values } ).observe( "focus", lock.curry( fields, k ) );
-          content.value = o;
-        }
-      }
-      else if( Object.isArray( o ) ) {
-        content = renderSelect( { select: { "class": "styled", value: o[ 0 ] }, options: normalizeOptions( o ) } );
-      }
-      else if( Object.isBoolean( o ) ) {
-        content = rLed( o, ro ? { readonly: "readonly" } : {} );
-        if( !ro ) {
-          content.observe( "click", function( e ) {
-            lock( fields, k );
-            content.toggle();
-          } );
-        }
-      }
-      else if( !Object.isNumber( o ) && !Object.isString( o ) ) {
-        return;
-      }
+    const sss = globals.shift.settings.screenshotMode && f && f.sss;
+    const o = sss ? true === sss ? k.capitalize() : sss( object[ k ] ) : object[ k ];
 
-      if( ro ) {
-        valueCell.writeAttribute( "readonly", "readonly" );
-      }
-      else if( f && f.renderAdvanced ) {
-        content = f.renderAdvanced( content );
-      }
-      else if( createInput && !Object.isElement( content ) ) {
-        content = rI( content ).observe( "focus", lock.curry( fields, k ) );
-      }
-      valueCell.insert( content );
+    const a = f && f.action;
+    const cont = a && a( row, keyCell, valueCell, o );
+    if( !a || cont ) {
+      row.insert( keyCell ).insert( valueCell );
     }
+    target.insert( row );
+    if( a && !cont ) {
+      return;
+    }
+
+    var content = o;
+    if( f && f.render ) {
+      content = f.render( content, valueCell );
+    }
+    else if( f && f.values ) {
+      if( !ro ) {
+        content = renderSelect( { options: f.values } ).observe( "focus", lock.curry( fields, k ) );
+        content.value = o;
+      }
+    }
+    else if( Object.isArray( o ) ) {
+      content = renderSelect( { select: { value: o[ 0 ] }, options: normalizeOptions( o ) } );
+    }
+    else if( Object.isBoolean( o ) ) {
+      content = rLed( o, ro ? { readonly: "readonly" } : {} );
+      if( !ro ) {
+        content.observe( "click", function() {
+          lock( fields, k );
+          content.toggle();
+        } );
+      }
+    }
+    else if( !Object.isNumber( o ) && !Object.isString( o ) ) {
+      return;
+    }
+
+    if( ro ) {
+      valueCell.writeAttribute( "readonly", "readonly" );
+    }
+    else if( f && f.renderAdvanced ) {
+      content = f.renderAdvanced( o, content );
+    }
+    else if( createInput && !Object.isElement( content ) ) {
+      content = rI( content ).observe( "focus", lock.curry( fields, k ) );
+    }
+    valueCell.insert( content );
   } );
 }
 
-function updateKeyValuePairs( elements, idPrefix, fields ) {
-  Object.keys( elements ).sort().each( function( k ) {
-    var f = fields ? fields[ k ] : false === fields ? false : null;
-    if( k[ 0 ] === '_' || f && ( f.ignore || f.locked ) ) {
+function updateKeyValuePairs( object, idPrefix, fields ) {
+  Object.keys( object ).sort().each( function( k ) {
+    const f = fields ? fields[ k ] : false === fields ? false : null;
+    if( k[ 0 ] === '_' || f && ( f._ignore || f.locked ) ) {
       return;
     }
-    if( elements.hasOwnProperty( k ) ) {
-      var o = elements[ k ];
-      var ro = false === f || f && f.readOnly;
-      var content = globals.shift.settings.screenshotMode && f && f.sss ? k.capitalize() : o;
-      var valueCell = $( idPrefix + k );
 
-      if( f && f.render ) {
-        content = f.render( content, valueCell );
-      }
-      else if( f && f.values ) {
-        if( !ro ) {
-          valueCell.down( "select" ).value = o;
-          return;
-        }
-      }
-      else if( Object.isBoolean( o ) ) {
-        valueCell.down( "span.led" ).set( o );
+    const sss = globals.shift.settings.screenshotMode && f && f.sss;
+    const o = sss ? true === sss ? k.capitalize() : sss( object[ k ] ) : object[ k ];
+
+    const ro = false === f || f && f._ro;
+    const valueCell = $( idPrefix + k );
+
+    var content = o;
+    if( f && f.render ) {
+      content = f.render( content, valueCell );
+    }
+    else if( f && f.values ) {
+      if( !ro ) {
+        valueCell.down( "select" ).value = o;
         return;
       }
-      else if( !Object.isNumber( o ) && !Object.isString( o ) ) {
-        return;
-      }
+    }
+    else if( Object.isBoolean( o ) ) {
+      valueCell.down( "led" ).value = o;
+      return;
+    }
+    else if( !Object.isNumber( o ) && !Object.isString( o ) ) {
+      return;
+    }
 
-      if( ro ) {
-        valueCell.update( content );
-      }
-      else if( !Object.isElement( content ) ) {
-        valueCell.down( "input" ).value = content;
-      }
+    if( ro ) {
+      valueCell.update( content );
+    }
+    else if( !Object.isElement( content ) ) {
+      valueCell.down( "input" ).value = content;
     }
   } );
 }
@@ -2961,57 +3554,139 @@ function showSessionTable() {
 
   doRequest( "session-get", {}, function( response ) {
     globals.shift.session = getArguments( response );
-    var sessionTable = getTable( "sessionTable", globals.content, sessionColumns, function( t ) {
-      var clipboardLed = rLed().makeToggle().addClassName( "clipboard" );
-
+    const sessionTable = getTable( "sessionTable", globals.content, sessionColumns, undefined, function( t ) {
       t.table.addClassName( "keyvalue" );
       renderKeyValuePairs( t.body, globals.shift.session, "s_", sessionFields );
-      t.body.insert(
-        rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function( e ) {
-          var data = getKeyValuePairs( globals.shift.session, "s_", sessionFields );
-          if( clipboardLed.value ) {
-            copyObjectToClipboard( globals.shift.session );
-          }
-          if( !isEmpty( data ) ) {
-            Object.extend( globals.shift.session, data );
-            doRequest( "session-set", data,  function( response ) {
-              var m = { body: prettify( data ) };
-              if( success( response ) ) {
-                sendNotification( 3, "Session settings changed.", m );
-              }
-              else {
-                sendNotification( 1, "Changed session settings Failed.", m );
-              }
-            } );
-          }
-        } ) ).insert( clipboardLed ).insert( "Copy to clipboard" ) )
-      );
+      t.footer.insert( renderFooter( function( clipboard ) {
+        const data = getKeyValuePairs( globals.shift.session, "s_", sessionFields );
+        clipboard.copy( globals.shift.session );
+        if( !isEmpty( data ) ) {
+          Object.extend( globals.shift.session, data );
+          doRequest( "session-set", data,  function( response ) {
+            const m = { body: prettify( data ) };
+            if( success( response ) ) {
+              sendNotification( 3, "Session settings changed.", m );
+            }
+            else {
+              sendNotification( 1, "Changed session settings Failed.", m );
+            }
+          } );
+        }
+      } ) );
     } );
   } );
 }
 
-var shiftFields = {
+const shiftFields = {
+  "dark": {
+    getValue: function() {
+      return $( "darkLed" ).value;
+    }
+  },
+  "paths": {
+    getValue: function( cell ) {
+      return this.value;
+    },
+    renderAdvanced: function( paths, content ) {
+      const self = this;
+      paths = self.value = [].concat( paths ).pushUnique( globals.shift.session[ "download-dir" ] ).compact();
+      paths = globals.shift.settings.screenshotMode ? paths.map( function( p, i ) { return "Path" + i } ) : paths;
+      const _new = function( p ) { return { path: p, count: 0 } }
+      paths = paths.map( _new );
+      const pathHash = paths.reduce( function( h, p ){ h[ p.path ] = p; return h }, {} );
+      const pathTable = getTable( "pathTable", undefined, pathColumns ).addClassName( "styled" );
+      const body = $( pathTable.down( "tbody" ) ).observe( "click", function( e ) {
+        e.stop();
+        if( e.target.classList.contains( "led" ) ) {
+          const selected = paths.filter( function( path ) {
+            return path.node.down( "led" ).value;
+          } ).pluck( "path" );
+          globals.torrents.each( function( torrent ) {
+            torrent.selected = selected.includes( torrent.downloadDir );
+          } );
+        }
+      } );
+
+      const _render = function() {
+        paths.each( function( path ) {
+          const row = path.node = renderRow( path, pathColumns, path.node );
+          row.down( "led" )[ path.count ? "show" : "hide" ]();
+          body.insert( row );
+        } );
+      };
+      _render();
+
+      return [
+        pathTable,
+        rB( "Edit Paths" ).observe( "click", function() {
+          globals.dialogs.paths.paths.update( paths.pluck( "path" ).join( "\n" ) );
+          globals.dialogs.paths.callback = function( values ) {
+            for( var p, i; p = paths.shift(); ) {
+              switch( i = values.indexOf( p.path ) ) {
+                case -1:
+                  p.node && p.node.remove() && delete p.node;
+                  break;
+                default:
+                  values[ i ] = p;
+              }
+            }
+            paths.concatUnique( values.map( function( p ) {
+              return Object.isString( p ) ? _new( p ) : p;
+            } ) ) ;
+            _render();
+            self.value.setLength( 0 ).concatUnique( paths.pluck( "path" ) );
+          }
+          showPopup( "popupPaths" );
+        } ),
+        rB( "Scrape Paths" ).observe( "click", function() {
+          paths.each( function( p ) { p.count = 0 } );
+          fetchTorrents( [ "id", "downloadDir" ], undefined, function ( response ) {
+            updateTorrents( response ).each( function( torrent ) {
+              const k = torrent.downloadDir;
+              ( pathHash[ k ] = pathHash[ k ] || paths.squeak( _new( k ) ) ).count++;
+            } );
+            paths.concatUnique( Object.values( pathHash ) );
+            _render();
+            self.value.setLength( 0 ).concatUnique( paths.pluck( "path" ) );
+          } )
+        } ),
+        rB( "Free Space" ).observe( "click", function() {
+          const _work = paths.pluck( "path" );
+          _next = function() {
+            doRequest( "free-space", { "path": _work.shift() }, function( response ) {
+              const args = getArguments( response );
+              const path = pathHash[ args.path ];
+              path.free = args[ "size-bytes" ];
+              path.total = args[ "total_size" ];
+              ( isEmpty( _work ) ? _render : _next )()
+            } )
+          }
+          _next();
+        } )
+      ]
+    },
+    value: []
+  },
   "minSeeders": {
   },
   "trackers": {
     getValue: function( cell ) {
       return cell.down( "textarea" ).value;
     },
-    renderAdvanced: rT,
-    update: function( cell, value ) {
+    renderAdvanced: function( trackers ) {
+      return [
+        rT( { id: "trackers_remove", "class": "styled", style: "resize: vertical", placeholder: "Remove" } ).hide(),
+        rT( { id: "trackers_add", "class": "styled", style: "resize: vertical", placeholder: "Add" } ).insert( trackers )
+      ]
     }
   }
 }
 
 function stopSeeding() {
-  var minSeeders = $( "s_minSeeders" ).down( "input" ).value;
-  var status = globals.version < 14 ? 8 : 6; // 2.40
-  var seedingTorrents = globals.torrents.filter( function( torrent ) {
-    return torrent.status == status;
-  } );
-  doTorrentGet( [ "id", "trackerStats" ], seedingTorrents.pluck( "id" ), function( response ) {
-    var stopTorrents = getArguments( response ).torrents.filter( function( torrent ) {
-      var stats = torrent.trackerStats;
+  const minSeeders = $( "s_minSeeders" ).down( "input" ).value;
+  fetchTorrents( [ "id", "trackerStats" ], filterStatus( globals.version < 14 ? 8 : 6 ).pluck( "id" ), function( response ) {
+    const stopTorrents = getArguments( response ).torrents.filter( function( torrent ) {
+      const stats = torrent.trackerStats;
       for( var i = 0, len = stats.length; i < len; ++i ) {
          if( stats[ i ].seederCount >= minSeeders ) {
             return true;
@@ -3024,47 +3699,197 @@ function stopSeeding() {
   return;
 }
 
-function addTrackersToTorrents( ids, trackers ) {
-  var request = newRequest( "torrent-set", { ids: ids, trackerAdd: trackers }, function( response ) {
-    var enableTrackerButton = function() {
-      var e = $( "tracker" )
-      if( e ) {
-        e.enable();
-      }
+function iterateTorrents( fields, ids, callback, last ) {
+  ids = isEmpty( ids ) ? globals.torrents.pluck( "id" ) : ids;
+  const _next = function() {
+    const id = ids.shift();
+    if( !id ) {
+      last && last();
+      return;
     }
+    fetchTorrents( fields, [ id ], function( response ) {
+      if( success( response ) ) {
+        callback && callback( getArguments( response ).torrents[ 0 ], _next );
+        return;
+      }
+      _next();
+    } );
+  }
+  _next();
+}
 
+function matchTracker( trackers, list ) {
+  return result = trackers.reduce( function( r, tracker ){
+    list.includes( tracker.announce ) && r.push( [ tracker.id, tracker.announce ] );
+    return r;
+  }, [] );
+}
+
+function addTrackers( ids, add, done ) {
+  if( isEmpty( add ) ) {
+    done();
+    return;
+  }
+
+  fixTorrents( { ids: ids, trackerAdd: add }, function( response ) {
     if( success( response ) ) {
-      enableTrackerButton();
+      done();
+      return;
     }
-    else { // Any torrent has all trackers means iterate all torrents.
-      ids = isEmpty( ids ) ? globals.torrents.pluck( "id" ) : ids;
-      globals.torrentIndex = 0;
-      request.onSuccess = function( response ) {
-        if( globals.torrentIndex < ids.length ) {
-          request.parameters = null;
-          request.parametersObject.arguments.ids = ids[ globals.torrentIndex++ ];
-          doRequest( request );
-        }
-        else {
-          enableTrackerButton();
-        }
+    iterateTorrents( trackerFields, ids, function( torrent, next ) {
+      const trackers = add.withoutArray( matchTracker( torrent.trackers, add ).pluck( 1 ) );
+      if( 0 === trackers.length ) {
+        next();
       }
-      request.onSuccess( response );
-    }
+      else {
+        fixTorrents( { ids: ids, trackerAdd: add.withoutArray( trackers.pluck( 1 ) ) }, next );
+      }
+    }, done );
   } );
-  doRequest( request );
+}
+
+function removeTrackers( ids, remove, done ) {
+  if( isEmpty( remove ) ) {
+    done();
+    return;
+  }
+
+  fixTorrents( { ids: ids, trackerRemove: remove }, function( response ) {
+    if( success( response ) ) {
+      done();
+      return;
+    }
+    iterateTorrents( trackerFields, ids, function( torrent, next ) {
+      const trackers = matchTracker( torrent.trackers, remove );
+      if( 0 === trackers.length ) {
+        next();
+      }
+      else {
+        fixTorrents( { ids: ids, trackerRemove: trackers.pluck( 0 ) }, next );
+      }
+    }, done );
+  } );
+}
+
+function replaceTrackers( ids, add, remove, done ) {
+  if( isEmpty( add ) || isEmpty( remove ) || add.length !== remove.length ) {
+    done();
+    return;
+  }
+
+  const replace = remove.zip( add );
+  fixTorrents( { ids: ids, trackerReplace: replace }, function( response ) {
+    if( success( response ) ) {
+      done();
+      return;
+    }
+    const map = replace.reduce( function( o, e ){
+      o[ e[ 0 ] ] = e[ 1 ];
+      return o;
+    }, {} )
+    iterateTorrents( trackerFields, ids, function( torrent, next ) {
+      const trackers = matchTracker( torrent.trackers, replace.pluck( 0 ) );
+      if( 0 === trackers.length ) {
+        next();
+      }
+      else {
+        fixTorrents( { ids: ids, trackerReplace: trackers.each( function( tracker ) {
+          tracker[ 1 ] = map[ tracker[ 1 ] ];
+        } ) }, next );
+      }
+    }, done );
+  } );
+}
+
+function renderTrackerCell( cell ) {
+  const tb = rB( "trackers on all torrents" );
+  const ta = cell.down( "textarea#trackers_add" );
+  const tr = cell.down( "textarea#trackers_remove" );
+  const elements = [ tb, ta, tr ];
+
+  const _done = function( result ) {
+    elements.invoke( "enable" );
+    tb.insert( { after: rS( result ) } );
+  }
+
+  const x = {
+    "add_trackers": {
+      click: function( e ) {
+        ta.show();
+        tr.hide();
+        tr.insert( { after: ta } );
+      },
+      action: function( e ) {
+        addTrackers( [], ta.value.match( trackerRegExp ), _done );
+      }
+    },
+    "remove_trackers": {
+      click: function( e ) {
+        ta.hide();
+        tr.show();
+        ta.insert( { after: tr } );
+      },
+      action: function( e ) {
+        removeTrackers( [], tr.value.match( trackerRegExp ), _done );
+      }
+    },
+    "replace_trackers": {
+      click: function( e ) {
+        ta.show();
+        tr.show();
+        tr.insert( { after: ta } );
+      },
+      action: function( e ) {
+        replaceTrackers( [], ta.value.match( trackerRegExp ), tr.value.match( trackerRegExp ), _done );
+      }
+    }
+  }
+
+  const _prep = function( s ) {
+    return s.charAt( 0 ).toUpperCase() + s.slice( 1, s.indexOf( "_" ) );
+  }
+
+  var first;
+  Object.keys( x ).each( function( i ) {
+    var l = rLed( false, { id: i } );
+    first = first || l;
+    first.addRadio( l );
+    cell.insert( l ).insert( _prep( i ) );
+  } );
+  first.setRadioHandler( function( e ) {
+    e.stop();
+    x[ e.target.id ].click( e );
+  } );
+
+  cell.insert( tb.observe( "click", function( e ){
+    e.stop();
+    elements.invoke( "disable" );
+    x[ first.getRadio().id ].action( e );
+  } ) );
+  first.click();
 }
 
 function setQueuePositionBy( property ) {
+  const batchIds = [];
   showWait();
-  doTorrentGet( [ "id", property ], undefined, function( response ) {
+
+  const _next = function() {
+    const ids = batchIds.shift();
+    if( ids ) {
+      doRequest( "queue-move-bottom", { ids: ids }, _next );
+    }
+    else{
+      showDone();
+    }
+  }
+
+  fetchTorrents( [ "id", property ], undefined, function( response ) {
     updateTorrents( response );
     globals.torrents.sortByProperty( property );
     if( undefined === globals.torrents[ 0 ].queuePosition ) {
       globals.torrents[ 0 ].queuePosition = 0;
     }
     var minQueuePosition = globals.torrents[ 0 ].queuePosition;
-    var batchIds = [];
     var ids = [ globals.torrents[ 0 ].id ];
     for( var i = 1, len = globals.torrents.length; i < len; ++i ) {
       if( minQueuePosition < globals.torrents[ i ].queuePosition ) {
@@ -3076,35 +3901,36 @@ function setQueuePositionBy( property ) {
     }
     batchIds.push( ids );
     batchIds.reverse();
-    if( batchIds.length < 2 ) {
-      showDone();
-      return;
-    }
-
-    var _setQueuePosition = function( ids ) {
-      doRequest( "queue-move-bottom", { ids: ids }, function( response ) {
-        if( batchIds.length > 0 ) {
-          _setQueuePosition( batchIds.shift() );
-        }
-        else {
-          getQueuePositions( null );
-          showDone();
-        }
-      } );
-    }
-
-    if( batchIds.length > 0 ) {
-      _setQueuePosition( batchIds.shift() );
-    }
-    else {
-      showDone();
-    }
+    _next();
   } );
 }
 
-function setStylesheet( name ) {
-  var sheet = $$( "link[rel=stylesheet]" )[ 1 ];
+const darkMedia = "(prefers-color-scheme: dark)";
+function isDark() {
+  return window.matchMedia && window.matchMedia( darkMedia ).matches
+}
+
+function setStylesheet( name, dark ) {
+  name = Object.isString( name ) ? name : globals.shift.settings.styleSheet[ 0 ];
+  dark = dark || globals.shift.settings.dark || isDark();
+  globals.html.className = dark ? "dark" : "";
+  var i = name.lastIndexOf( "." );
+  globals.html.addClassName( -1 === i ? name : name.substring( 0, i ) );
+
+  const sheet = $$( "link[rel=stylesheet]" )[ 1 ];
   sheet.href = sheet.baseURI + name;
+  globals.piecesColor = undefined;
+  indentDeclaration = undefined;
+  availabilityColors = undefined;
+  if( document.getAnimations ) {
+    const a = document.getAnimations();
+    for( i = 0, len = a.length; i < len; ++i ) {
+      if( -1 !== a[i].animationName.indexOf( "fullcircle" ) ) {
+        a[i].currentTime = new Date().getTime() % 3600000;
+        break;
+      }
+    }
+  }
 }
 
 function showShiftTable() {
@@ -3112,51 +3938,52 @@ function showShiftTable() {
     return;
   }
 
-  var shiftTable = getTable( "shiftTable", globals.content, shiftColumns, function( t ) {
-    var clipboardLed = rLed().makeToggle().addClassName( "clipboard" );
-
+  getTable( "shiftTable", globals.content, shiftColumns, undefined, function( t ) {
     t.table.addClassName( "keyvalue" );
     renderKeyValuePairs( t.body, globals.shift.settings, "s_", shiftFields );
-    t.body.down( "td#s_minSeeders" ).insert( rB( { value: "Stop seeding" } ).observe( "click", stopSeeding ) );
-    var trackerButton = rB( { value: "Add to all torrents", id: "tracker" } );
-    trackerButton.observe( "click", function( e ) {
-      trackerButton.disable();
-      var trackers = t.body.down( "td#s_trackers" ).down( "textarea" ).value.match( trackerRegexp );
-      addTrackersToTorrents( [], trackers );
-    } );
-    t.body.down( "td#s_trackers" ).insert( trackerButton );
+
+    t.body.down( "td#s_minSeeders" ).insert( rB( "Stop seeding" ).observe( "click", stopSeeding ) );
+
+    const _dark = t.body.down( "td#s_dark" );
+    const _l = _dark.down( "led" )
+    _l.setAttribute( "id", "darkLed" );
+    t.body.down( "td#s_styleSheet" ).insert( _l ).insert( "Dark" );
+    _dark.up( "tr" ).remove();
+
+    if( globals.version >= 10 ) { // 2.10
+      renderTrackerCell( t.body.down( "td#s_trackers" ) );
+    }
+
     if( globals.version >= 14 ) { // 2.40
       t.body.insert( rR().insert( rC().insert( "Set queue positions" ) ).insert( rC().insert(
-        rB( { value: "Date" } ).observe( "click", setQueuePositionBy.curry( "addedDate" ) )
+        rB( "Date" ).observe( "click", setQueuePositionBy.curry( "addedDate" ) )
       ) ) );
     }
-    t.body.insert(
-      rR().insert( rC() ).insert( rC().insert( rB().observe( "click", function( e ) {
-        var data = getKeyValuePairs( globals.shift.settings, "s_", shiftFields );
-        globals.shift.settingsChanged = !isEmpty( data );
-        if( globals.shift.settingsChanged ) {
-          var date = new Date();
-          Object.extend( globals.shift.settings, data );
-          data = getKeyValuePairs( globals.shift.defaultSettings, "s_", shiftFields );
-          if( data.styleSheet ) {
-            setStylesheet( data.styleSheet[ 0 ] );
-          }
-          if( clipboardLed.value ) {
-            copyObjectToClipboard( globals.shift.settings );
-          }
-          date.setTime( date.getTime() + 365 * DAY_MS );
-          document.cookie = COOKIE_KEY + window.btoa( Object.toJSON( data ) ) + "; expires=" + date;
-          if( globals.shift.settings.notificationLevel > 0 ) {
-            if( data.notificationLevel > 0 && Notification.permission !== "granted" ) {
-              Notification.requestPermission( f );
-            }
-            sendNotification( 3, "Shift settings Changed.", { body: prettify( data ) } );
-          }
-          renderDoneSound();
+
+    t.footer.insert( renderFooter( function( clipboard ) {
+      const s = globals.shift.settings;
+      var data = getKeyValuePairs( s, "s_", shiftFields );
+      if( globals.shift.settingsChanged = !isEmpty( data ) ) {
+        const deactivated = false === data.screenshotMode;
+        data = deactivated ? { screenshotMode: false } : data;
+        Object.extend( s, data );
+        clipboard.copy( s );
+        deactivated && updateKeyValuePairs( t.body, s );
+        data = Object.diff( s, globals.shift.defaultSettings );
+        if( data.styleSheet || undefined !== data.dark ) {
+          setStylesheet( data.styleSheet[ 0 ], data.dark );
         }
-        playDoneSound();
-      } ) ).insert( clipboardLed ).insert( "Copy to clipboard" ) )
-    );
+        cookiefy( data );
+        if( s.notificationLevel > 0 ) {
+          if( data.notificationLevel > 0 && Notification.permission !== "granted" ) {
+            Notification.requestPermission();
+          }
+          sendNotification( 3, "Shift settings Changed.", { body: prettify( data ) } );
+        }
+        renderDoneSound();
+      }
+      playDoneSound();
+    }, true ) );
   } );
 }
 
@@ -3166,71 +3993,18 @@ function showContent( content ) {
     content = $( content );
   }
   if( content ) {
-     result = content.visible();
-     content.show();
+    result = content.visible();
+    content.show();
   }
   globals.content.childElements().without( content ).invoke( "hide" );
   return result;
-}
-
-function handleUpdate( menu, tableId, fields, renderer ) {
-  if( !menuSelect( menu ) ) {
-    return;
-  }
-  showWait();
-  if( !showContent( tableId ) ) {
-    var torrent = globals.currentTorrent;
-    changeRequest( globals.shift.torrentUpdater, "torrent-get", { fields: fields, ids: [ torrent.id ] }, function( response ) {
-      updateTorrents( response );
-      renderer( torrent );
-      showDone();
-    } );
-  };
-}
-
-function handleTorrentClick( handler ) {
-  globals.menu.main.invoke( "hide" );
-  globals.menu.torrent.invoke( "show" );
-  var torrent = globals.currentTorrent;
-  if( globals.oldTorrent != torrent ) {
-      globals.oldTorrent = torrent;
-      globals.content.select( ".torrent" ).invoke( "remove" );
-  }
-  if( torrent.files ) {
-    handler()
-  }
-  else {
-    doTorrentGet( torrentFieldKeys, [ torrent.id ], function( response ) {
-      updateTorrents( response );
-      handler();
-    } );
-  }
-}
-
-function handleAddClick( e ) {
-  closePopup();
-  var d = globals.dialogs.add;
-  if( d.addFile ) {
-    if( d.fileName.value.length > 0 ) {
-      showWait();
-      processFiles( Array.from( d.file.files ), d.dir.value, d.pausedLed.value );
-      d.fileName.value = "";
-    }
-  }
-  else {
-    if( d.url.value.length > 0 ) {
-      showWait();
-      processURLs( [ d.url.value ], d.dir.value, d.pausedLed.value );
-      d.url.value = "";
-    }
-  }
 }
 
 var menuSelected = null;
 
 // Returns true if a new menu item was selected.
 function menuSelect( item ) {
-  var menuId = createId( "menu_", item );
+  const menuId = createId( "menu_", item );
   if( menuSelected ) {
     if( menuSelected.id == menuId ) {
       return false;
@@ -3244,16 +4018,6 @@ function menuSelect( item ) {
   return true;
 }
 
-function selectFileLed( file ) {
-  var d = globals.dialogs.add;
-  d.addFile = file;
-  d.fileLed.set( file );
-  d.urlLed.set( !file );
-}
-
-var selectFileLedTrue = selectFileLed.curry( true );
-var selectFileLedFalse = selectFileLed.curry( false );
-
 function renderPopup( id ) {
   return rD( { id: id, "class": "popup" } ).hide();
 }
@@ -3263,7 +4027,7 @@ function renderDialogPopup( id ) {
 }
 
 function renderMenuItems( items, render ) {
-  return items.collect( function( item ) {
+  return items.map( function( item ) {
     return rE( "li", { id: item.toLowerCase() } ).insert( render ? render( item ) : item );
   } );
 }
@@ -3272,74 +4036,102 @@ function renderMenuPopup( id, items, render ) {
   return renderPopup( id ).insert( rE( "ul" ).insert( renderMenuItems( items, render ) ) );
 }
 
-function getFileSearcher( search, isRegExp ) {
-  return isRegExp ? function( file ) {
-    return getFilePart( file.name ).match( search );
-  } : function( file ) {
-    return getFilePart( file.name ).indexOf( search ) !== -1;
-  }
-}
-
-function previewSearchReplace( e ) {
-  var d = globals.dialogs.batchrename;
-  var search = d.search.value || "";
-  var isRegExp = d.isRegExp.value;
-  search = isRegExp ? new RegExp( search ) : search;
-  var replace = d.replace.value || "";
-  if( isRegExp && 0 === replace.length ) {
-    for( var i = 1, len = ( new RegExp( ( d.search.value || "" ) + "|" ) ).exec( "" ).length; i < len; ++i ) {
-       replace += "$" + i;
-    }
-    d.replace.value = replace;
-  }
-  var file = globals.currentTorrent.files.find( getFileSearcher( search, isRegExp ) );
-  var fileName = file ? getFilePart( file.name ) : "";
-  d.search_preview.update( fileName );
-  d.replace_preview.update( fileName.replace( search, replace ) );
-}
-
 function renderPage() {
-  var rCancel = function( style, text ) {
-    return rB( { "class": "styled " + style, type: "button", value: text || "Cancel" } ).observe( "click", closePopup );
+  const rCancel = function( style, text ) {
+    return rB( { "class": style, value: text || "Cancel" } ).observe( "click", closePopup );
   }
 
-  var d = {
-    additional: rD( { "class": "additional" } ),
-    torrents: rD( { "class": "torrents" } ),
-    cancel: rCancel( "cancel" ),
-    action: rB( { "class": "styled action", type: "button", value: "Action" } )
+  const _searcher = function( search, isRegExp ) {
+    return isRegExp ? function( file ) {
+      return getFilePart( file.name ).match( search );
+    } : function( file ) {
+      return getFilePart( file.name ).includes( search );
+    }
+  }
+
+  const _preview = function() {
+    const d = globals.dialogs.batchrename;
+    var search = d.search.value;
+    const isRegExp = d.isRegExp.value;
+    search = isRegExp ? new RegExp( search, "g" ) : search;
+    var replace = d.replace.value;
+    if( isRegExp && 0 === replace.length ) {
+      for( var i = 1, len = ( new RegExp( d.search.value + "|", "g" ) ).exec( "" ).length; i < len; ++i ) {
+        replace += "$" + i;
+      }
+      d.replace.value = replace;
+    }
+    const file = globals.currentTorrent.files.find( _searcher( search, isRegExp ) );
+    const fileName = file ? getFilePart( file.name ) : "";
+    d.searchPreview.update( fileName );
+    d.replacePreview.update( fileName.replace( search, replace ) );
+  }
+
+  const _browse = function( e ) {
+    _file( e );
+    globals.dialogs.add.file.click();
+  }
+
+  const _file = function( e ) {
+    e.stop();
+    globals.dialogs.add.isFile.click();
+  }
+
+  const _url = function( e ) {
+    e.stop();
+    globals.dialogs.add.isUrl.click();
+  }
+
+  const d = globals.dialogs = {
+    action: rB( { "class": "action", value: "Action" } )
       .observe( "click", handleTorrentActionClick ),
     add: {
-      file: rI( null, { type: "file", multiple: "multiple" } ).hide(),
-      fileLed: rLed().observe( "click", selectFileLedTrue ),
-      fileName: rI( null, { readonly: "readonly" } ),
-      browse: rB( { "class": "styled add", type: "button", value: "Browse" } ),
-      urlLed: rLed().observe( "click", selectFileLedFalse ),
-      url: rI( null ).observe( "change", selectFileLedFalse ).observe( "keypress", selectFileLedFalse ),
-      dir: rI( globals.shift.session[ "download-dir" ] ),
-      pausedLed: rLed().makeToggle(),
-      add: rB( { "class": "styled add", type: "button", value: "Add" } ).observe( "click", handleAddClick )
-    },
-    relocate: {
-      target: rI( globals.shift.session[ "download-dir" ], { "class": "styled relocate", size: 64 } ),
-      move: rLed( true ).makeToggle(),
-    },
-    remove: {
-      trash: rLed( true )
-    },
-    batchrename: {
-      search: rI( null, { size: 64 } ).observe( "change", previewSearchReplace ),
-      search_preview: rS(),
-      isRegExp: rLed( false, { title: "Regular Expression" } ).makeToggle().observe( "click", previewSearchReplace ),
-      replace: rI( null, { size: 64 } ).observe( "change", previewSearchReplace ),
-      replace_preview: rS(),
-      rename: rB( { "class": "styled rename", id: "batchrename", type: "button", value: "Rename" } ).observe( "click", function( e ) {
+      file: rI( null, { type: "file", multiple: "multiple" } ).observe( "change", function( e ) {
+        _file( e );
+        d.add.fileName.value = $A( e.currentTarget.files ).pluck( "name" ).join( ";" );
+      } ).hide(),
+      isFile: rLed(),
+      fileName: rI( null, { readonly: "readonly" } ).observe( "click", _browse ).observe( "focus", _file ),
+      browse: rB( { "id": "browse", "class": "add", value: "Browse" } ).observe( "click", _browse ).observe( "focus", _file ),
+      isUrl: rLed(),
+      url: rI().observe( "change", _url ).observe( "focus", _url ).observe( "keypress", _url ),
+      paths: rI( "" ),
+      paused: rLed().makeToggle().setValue( !function() {
+        var s = globals.shift.session[ "start-added-torrents" ];
+        return undefined === s ? true : s;
+      }() ),
+      uploading: rB( { "class": "add", value: "Uploading" } ).observe( "click", function( e ) {
+        e.stop();
+        showPopup( "popupUpload" );
+      } ),
+      add: rB( { "class": "add", value: "Add" } ).observe( "click", function( e ) {
+        e.stop();
         closePopup();
-        var search = d.batchrename.search.value || "";
-        search = d.batchrename.isRegExp.value ? new RegExp( search ) : search;
-        var replace = d.batchrename.replace.value || "";
-        var files = globals.currentTorrent.files.findAll( getFileSearcher( search, d.batchrename.isRegExp.value ) );
-        renameFiles( files.collect( function( f ) {
+        const d = globals.dialogs.add;
+        const file = d.isFile.getRadio() === d.isFile;
+        const input = d[ file ? "fileName": "url" ];
+        if( input.value.length ) {
+          upload( file ? Array.from( d.file.files ) : [ input.value ], persistPath( d.paths.value ), d.paused.value );
+          input.value = "";
+        }
+      } )
+    },
+    additional: rD( "additional" ),
+    batchrename: {
+      search: rI().observe( "change", _preview ),
+      searchPreview: rS( "example" ),
+      isRegExp: rLed( false, { title: "Regular Expression" } ).makeToggle().observe( "click", _preview ),
+      replace: rI().observe( "change", _preview ),
+      replacePreview: rS( "example" ),
+      rename: rB( { "class": "rename", id: "batchrename", value: "Rename" } ).observe( "click", function( e ) {
+        e.stop();
+        closePopup();
+        const d = globals.dialogs.batchrename;
+        var search = d.search.value;
+        search = d.isRegExp.value ? new RegExp( search ) : search;
+        const replace = d.replace.value;
+        const files = globals.currentTorrent.files.filter( _searcher( search, d.isRegExp.value ) );
+        renameFiles( files.map( function( f ) {
           return {
             path: f.name,
             name: getFilePart( f.name ).replace( search, replace ),
@@ -3348,24 +4140,57 @@ function renderPage() {
         } ) );
       } )
     },
-    rename: {
-      fileName: rI( null, { size: 64 } ),
-      rename: rB( { "class": "styled rename", id: "rename", type: "button", value: "Rename" } ).observe( "click", handleTorrentActionClick )
+    cancel: rCancel( "cancel" ),
+    paths: {
+      paths: rD( { id: "paths", "class": "styled", contentEditable: "true", spellcheck: "false" } ).observe( "keydown", function( e ) {
+        if( e.keyCode !== 27 ) { // Esc
+          e.stopPropagation();
+        }
+        if( e.keyCode === 13 ) { // Enter
+          document.execCommand( "insertHTML", false, "\n" );
+          e.preventDefault();
+        }
+      } ),
+      apply: rB( { "class": "paths", value: "Apply" } ).observe( "click", function( e ) {
+        e.stop();
+        closePopup();
+        if( globals.shift.settings.screenshotMode ) {
+          return;
+        }
+        const callback = globals.dialogs.paths.callback;
+        callback && callback( $( "paths" ).textContent.split( "\n" ).grep( /([^\s])/ ).invoke( "trim" ).uniq() );
+      } ),
+      callback: undefined
     },
+    relocate: {
+      paths: null,
+      move: rLed( true ).makeToggle()
+    },
+    remove: {
+      trash: rLed( true )
+    },
+    rename: {
+      fileName: rI(),
+      rename: rB( { "class": "rename", id: "rename", value: "Rename" } ).observe( "click", handleTorrentActionClick )
+    },
+    torrents: rD( "torrents" ),
     upload: {
-       close: rCancel( "upload", "Close" ),
-       clear: rB( { "class": "styled upload", type: "button", value: "Clear" } ).observe( "click", function( e ) {
-         var t = e.target;
-         var u = $( "uploads" );
-         u.select( "div.drop" ).each( function( drop ){
-           drop.select( "div" ).each( function( div ){
-             if( div.down( "span.led" ).hasClassName( "duplicate" ) ) {
-               div.remove();
-             }
-           } );
-           if( drop.empty() ) {
-             drop.remove();
-           }
+      uploads: rD( { id: "uploads" } ).observe( "dblclick", function( e ) {
+        const l = e.findElement( "div.upload" );
+        l && l.item.clear( true );
+      } ),
+      keep: rLed().makeToggle(),
+      silent: rLed().makeToggle().toggle(),
+      add: rB( { "class": "upload", value: "Add" } ).observe( "click", showAddPopup ),
+      close: rCancel( "upload", "Close" ),
+      clear: rB( { "class": "upload", value: "Clear" } ).observe( "click", function( e ) {
+        e.stop();
+        const u = $( "uploads" );
+        u.select( "div.upload" ).each( function( div ){
+          const led = div.down( "led" );
+          if( led.hasClassName( "added" ) || led.hasClassName( "duplicate" ) ) {
+            div.item && div.item.clear( true );
+          }
         } );
         if( u.empty() ) {
           closePopup( e );
@@ -3373,25 +4198,12 @@ function renderPage() {
       } )
     }
   }
-  var _handler = function( e ) {
-    globals.dialogs.add.file.click();
-    e.stop();
-  };
-  d.add.fileName.observe( "click", _handler );
-  d.add.browse.observe( "click", _handler );
-  d.add.file.observe( "change", function( e ) {
-    globals.dialogs.add.fileName.value = $A( e.currentTarget.files ).pluck( "name" ).join( ";" );
-    selectFileLedTrue();
-  } );
+  d.add.isFile.addRadio( d.add.isUrl ).click();
 
-  d.relocate.insert = [ "To ", d.relocate.target, "<br/>", d.relocate.move, " Move" ];
-  d.remove.insert =  Object.values( d.remove );
-  d.rename.insert =  Object.values( d.rename );
+  d.remove.insert = Object.values( d.remove );
+  d.rename.insert = Object.values( d.rename );
 
-  globals.dialogs = d;
-  selectFileLedTrue();
-
-  var popups = rD( { id: "popups" } ).insert(
+  const popups = rD( { id: "popups" } ).insert(
     renderDialogPopup( "popupAbout" )
       .insert(
         "<h1>Shift / Transmission</h1><h2>By Killemov</h2>Version: " +
@@ -3405,19 +4217,19 @@ function renderPage() {
     renderDialogPopup( "popupAdd" )
       .insert( rE( "h1", {}, "Add a torrent" ) )
       .insert( rI( null, { type: "file", multiple: "multiple" } ).hide() )
-      .insert( rD().insert( [ d.add.fileLed, rS( { "class": "add" }, "File" ), d.add.fileName, d.add.browse ] ) )
-      .insert( rD().insert( [ d.add.urlLed, rS( { "class": "add" }, "Url" ), d.add.url ] ) )
-      .insert( rD().insert( [ rS( { "class": "add", id: "labelDir" }, "Dir" ), d.add.dir ] ) )
-      .insert( rD().insert( [ d.add.pausedLed, rS( { id: "labelPaused" }, "Add paused" ) ] ) )
-      .insert( rD().insert( [ rCancel( "add" ), d.add.add ] ) )
+      .insert( rD().insert( d.add.isFile, rS( "add", "File" ), d.add.fileName, d.add.browse ) )
+      .insert( rD().insert( d.add.isUrl, rS( "add", "Url" ), d.add.url ) )
+      .insert( rD().insert( rS( { class: "add", id: "labelDir" }, "Dir" ) ) )
+      .insert( rD().insert( d.add.paused, rS( { id: "labelPaused" }, "Add paused" ) ) )
+      .insert( rD().insert( d.add.uploading, rCancel( "add" ), d.add.add ) )
   ).insert(
     renderDialogPopup( "popupBatchRename" )
       .insert( rE( "h1", {}, "Batch Rename" ) )
-      .insert( rD().insert( [ rS( { "class": "rename" }, "Search" ), d.batchrename.search, d.batchrename.isRegExp ] ) )
-      .insert( rD().insert( [ rS( { "class": "rename" }, "Example" ), d.batchrename.search_preview ] ) )
-      .insert( rD().insert( [ rS( { "class": "rename" }, "Replace" ), d.batchrename.replace ] ) )
-      .insert( rD().insert( [ rS( { "class": "rename" }, "Example" ), d.batchrename.replace_preview ] ) )
-      .insert( rD().insert( [ rCancel( "rename" ), d.batchrename.rename ] ) )
+      .insert( rD().insert( rS( "rename", "Search" ), d.batchrename.search, d.batchrename.isRegExp ) )
+      .insert( rD().insert( rS( "rename", "Example" ), d.batchrename.searchPreview ) )
+      .insert( rD().insert( rS( "rename", "Replace" ), d.batchrename.replace ) )
+      .insert( rD().insert( rS( "rename", "Example" ), d.batchrename.replacePreview ) )
+      .insert( rD().insert( rCancel( "rename" ), d.batchrename.rename ) )
   ).insert(
     renderDialogPopup( "popupDialog" )
       .insert( rE( "h1" ) )
@@ -3426,10 +4238,15 @@ function renderPage() {
       .insert( d.additional )
       .insert( rD().insert( d.cancel ).insert( d.action ) )
   ).insert(
+    renderDialogPopup( "popupPaths" )
+      .insert( rE( "h1", {}, "Paths" ) )
+      .insert( d.paths.paths )
+      .insert( rD().insert( rCancel( "paths" ), d.paths.apply ) )
+  ).insert(
     renderDialogPopup( "popupUpload" )
       .insert( rE( "h1", {}, "Uploading" ) )
-      .insert( rD( { id: "uploads" } ) )
-      .insert( rD().insert( [ d.upload.close, d.upload.clear ] ) )
+      .insert( d.upload.uploads )
+      .insert( rD().insert( d.upload.keep, rS( "upload", "Keep" ), d.upload.silent, rS( "upload", "Silent" ), d.upload.add, d.upload.close, d.upload.clear ) )
   ).insert(
     renderMenuPopup( "popupFile", filePriorityKeys, function( item ) {
       return rLed( item );
@@ -3443,19 +4260,21 @@ function renderPage() {
   ).insert(
     renderDialogPopup( "popupRename" )
       .insert( rE( "h1", {}, "Rename" ) )
-      .insert( rD().insert( [ rS( { "class": "rename" }, "Name" ), d.rename.fileName ] ) )
-      .insert( rD().insert( [ rCancel( "rename" ), d.rename.rename ] ) )
+      .insert( rD().insert( rS( "rename", "Name" ), d.rename.fileName ) )
+      .insert( rD().insert( rCancel( "rename" ), d.rename.rename ) )
   ).insert(
     renderMenuPopup( "popupTorrent", torrentActionLabels )
   ).insert(
     renderMenuPopup( "popupTracker", [ "Remove" ] )
   ).insert(
     renderMenuPopup( "popupTrackerAdd", [ "Add" ] )
+  ).insert(
+    renderMenuPopup( "popupTrackerUpdate", [ "Update" ] )
   );
 
   $( "outside" ).insert( popups );
   $( "popupFile" ).down( "ul" ).insert( renderMenuItems( fileMenuItems ) );
-  $( "popupTorrent" ).down( "li#remove" ).insert( { before: rD( { class: "menuSpacer" } ) } );
+  $( "popupTorrent" ).down( "li#remove" ).insert( { before: rD( "menuSpacer" ) } );
 
   globals.popups = {
     "popups": popups
@@ -3465,19 +4284,19 @@ function renderPage() {
     globals.popups[ popup.id ] = popup;
   } );
 
-  var header = rD( { id: "header" } );
+  const header = rD( { id: "header" } );
   header
     .insert( rD( { id: "stats" } )
-    .insert( rS( { "class": "label" }, "Dl/Ul: " ) )
+    .insert( rS( "label", "Dl/Ul: " ) )
     .insert( rS( { id: "downloadSpeed" }, "0Bs" ) ).insert( " / " )
     .insert( rS( { id: "uploadSpeed" }, "0Bs" ) ).insert( rE( "br" ) )
-    .insert( rS( { "class": "label" }, "Total: " ) )
+    .insert( rS( "label", "Total: " ) )
     .insert( rS( { id: "downloadedBytes" }, "0B" ) ).insert( " / " )
     .insert( rS( { id: "uploadedBytes" }, "0B" ) ).insert( rE( "br" ) )
-    .insert( rS( { "class": "label" }, "Free: " ) )
+    .insert( rS( "label", "Free: " ) )
     .insert( rS( { id: "download-dir-free-space" }, "0B" ) )
-    .observe( "dblclick", function( e ) {
-      var f = $( "filterContainer" );
+    .observe( "dblclick", function() {
+      const f = $( "filterContainer" );
       globals.headerState++;
       globals.headerState %= 3;
       switch( globals.headerState ) {
@@ -3489,21 +4308,21 @@ function renderPage() {
           header.insert( f );
           this.observe( "selectstart", preventDefault );
           this.observe( "mousedown", function( e ) {
-            var xs = e.pageX - header.offsetLeft;
-            var ys = e.pageY - header.offsetTop;
-            var w = window.innerWidth - header.offsetWidth - 8;
-            var h = window.innerHeight - header.offsetHeight - 8;
+            const xs = e.pageX - header.offsetLeft;
+            const ys = e.pageY - header.offsetTop;
+            const w = window.innerWidth - header.offsetWidth - 8;
+            const h = window.innerHeight - header.offsetHeight - 8;
             this.observe( "mousemove", function( e ) {
-              header.style.left = Math.max( 8, Math.min( e.pageX - xs, w ) ) + "px";
-              header.style.top = Math.max( 8, Math.min( e.pageY - ys, h ) ) + "px";
+              header.style.left = ( e.pageX - xs ).limit( 8, w ) + "px";
+              header.style.top = ( e.pageY - ys ).limit( 8, h ) + "px";
             } );
-            var stopHandler = function( e ) {
+            const _handler = function() {
               this.stopObserving( "mouseleave" );
               this.stopObserving( "mousemove" );
               this.stopObserving( "mouseup" );
             }
-            this.observe( "mouseleave", stopHandler );
-            this.observe( "mouseup", stopHandler );
+            this.observe( "mouseleave", _handler );
+            this.observe( "mouseup", _handler );
           } );
         break;
         default:
@@ -3519,18 +4338,62 @@ function renderPage() {
 
   globals.menu = {
     main: [
-      rM( "Add", function() {
-        showPopup( "popupAdd" );
+      rM( "Add", showAddPopup ),
+      rM( "Start all", function() {
+        if( globals.shift.settings.confirmStartAll ) {
+          if( !confirm( "Start all torrents?" ) ) {
+            return;
+          }
+        }
+        doRequest( "torrent-start" );
       } ),
-      rM( "Start all", doRequest.curry( "torrent-start" ) ),
-      rM( "Stop All", doRequest.curry( "torrent-stop" ) )
+      rM( "Stop all", function() {
+        if( globals.shift.settings.confirmStopAll ) {
+          if( !confirm( "Stop all torrents?" ) ) {
+            return;
+          }
+        }
+        doRequest( "torrent-stop" );
+      } )
     ],
     torrent: [
       [ "Files", "fileTable", [ "id", "fileStats", "percentDone", "pieces", "sizeWhenDone" ], showFiles ],
       [ "Peers", "peersDiv", [ "id", "peers", "peersFrom" ], showPeers ],
       [ "Trackers", "trackerDiv", [ "id", "trackerStats" ], showTrackers ],
       [ "Details", "detailsTable", torrentDetailsUpdateKeys, showDetails ]
-    ].collect( function( a ) { return rM( a[ 0 ], handleTorrentClick.curry( handleUpdate.curry( a[ 0 ], a[ 1 ], a[ 2 ], a[ 3 ] ) ) ) } ),
+    ].map( function( a ) {
+      return rM( a[ 0 ], function( handler ) {
+        globals.menu.main.hideAll();
+        globals.menu.torrent.showAll();
+        const torrent = globals.currentTorrent;
+        if( globals.oldTorrent != torrent ) {
+          globals.oldTorrent = torrent;
+          globals.content.select( ".torrent" ).invoke( "remove" );
+        }
+        if( torrent.files ) {
+          handler();
+        }
+        else {
+          fetchTorrents( torrentFieldKeys, [ torrent.id ], function( response ) {
+            updateTorrents( response );
+            handler();
+          } );
+        }
+      }.curry( function( menu, tableId, fields, renderer ) {
+        if( !menuSelect( menu ) ) {
+          return;
+        }
+        showWait();
+        if( !showContent( tableId ) ) {
+          const torrent = globals.currentTorrent;
+          globals.shift.torrentUpdater.mod( { fields: fields, ids: [ torrent.id ] }, function( response ) {
+            updateTorrents( response );
+            renderer( torrent );
+            showDone();
+          } );
+        }
+      }.curry( a[ 0 ], a[ 1 ], a[ 2 ], a[ 3 ] ) ) );
+    } ),
     session: [
       rM( "Shift", function() {
         if( menuSelect( "shift" ) ) {
@@ -3554,11 +4417,11 @@ function renderPage() {
     .insert( rM( "Torrents", function() {
       if( menuSelect( "torrents" ) ) {
         showTorrentTable();
-        setDefaultTorrentRequest();
+        globals.shift.torrentUpdater.default();
       }
-      globals.menu.session.invoke( "hide" );
-      globals.menu.torrent.invoke( "hide" );
-      globals.menu.main.invoke( "show" );
+      globals.menu.session.hideAll();
+      globals.menu.torrent.hideAll();
+      globals.menu.main.showAll();
     } ) )
     .insert( globals.menu.main )
     .insert( globals.menu.torrent )
@@ -3566,12 +4429,12 @@ function renderPage() {
       if( menuSelect( "session" ) ) {
         showSessionTable();
       }
-      globals.menu.main.invoke( "hide" );
-      globals.menu.torrent.invoke( "hide" );
-      globals.menu.session.invoke( "show" );
+      globals.menu.main.hideAll();
+      globals.menu.torrent.hideAll();
+      globals.menu.session.showAll();
     } ) )
     .insert( globals.menu.session )
-    .insert( rM( "About", function( e ) {
+    .insert( rM( "About", function() {
       showPopup( "popupAbout" );
     } ) )
   );
@@ -3581,7 +4444,7 @@ function renderPage() {
   globals.content = rD( { id: "content" } );
   globals.body.insert( globals.content );
 
-  globals.menu.main.invoke( "show" );
+  globals.menu.main.showAll();
   menuSelect( "torrents" );
 }
 
@@ -3590,167 +4453,198 @@ function getBody( torrent, s ) {
   return { body: ( torrent.hashString ? torrent.hashString + "\n" : "" ) + torrent.name + s };
 }
 
-function keepProcessing( response ) {
-  if( !success( response ) ) {
-    return false;
-  }
+const _uploads = [];
 
-  var args = getArguments( response )
-  var t = args[ "torrent-duplicate" ];
-  if( t ) {
-    sendNotification( 2, "Duplicate torrent added.", getBody( t ) );
-    return false;
-  }
-  t = args[ "torrent-added" ];
-  if( t ) {
-    sendNotification( 3, "Torrent added.", getBody( t ) );
-  }
-  return true;
-}
+function upload( uploads, target, paused ) {
+  const preLoad = true;
+  const protocol = window.location.href.includes( "uri=" );
+  const d = globals.dialogs && globals.dialogs.upload;
 
-function loadFile( file, onSuccess ) {
-  if( "loaded" === file.status ) {
-    if( onSuccess ) {
-      onSuccess( {
-        target: {
-          result: file.result,
-          file: file
-        }
-      } )
+  const _back = function( message ) {
+    if( protocol ) {
+      globals.body.insert( message );
+      window.history.back();
     }
   }
-  else {
-    file.update( "loading" );
-    var r = new FileReader();
-    r.file = file;
 
-    Event.observe( r, "load", function( e ) {
-      e.target.file.update( "loaded" );
-      e.target.file.result = e.target.result;
-      if( onSuccess ) {
-        onSuccess( e )
+  if( isEmpty( uploads ) ) {
+    _back();
+  }
+
+  const _upload = function( uploadable ) {
+    uploadable.update( "uploading" );
+    uploadable.node && uploadable.node.scrollIntoView( false );
+
+    // Upload the item first to see if Transmission can handle it.
+    addTorrent( uploadable.result || uploadable.url, function( response ) {
+      _uploads.remove( uploadable );
+      _back();
+
+      if( !success( response ) ) {
+        // Transmisssion could not handle the item. Parse it for URL extraction.
+        const textReader = _reader( function() {
+          upload( textReader.result.match( torrentRegExp ), target, paused );
+        } );
+        textReader.readAsText( uploadable );
+        uploadable.update( "processing" );
+        _next();
+        return;
       }
+
+      const args = getArguments( response );
+      const t = args[ "torrent-added" ] || args[ "torrent-duplicate" ];
+      if( !t ) {
+        _back();
+        _next();
+        return;
+      }
+
+      var m;
+      if( "torrent-added" in args ) {
+        uploadable.update( "added" );
+        sendNotification( 3, "Torrent added.", getBody( t ) );
+        if( uploadable.url && uploadable.url.startsWith( "magnet:" ) ) {
+          globals.magnets.push( t.id );
+        }
+        !d.keep.value && uploadable.clear( true );
+        m = " added!";
+      }
+
+      if( "torrent-duplicate" in args ) {
+        uploadable.update( "duplicate" );
+        sendNotification( 2, "Duplicate torrent.", getBody( t ) );
+        !d.keep.value && uploadable.clear( false );
+        m = " duplicate!"
+      }
+
+      _back( m );
+      _next();
+    }, target, paused, function( request ) {
+      uploadable.request = request;
     } );
-    r.readAsDataURL( file );
-  }
-}
-
-function processFiles( files, target, paused ) {
-  if( isEmpty( files ) ) {
-    return;
   }
 
-  for( var i = files.length - 1; i >= 0; --i ) {
-    var file = files[ i ];
-    if( "added" === file.status ) {
-       file.node.file = null;
-       file.node.remove();
-       files.splice( i, 1 );
+  const _url = function( s ) {
+    var name = decodeURIComponent( s );
+    return {
+      url: s,
+      name: name.startsWith( "magnet:" ) ? magnetNameRegExp.exec( name )[ 1 ] : getFilePart( name )
     }
   }
 
-  var dropId = "drop" + dropCount++;
-
-  var update = function( status ) {
-    this.status = status;
-    this.node.down( "span" ).set( status );
+  if( protocol ) {
+    return _upload( function( item ) {
+      item.clear = nop;
+      item.update = nop;
+      return item;
+    }( _url( uploads[0] ) ) );
   }
 
-  var u = $( "uploads" );
-  var removables = u.select( "div.drop" ).filter( Element.empty );
-  var loadHandler = function( e ) {
-    // Reader adds some metadata that ends with "base64,".
-    var search = "base64,"
-    var index = e.target.result.indexOf( search );
-    if( index > -1 ) {
-      var result = e.target.result.substring( index + search.length );
-      e.target.file.update( "uploading" );
-      // Upload the file first to see if Transmission can handle it.
-      doRequest( "torrent-add", { "download-dir": target, "paused": paused, "metainfo": result }, function( response ) {
-        $( dropId ).remove();
-        $A( u.children ).select( Element.visible ).length ? u.show() : u.hide();
-
-        if( success( response ) ) {
-          e.target.file.update( keepProcessing( response ) ? "added" : "duplicate" )
-        }
-        else {
-          // Transmisssion could not handle the file. Parse it for URL extraction.
-          var textReader = new FileReader();
-          Event.observe( textReader, "load", function( e ) {
-            processURLs( textReader.result.match( torrentRegexp ), target, paused );
-          } );
-          textReader.readAsText( e.target.file );
-          e.target.file.update( "processing" );
-        }
-        processFiles( files, target, paused );
-      } );
+  const u = $( "uploads" );
+  const uploading = !isEmpty( _uploads );
+  uploads.each( function( item ) {
+    if( _uploads.find( function( existing ) {
+      return item === existing.url || item.name === existing.name;
+    } ) ) {
+      return;
     }
-  }
+    const isUrl = !item.name;
+    item = isUrl ? _url( item ) : item;
+    u.insert( _uploads.squeak( function( item ) {
+      item.clear = function( n ) {
+        _uploads.remove( this );
+        this.request && this.request.transport && this.request.transport.abort && this.request.transport.abort();
+        delete this.request;
+        delete this.name;
+        delete this.result;
+        delete this.update;
+        delete this.url
+        if( n ) {
+          delete this.clear;
+          delete this.node.item;
+          this.node.remove();
+          delete this.node;
+          !d.silent.value && showPopup( "popupUpload" );
+        }
+      }.bind( item );
+      item.update = function( status ) {
+        this.status = status;
+        this.node.down( "led" ).value = status;
+      }.bind( item );
+      item.node = rD( "upload" ).insert( rLed( false ) ).insert( item.name );
+      item.node.item = item;
+      return item;
+    } ( item ) ).node );
+    isUrl && item.update( "loaded" );
+  } );
 
-  var drops = rD( { id: dropId, "class": "drop" } );
-  u.insert( drops );
-
-  for( var i = 0, l = files.length; i < l; ++i ) {
-    var file = files[ i ];
-    file.update = file.update || update.bind( file );
-    file.node = file.node || rD().insert( rLed( false ) ).insert( file.name );
-    file.node.file = file;
-    drops.insert( file.node );
-  }
   u.show();
   showPopup( "popupUpload" );
 
-  var first = true;
-  for( var i = 0, l = files.length; i < l; ++i ) {
-    var file = files[ i ];
-    if( undefined === file.status ) {
-      loadFile( file, first ? loadHandler : undefined );
-      first = false;
-      continue;
-    }
-
-    if( "loaded" === file.status ) {
-      if( first ) {
-        first = false;
-        loadFile( file, loadHandler );
-      }
-    }
-  }
-}
-
-function processURLs( urls, target, paused ) {
-  var url = urls.shift();
-  if( undefined === url ) {
+  if( uploading ) {
     return;
   }
 
-  url = decodeURIComponent( url ).replace( new RegExp( "&amp;", "g" ), "&" );
-  doRequest( "torrent-add", { "download-dir": target, "paused": paused, "filename": url }, function( response ) {
-    if( window.location.href.indexOf( "uri=" ) > 0 ) {
-      window.history.back();
+  const _reader = function( onLoad ) {
+    return Event.observe( new FileReader(), "load", onLoad );
+  }
+
+  const _load = function( file, onLoad ) {
+    if( "loaded" === file.status ) {
+      onLoad( file );
     }
-    if( keepProcessing( response ) ) {
-      var args = getArguments( response );
-      var added = args[ "torrent-added" ];
-      args.torrents = [ added ];
-      if( url.startsWith( "magnet:" ) ) {
-        globals.magnets.push( added.id );
-      }
-      updateTorrents( response );
+    else {
+      file.update( "loading" );
+      const r = _reader( function( e ) {
+        file.update( "loaded" );
+        file.result = e.target.result;
+        onLoad( file )
+      } );
+      r.readAsDataURL( file );
     }
-    processURLs( urls, target, paused );
-  } );
+  }
+
+  const _next = function() {
+    if( isEmpty( _uploads ) ) {
+      return;
+    }
+
+    var item = _uploads.find( function( i ) {
+      return "uploading" === i.status;
+    } );
+
+    if( item ) {
+      // TODO Update status.
+    }
+    else {
+      item = _uploads.find( function( i ) {
+        return "loaded" === i.status;
+      } );
+      item && _upload( item );
+    }
+
+    item = _uploads.find( function( item ) {
+      return !item.status;
+    } );
+
+    if( item ) {
+      _load( item, preLoad ? _next : _upload );
+      return;
+    }
+    setTimeout( _next, 1000 );
+  }
+  _next();
 }
 
 function renderDoneSound() {
-  var s = globals.shift;
+  const s = globals.shift;
   if( s.doneSound ) {
     s.doneSound.pause();
     s.doneSound.currentTime = 0;
   }
   var soundDone = s.settings.soundDone;
   if( isEmpty( soundDone ) ) {
-    var audioWave = [];
+    const audioWave = [];
     for( var i = 0; i < 1024; ++i ) {
       audioWave[ i ] = 128 + Math.round( 127 * Math.sin( i / 1.8 ) );
     }
@@ -3761,46 +4655,70 @@ function renderDoneSound() {
 }
 
 function renderTitle() {
-  var s = globals.shift;
+  const s = globals.shift;
   if( s.settings.showSpeedTitle && s.sessionStats ) {
-    document.title = "Down: " + renderers[ "downloadSpeed" ]( s.sessionStats.downloadSpeed ) + " / Up: " + renderers[ "uploadSpeed" ]( s.sessionStats.uploadSpeed );
+    document.title = renderers[ "downloadSpeed" ]( s.sessionStats.downloadSpeed ) + " \u25BC\u25B2" + renderers[ "uploadSpeed" ]( s.sessionStats.uploadSpeed );
   }
   else {
     document.title = "Shift " + s.version + " / Transmission " + s.session.version;
   }
 }
 
+function getVisible( selector ) {
+  var elements = globals.body.select( selector ).filter( Element.visible );
+  for( var i = 0, len = elements.length; i < len; ++i ) {
+    var e = elements[ i ];
+    if( elements.offsetParent ) {
+      return e;
+    }
+  }
+  return null;
+}
+
 function centerVertically( e ) {
   if( !e ) {
     return;
   }
-  var clientHeight = document.viewport.getHeight();
-  var clientBottom = document.viewport.getScrollOffsets().top + clientHeight;
-  var h = e.getHeight();
-  var t = e.cumulativeOffset().top;
+  const clientHeight = document.viewport.getHeight();
+  const clientBottom = document.viewport.getScrollOffsets().top + clientHeight;
+  const h = e.getHeight();
+  const t = e.cumulativeOffset().top;
 
   if( t < clientBottom || clientBottom < t + h ) {
     window.scrollTo( 0, t + h / 2 - clientHeight / 2 );
   }
 }
 
+var statusKeys;
+
 function handleKeyDown( e ) {
-  if( e.ctrlKey || [ "INPUT", "TEXTAREA" ].include( e.target.tagName ) ) {
+  if( e.ctrlKey || [ "INPUT", "TEXTAREA" ].includes( e.target.tagName ) ) {
     return true;
   }
-  var kc = e.keyCode;
+  const kc = e.keyCode;
 
+  const _getVisible = function() {
+    return $( "torrentBody" ).select( "tr" ).filter( Element.visible );
+  }
+
+  var torrent;
   switch( globals.activeTableId ) {
   case "torrentTable":
     globals.currentIndex |= 0;
-    if( Object.keys( globals.torrentStatusKeyHash ).include( kc ) ) {
+    statusKeys = statusKeys || Object.keys( globals.torrentStatusKeyHash ).map( Number );
+    if( statusKeys.includes( kc ) ) {
       preventDefault( e );
       globals.hashIndex = ( globals.hashIndex + 1 ) % globals.torrentStatusKeyHash[ kc ].length;
       $( "statusSelect" ).setValue( globals.torrentStatusKeyHash[ kc ][ globals.hashIndex ] ).dispatchEvent( new Event( "change" ) );
     }
-    else if( 32 == kc ) { // space
+    else if( 32 == kc ) { // Space
       preventDefault( e );
-      globals.select = globals.currentTorrent.toggleSelect().isSelected();
+      torrent = globals.currentTorrent || getTorrent( _getVisible()[ 0 ].id, true );
+      if( !torrent ) {
+        return;
+      }
+      centerVertically( torrent._node );
+      globals.select = torrent.toggleSelect().selected;
     }
     else if( 219 == kc ) { // [
       preventDefault( e );
@@ -3814,29 +4732,29 @@ function handleKeyDown( e ) {
       preventDefault( e );
       restoreSelection();
     }
-    else if( 38 == kc || 40 == kc ) { // up, down
+    else if( 38 == kc || 40 == kc ) { // Up, Down
       preventDefault( e );
-      var rows = $( "torrentBody" ).select( "tr" ).findAll( Element.visible );
+      var rows = _getVisible();
       if( !isEmpty( rows ) ) {
         rows.invoke( "toggleClassName", "active", false );
         globals.currentIndex += 38 == kc ? -1 : 1;
         globals.currentIndex = globals.currentIndex.limit( 0, rows.length - 1 );
         var row = rows[ globals.currentIndex ];
         row.toggleClassName( "active", true );
-        globals.currentTorrent = globals.torrentHash[ row.id ];
+        torrent = getTorrent( row.id, true );
         if( undefined !== globals.select ) {
-          globals.currentTorrent.toggleSelect( globals.select );
+          torrent.toggleSelect( globals.select );
         }
         centerVertically( row );
       }
     }
-    else if( 46 == kc ) { // delete
+    else if( 46 == kc ) { // Delete
       preventDefault( e );
       handleTorrentMenuClick( { target: { id: e.shiftKey ? "trash" : "remove" } } );
     }
     else if( 48 <= kc && kc <= 57 ) { // 0..9
       preventDefault( e );
-      var headers = $( "torrentTable" ).select( "th" ).select( Element.visible ).select( function( column ) {
+      var headers = $( "torrentTable" ).select( "th" ).filter( Element.visible ).filter( function( column ) {
         return column.id.startsWith( "h_" ) && "h_menu" != column.id;
       } );
       var i = ( kc - 39 ) % 10; // 1..9,0
@@ -3846,7 +4764,8 @@ function handleKeyDown( e ) {
   }
 
   switch( kc ) {
-    case 13: // enter
+    case 13: // Enter
+    case 107: // +
       var button;
       preventDefault( e );
       if( $( "popups" ).visible() ) {
@@ -3855,15 +4774,15 @@ function handleKeyDown( e ) {
           break;
         }
       }
-      else if( button = globals.body.select( "button.apply" ).find( Element.visible ) ) {
+      else if( button = getVisible( "button.apply" ) ) {
         button.click();
         break;
       }
       else {
-        showPopup( "popupAdd" );
+        showAddPopup();
         break;
       }
-    case 27: // esc
+    case 27: // Esc
       closePopup( e )
     break;
     case 191: // /
@@ -3882,11 +4801,11 @@ function handleKeyDown( e ) {
 }
 
 function handleKeyUp( e ) {
-  var kc = e.keyCode;
-  if( undefined !== globals.select && 32 == kc ) { // space
+  const kc = e.keyCode;
+  if( undefined !== globals.select && 32 == kc ) { // Space
     delete globals.select;
   }
-  if( 9 == kc ) { // tab
+  if( 9 == kc ) { // Tab
     document.activeElement.trigger( "focus" );
   }
 }
@@ -3898,23 +4817,11 @@ function registerMagnetHandler() {
         return;
       }
     }
-    if( navigator.registerProtocolHandler ) {
-      navigator.registerProtocolHandler( "magnet", window.location.href + "?uri=%s", "Shift Transmission Magnet Handler" );
-    }
+    navigator.registerProtocolHandler && navigator.registerProtocolHandler( "magnet", window.location.href + "?uri=%s", "Shift Transmission Magnet Handler" );
   }
   else {
-    if( navigator.unregisterProtocolHandler ) {
-      navigator.unregisterProtocolHandler( "magnet" );
-    }
+    navigator.unregisterProtocolHandler && navigator.unregisterProtocolHandler( "magnet" );
   }
-}
-
-function removeFields( fields ){
-  Object.without( torrentFields, fields );
-  Object.values( globals.torrentStatus ).pluck( "columns" ).each( function( columns ) {
-    columns.remove( fields );
-  } );
-  globals.staticFields.remove( fields );
 }
 
 document.observe( "dom:loaded", function() {
@@ -3924,11 +4831,11 @@ document.observe( "dom:loaded", function() {
   globals.body = globals.html.down( "body" );
   globals.body.addClassName( "normal" );
 
-  var s = window.location.href;
-  var i = s.indexOf( "uri=" );
-  if( i > 0 ) {
+  const s = window.location.href;
+  const i = s.indexOf( "uri=" );
+  if( -1 !== i ) {
     globals.body.update( "Uploading ..." );
-    processURLs( decodeURIComponent( s.substring( i + 4 ) ).match( torrentRegexp ) );
+    upload( decodeURIComponent( s.substring( i + 4 ) ).match( torrentRegExp ) );
     return;
   }
 
@@ -3946,44 +4853,67 @@ document.observe( "dom:loaded", function() {
   globals.html.observe( "dragover", preventDefault );
   globals.html.observe( "drop", function( e ) {
     e.stop();
-    var files = Array.from( e.dataTransfer.files );
-    if( isEmpty( files ) ) {
-      processURLs( [ e.dataTransfer.getData( "URL" ) ] );
-    }
-    else {
-      processFiles( files );
-    }
+    const files = Array.from( e.dataTransfer.files );
+    upload( isEmpty( files ) ? [ e.dataTransfer.getData( "URL" ) ] : files );
   } );
 
   doRequest( { url: "shift.json", evalJSON: "force", method: "get", onSuccess: function( response ) {
     globals.shift.defaultSettings = response.responseJSON;
-    var cookies = document.cookie.split( ";" );
-    var cookie = cookies.find( function( s ) {
+    const cookies = document.cookie.split( ";" );
+    const cookie = cookies.find( function( s ) {
       return s.startsWith( COOKIE_KEY );
     } );
-    var data = undefined === cookie ? {} : window.atob( cookie.substring( COOKIE_KEY.length ) ).evalJSON();
+    const data = undefined === cookie ? {} : window.atob( cookie.substring( COOKIE_KEY.length ) ).evalJSON();
     globals.shift.settings = Object.extend( Object.extend( {}, globals.shift.defaultSettings ), data );
-    setStylesheet( globals.shift.settings.styleSheet[ 0 ] );
+    for( k in globals.shift.defaultSettings ) {
+      var o = globals.shift.defaultSettings[ k ];
+      Object.isArray( o ) && globals.shift.settings[ k ].concatUnique( o );
+    }
+    setStylesheet();
+    window.matchMedia && window.matchMedia( darkMedia ).addEventListener( "change", setStylesheet );
     renderDoneSound();
     registerMagnetHandler();
   } } );
 
   // Get first time session data and initialize page.
   doRequest( "session-get", {}, function( response ) {
+    function _remove() {
+      const fields = Array.prototype.slice.call( arguments );
+      fields.each( function( field ) {
+        const f = field.split( "." );
+        const k = f.shift();
+        var o = torrentFields;
+        switch( k ) {
+        case "session":
+          o = sessionFields;
+          break;
+        default:
+          f.unshift( k );
+        }
+        Object.without( o, f.join( "." ) );
+      } )
+      Object.values( globals.torrentStatus ).pluck( "columns" ).each( function( columns ) {
+        Object.without( columns, fields );
+      } );
+      globals.staticFields.remove( fields );
+    }
+
     globals.shift.session = getArguments( response );
-    globals.version = parseInt( globals.shift.session[ "rpc-version" ] );
+    globals.version = +globals.shift.session[ "rpc-version" ];
     if( globals.version < 17 ) { // 4.00
-      removeFields( [ "file-count", "group", "percentComplete", "primary-mime-type", "trackerList" ] );
+      _remove( "availability", "file-count", "group", "percentComplete", "primary-mime-type", "trackerList", "trackerStats.sitename" );
+      delete pathColumns.total;
     }
     if( globals.version < 16 ) { // 3.00
-      removeFields( [ "session-id", "labels", "editDate" ] );
+      globals.table = false;
+      _remove( "session.session-id", "labels", "editDate" );
     }
     if( globals.version < 15 ) { // 2.80
-      removeFields( [ "etaIdle" ] );
+      _remove( "etaIdle" );
       fileMenuItems.remove( "Rename" );
     }
     if( globals.version < 14 ) { // 2.40
-      removeFields( [ "queuePosition", "isStalled" ] );
+      _remove( "queuePosition", "isStalled" );
       torrentActionLabels.remove( "Start Now" );
       globals.torrentStatus = {
         "-1": globals.torrentStatus[ "-1" ],
@@ -3993,21 +4923,20 @@ document.observe( "dom:loaded", function() {
         8: globals.torrentStatus[ 6 ],
         16: globals.torrentStatus[ 0 ]
       }
-      delete torrentColumns.queuePosition;
-      Object.values( globals.torrentStatus ).pluck( "columns" ).each( function( columns ) {
-        columns.remove( "queuePosition" );
-      } );
-      globals.staticFields.remove( "queuePosition" );
+    }
+    if( globals.version < 10 ) { // 2.10
+      delete shiftFields.trackers;
+      delete globals.shift.settings.trackers;
     }
     if( globals.version < 6 ) { // 1.70
       torrentActionLabels.remove( "Relocate" );
     }
 
-    var h = {};
+    const h = {};
     for( var k in globals.torrentStatus ) {
       var kc = globals.torrentStatus[ k ].keyCode;
       if( kc ) {
-        var a = h[ kc ] || [];
+        const a = h[ kc ] || [];
         a.push( k );
         h[ kc ] = a;
       }
@@ -4019,28 +4948,46 @@ document.observe( "dom:loaded", function() {
     renderPage();
     updateFields( globals.shift.session );
 
-    doTorrentGet( [ "id", "status" ], undefined, function( response ) {
-      getArguments( response ).torrents.each( createTorrent );
-      filterTorrents();
+    fetchTorrents( [ "id", "status" ], undefined, function( response ) {
+      updateTorrents( response );
 
       // Get full update for visible torrents and start periodical updaters.
-      doTorrentGet( globals.staticFields.concat( globals.updateFields ), filterDisplayed( globals.torrents ).pluck( "id" ), function( response ) {
+      fetchTorrents( globals.staticFields.concat( globals.updateFields ), filterStatus().pluck( "id" ), function( response ) {
         updateTorrents( response );
         filterTorrents();
-        globals.activeTableId = "torrentTable";
-        showTorrentTable();
-        setTorrentsColumnsVisible( globals.torrentStatus[ globals.torrentStatusCurrent ].columns );
         sortTorrents();
         renderTorrents();
 
-        globals.shift.updateTorrents.parametersObject.arguments.fields = globals.updateFields;
+        const args = globals.shift.updateTorrents.parametersObject.arguments;
+        args.fields = globals.updateFields;
+        if( globals.table ) {
+          args.format = "table";
+        }
         globals.shift.torrentUpdater = doRequest( globals.shift.updateTorrents );
+        globals.shift.torrentUpdater.mod = function( args, onSuccess ) {
+          const po = this.options.parametersObject;
+          for( var k in args ) {
+            po.arguments[ k ] = args[ k ];
+          }
+          this.options.parameters = Object.toJSON( po );
+          this.options.onSuccess = onSuccess || globals.shift.updateTorrents.onSuccess;
+        }
+        globals.shift.torrentUpdater.default = function( extraFields, onSuccess ) {
+          this.mod( {
+            fields: globals.updateFields.concat( extraFields ).compact(),
+            ids: "recently-active"
+          }, onSuccess );
+        }
+
         globals.shift.statsUpdater = doRequest( globals.shift.updateStats );
         globals.shift.sessionUpdater = doRequest( globals.shift.updateSession );
 
         Event.observe( document, "keydown", handleKeyDown );
         Event.observe( document, "keyup", handleKeyUp );
       } );
+      globals.activeTableId = "torrentTable";
+      showTorrentTable();
+      setTorrentsColumnsVisible( globals.torrentStatus[ globals.currentStatus ].columns );
     } );
   } );
 } );

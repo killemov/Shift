@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2021 Killemov.
+ * © 2023 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -44,8 +44,16 @@ html {
   background-size: 100%;
 }
 
+html.dark {
+  -moz-filter: unset;
+  -ms-filter: unset;
+  -o-filter: unset;
+  -webkit-filter: unset;
+  filter: unset;
+}
+
 body {
-  background-color: rgba( 0, 0, 0, 0.5 );
+  background-color: rgba( 0, 0, 0, 0.2 );
   color: #FFFFFF;
   font-family: Arial,sans-serif;
   font-size: 11pt;
@@ -115,7 +123,6 @@ ul#menu li.selected {
 
 ul#menu li.sub {
   padding: 0.2em 1em;
-  vertical-align: bottom;
 }
 
 th#filterContainerCell {
@@ -130,7 +137,7 @@ div.filter {
   min-height: 38px;
 }
 
-div.filter span.led {
+div.filter led {
   float: none;
 }
 
@@ -149,7 +156,7 @@ div#outside {
   border-width: 0;
 }
 
-.popup div {
+.popup > div {
   display: block;
   margin: 8px 0;
   position: relative;
@@ -185,25 +192,46 @@ div#popupAbout {
 }
 
 div#popupAdd {
-  width: 414px;
+  width: 434px;
 }
 
-div#popupAdd input[type="text"] {
-  left: 96px;
-  position: absolute;
+div#popupAdd button#browse {
+  margin-left: 0px;
 }
 
-div#popupAdd span.led {
-  margin-right: 8px;
+div#popupAdd button.styled {
+  margin: 2px 0 0 8px;
 }
 
-span#labelDir {
+div#popupAdd span#labelDir {
   display: inline-block;
   line-height: 38px;
   margin-left: 26px;
+  padding-left: 22px;
 }
 
-span#port-is-open {
+div.pathselect.styled > .styled {
+  width: 100%;
+}
+
+div#popupAdd div.pathselect.styled > .styled {
+  margin-left: 0;
+}
+
+div#popupDialog div.pathselect.styled {
+  width: calc(100% - 30px);
+}
+
+div.pathselect.styled {
+  background: none;
+}
+
+div#popupAdd div.pathselect.styled {
+  margin-left: 8px;
+  width: 334px;
+}
+
+led#port-is-open {
   margin-top: 2px;
 }
 
@@ -215,6 +243,7 @@ span#port-is-open {
   box-sizing: border-box;
   font-weight: bold;
   height: 34px;
+  margin: 2px 8px 2px 8px;
   padding: 4px 8px;
   transition: box-shadow 0.4s ease 0s, color 0.4s ease 0s;
 }
@@ -267,6 +296,7 @@ select.styled {
   background-size:
     8px 8px,
     8px 8px;
+  line-height: 1em;
   padding: 0 2em 0 8px;
 }
 
@@ -285,52 +315,118 @@ select.styled option:last-child {
   border-bottom: 0;
 }
 
-.keyvalue select.styled {
+table.keyvalue td select.styled {
   background-color: rgba( 255, 255, 255, 0.25 );
 }
 
-td#d_downloadDir input {
-  width: calc(100% - 44px);
+textarea.styled {
+  height: 4em;
+}
+
+table#trackerTable tfoot td textarea.styled {
+  line-height: 1.2em;
+}
+
+table.keyvalue td .styled:first-of-type,
+table.keyvalue td led:first-of-type {
+  margin-left: 0px;
+  margin-top: 0px;
+}
+
+table.keyvalue td input.styled,
+table.keyvalue td textarea.styled {
+  padding: 0px 8px;
 }
 
 td#d_bandwidthPriority select.styled {
   background-color: rgba( 255, 255, 255, 0.25 );
 }
 
-td#s_encryption select.styled {
-  background-color: rgba( 255, 255, 255, 0.25 );
+td#d_downloadDir div.pathselect {
+  width: calc(100% + 4px);
 }
 
-span.led {
+td#d_downloadDir div.pathselect .styled {
+  width: calc(100% - 46px);
+}
+
+td#d_magnetLink {
+  line-height: 1.6em;
+}
+
+table.keyvalue td#s_trackers button.styled {
+  margin-left: 8px;
+}
+
+table.keyvalue td#s_trackers textarea.styled {
+  line-height: 1.2em;
+  margin-left: 0px;
+}
+
+led {
   background-color: #00FF00;
   border: 1px solid #007F00;
   border-radius: 8px;
   color: #FFFFFF;
   font-size: 32px;
   font-weight: bold;
-  height: 32px;
-  margin: 2px;
+  height: 1em;
+  line-height: 35px;
+  margin: 2px 8px 2px 8px;
   text-align: center;
   transition: box-shadow 0.5s ease 0s, background-color 0.2s ease 0s;
   vertical-align: middle;
-  width: 32px;
+  width: 1em;
 }
 
-span.led:hover {
+led:hover {
   box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
 }
 
-span.led.high {
+led.added,
+led.high {
   line-height: 32px;
 }
 
-span.led.low {
-  line-height: 26px;
-  text-indent: 11px;
+led.duplicate {
+  background-color: red;
+  line-height: 33px;
 }
 
-span.led.none {
+led.loaded {
+  background-color: yellow;
+  line-height: 32px;
+}
+
+led.loading {
+  background-color: blue;
+  line-height: 28px;
+}
+
+led.low {
+  line-height: 27px;
+  text-indent: -1px;
+}
+
+led.none {
   background-color: #003F00;
+}
+
+led.processing {
+  background-color: purple;
+}
+
+led.uploading {
+  line-height: 24px;
+}
+
+td#s_styleSheet led {
+  margin-top: -2px;
+  margin-bottom: 0px;
+}
+
+div#popupFile led {
+  margin: 2px;
 }
 
 table {
@@ -347,6 +443,16 @@ table thead tr th {
 table tbody tr td {
   border: unset;
   line-height: 38px;
+}
+
+table tfoot tr td {
+  border: unset;
+  line-height: 38px;
+}
+
+table tfoot tr td:first-child {
+  margin-top: 2px;
+  vertical-align: top;
 }
 
 table input[type=text] {
@@ -373,12 +479,12 @@ table#torrentTable thead tr:first-child th:first-child  {
   padding-left: 0px;
 }
 
-table#torrentTable thead tr:first-child th span.led {
+table#torrentTable thead tr:first-child th led {
   margin: 0 0 8px 0;
   display: block;
 }
 
-table#torrentTable thead tr:first-child th.menu span.led {
+table#torrentTable thead tr:first-child th.menu led {
   display: inline-block;
   margin-top: 32px;
 }
@@ -517,6 +623,18 @@ table#torrentTable td:first-child, table#fileTable th:first-child, table#fileTab
 table#shiftTable button#tracker {
 }
 
+table#pathTable {
+  border-collapse: separate;
+  margin-top: 2px;
+}
+
+table#pathTable td,
+table#pathTable th {
+  height: 36px;
+  line-height: 34px;
+  padding: 0px 4px;
+}
+
 div#header {
   background-color: unset;
 }
@@ -528,7 +646,7 @@ body.fixed div#header {
 }
 
 body.fixed > div#content {
-	margin-top: 56px;
+  margin-top: 56px;
 }
 
 body.box div#stats {
@@ -557,11 +675,31 @@ body.box ul#menu li.sub {
   margin-left: 64px;
 }
 
-canvas.pieces {
+canvas {
   border: 1px solid #007F00;
   border-radius: 8px;
-  color: #00FF00;
+  height: 32px;
+}
+
+canvas.gradient {
+  border: 0px solid rgba(255, 255, 255, 0); /* marker for NO color, creates HSL gradient */
+}
+
+table#filesTable thead th canvas {
+  margin: 4px 0 -6px 0;
+}
+
+table#detailsTable td canvas {
   margin: 4px 0;
+}
+
+canvas.pieces {
+  color: #00FF00;
+}
+
+td#d_pieces canvas.pieces {
+  margin: 0 0 -8px 0;
+  width: calc(100% - 1px);
 }
 
 div#stats {
@@ -587,32 +725,32 @@ div#stats span.label {
   margin: 4px 0 0 4px;
 }
 
-div.drop div span.led {
+div.drop div led {
   line-height: 1.0em;
 }
 
-div.drop div span.loading {
+div.drop div led.loading {
   animation: blinker 1s linear infinite;
   background-color: blue;
 }
 
-div.drop div span.loaded {
+div.drop div led.loaded {
   background-color: yellow;
   color: black;
   line-height: 1.3em;
 }
 
-div.drop div span.uploading {
+div.drop div led.uploading {
   animation: blinker 1s linear infinite;
   background-color: purple;
   line-height: 1.3em;
   text-indent: -1px;
 }
 
-div.drop div span.added {
+div.drop div led.added {
   background-color: green;
 }
 
-div.drop div span.duplicate {
+div.drop div led.duplicate {
   background-color: #00FF00;
 }

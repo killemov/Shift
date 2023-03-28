@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2021 Killemov.
+ * © 2023 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -32,6 +32,14 @@ html {
   background-color: #000000;
 }
 
+html.dark {
+  -moz-filter: unset;
+  -ms-filter: unset;
+  -o-filter: unset;
+  -webkit-filter: unset;
+  filter: unset;
+}
+
 body {
   color: #00F000;
   font-family: wellbutrin;
@@ -39,7 +47,8 @@ body {
 }
 
 a {
-  color: inherit;
+  color: #00F000;
+  text-decoration: none;
 }
 
 input, select {
@@ -129,7 +138,7 @@ label {
 }
 
 .dialog div:last-child .styled {
-	margin: 0 0 0 8px;
+  margin: 0 0 0 2px;
 }
 
 .popup ul {
@@ -147,8 +156,12 @@ label {
   margin: 0;
 }
 
+.popup ul li:hover {
+  background-color: #00F000;
+  color: black;
+}
+
 div#popupAbout {
-  background-color: #008000;
   position: fixed;
   text-align: center;
   width: 424px;
@@ -156,25 +169,71 @@ div#popupAbout {
 
 div#popupAdd {
   position: fixed;
-  width: 368px;
+  width: 372px;
 }
 
-span#port-is-open {
-  margin-top: 3px;
+div#popupAdd span#labelDir {
+  padding-left: 16px;
+}
+
+table.keyvalue div.pathselect > input.styled {
+  margin-left: 0px;
+  margin-right: 0px;
+  width: calc(100% - 9px);
+}
+
+table.keyvalue div.pathselect > select.styled {
+  margin-left: 0px;
+  margin-right: 0px;
+  width: calc(100% - 1px);
+}
+
+td#d_downloadDir div.pathselect.styled {
+  margin-left: 2px;
+  width: calc(100% - 12px);
+}
+
+td#downloadDir div.pathselect.styled > select.styled {
+  width: calc(100% + 7px);
+}
+
+div#popupAdd div.pathselect.styled {
+  width: 324px;
+}
+
+div#popupDialog div.pathselect.styled {
+  width: calc(100% - 24px);
+}
+
+div#popupAdd div.pathselect.styled > input.styled,
+div#popupDialog div.pathselect.styled > input.styled {
+  width: calc(100% - 6px);
+}
+
+div#popupAdd div.pathselect.styled > select.styled,
+div#popupDialog div.pathselect.styled > select.styled {
+  height: 20px;
+}
+
+led#port-is-open {
+  margin: 2px -2px;
 }
 
 .styled {
   border: 1px solid #004000;
+  margin-right: 8px;
 }
 
 .styled:focus {
   outline: 2px solid rgba( 0, 255, 0, 0.5 ) !important;
 }
 
-input.styled, textarea.styled {
+input.styled,
+textarea.styled {
   background: inherit;
   border: 1px solid #004000;
   border-color: #004000 #004000 #004000 #004000;
+  height: 16px;
 }
 
 input.styled.number {
@@ -192,7 +251,12 @@ button.styled {
   font-weight: bold;
   font-size: larger;
   margin-right: 2px;
-  width: 6em;
+  min-width: 6em;
+  white-space: nowrap;
+}
+
+td#s_trackers button.styled {
+  margin-left: 1em;
 }
 
 select.styled {
@@ -200,12 +264,12 @@ select.styled {
     linear-gradient( 45deg, transparent 50%, #00F000 50% ),
     linear-gradient( 135deg, #00F000 50%, transparent 50% );
   background-position:
-    calc(100% - 12px) 0.4em,
-    calc(100% - 6px) 0.4em;
+    4px 0.6em,
+    10px 0.6em;
   background-size:
     6px 6px,
     6px 6px;
-  height: 1.4em;
+  height: 17px;
 }
 
 select.styled option {
@@ -216,33 +280,59 @@ textarea.styled {
   border: 1px solid #004000;
 }
 
-span.led {
+led {
   background-color: #00F000;
   border: 1px solid #004000;
   border-radius: 8px;
   color: #004000;
   display: inline-block;
-  font-size: 1.1em;
-  font-weight: 900;
+  font-size: 14pt;
   height: 12px;
   margin: 2px;
   width: 12px;
 }
 
-span.led.high {
-  line-height: 11px;
-  text-align: center;
-}
-
-span.led.low {
+led.added,
+led.high {
+  font-size: 16pt;
   line-height: 10px;
-  padding-left: 3px;
-  text-align: left;
-  width: 9px;
 }
 
-span.led.none {
+led.duplicate {
+  background-color: #FF0000;
+  font-size: 9pt;
+  line-height: 12px;
+}
+
+led.loading {
+  animation: blinker 1s linear infinite;
+  background-color: #FF8F00;
+  font-size: 14pt;
+  line-height: 9px;
+  text-indent: 2px;
+}
+
+led.loaded {
+  background-color: #FFBF00;
+  color: black;
+  font-size: 10pt;
+  line-height: 12px;
+}
+
+led.low {
+  line-height: 9px;
+  font-size: 15pt;
+}
+
+led.none {
   background-color: #004000;
+}
+
+led.uploading {
+  animation: blinker 1s linear infinite;
+  background-color: #FFFF00;
+  font-size: 12pt;
+  line-height: 8px;
 }
 
 span.add {
@@ -255,15 +345,37 @@ table {
   width: 100%;
 }
 
-table thead tr th {
+table#pathTable {
+  margin: -1px 0px 0px -5px;
+}
+
+td,
+th {
   border: 1px solid #004000;
-  line-height: 20px;
+  height: 16px;
+  line-height: 1.4em;
+  padding: 0px 4px;
   white-space: nowrap;
 }
 
-table tbody tr td {
-  border: 1px solid #004000;
-  line-height: 20px;
+.keyvalue button.styled:first-of-type {
+  margin-left: -4px;
+}
+
+.keyvalue input.styled:first-child {
+  border-width: 0;
+  margin-left: -4px;
+  padding: 1px 4px;
+  width: calc(100% + 4px);
+}
+
+.keyvalue select.styled:first-child {
+  border-width: 0;
+  margin-left: -4px;
+}
+
+.keyvalue led:first-child {
+  margin-left: -2px;
 }
 
 col {
@@ -311,7 +423,7 @@ col.progress {
 }
 
 col.queuePosition {
-  width: 48px;
+  width: 64px;
 }
 
 col.status {
@@ -322,7 +434,10 @@ td[readonly] {
   color: #008000;
 }
 
-td.announce, td.errorString, td.name, td.status {
+td.announce,
+td.errorString,
+td.name,
+td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -332,41 +447,31 @@ td.menu {
   text-align: left;
 }
 
-table#peerTable tbody tr td.address, table#peerTable tbody tr td.clientName, table#peerTable tbody tr td.flagStr {
-  text-align: left;
+table#shiftTable td#s_trackers textarea {
+  resize: vertical;
+  min-height: 3em;
+  margin: -1px 0px 0px -5px;
 }
 
-table#torrentTable tbody tr td.menu, table#torrentTable tbody tr td.name, table#torrentTable tbody tr td.status {
-  text-align: left;
-}
-
-table#detailsTable input {
-  border-width: 0;
-  width: 100%;
-}
-
-table#fileTable tbody tr td.name {
-  text-align: left;
-}
-
-table#sessionTable input {
-  border-width: 0;
-  width: 100%;
-}
-
-table#shiftTable input {
-  border-width: 0;
-  width: 100%;
+table#shiftTable td#s_trackers textarea:not([style*="display: none;"]) + textarea {
+  margin-top: -2px;
 }
 
 table#shiftTable button#tracker {
   width: auto;
 }
 
-canvas.pieces {
-  border-color: #004000 #00F000 #00F000 #004000;
+canvas {
   color: #00FF00;
   width: 100%;
+  height: 20px;
+  margin-bottom: -4px;
+}
+
+table#detailsTable td canvas {
+  height: 18px;
+  margin: -1px -1px -5px -1px;
+  width: calc(100% + 2px);
 }
 
 table#trackerTable textarea.styled {
@@ -381,36 +486,6 @@ span.drop {
 
 td#d_errorString {
   font-weight: bold;
-}
-
-div.drop div span.led {
-  line-height: 1.0em;
-}
-
-div.drop div span.loading {
-  animation: blinker 1s linear infinite;
-  background-color: blue;
-}
-
-div.drop div span.loaded {
-  background-color: yellow;
-  color: black;
-  line-height: 1.3em;
-}
-
-div.drop div span.uploading {
-  animation: blinker 1s linear infinite;
-  background-color: purple;
-  line-height: 1.3em;
-  text-indent: -1px;
-}
-
-div.drop div span.added {
-  background-color: green;
-}
-
-div.drop div span.duplicate {
-  background-color: #00FF00;
 }
 
 /* Wellbutrin font by Karen Clemens & Apostrophe */
