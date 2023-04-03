@@ -57,8 +57,7 @@ led.duplicate {
 
 led.loaded {
   font-size: 10pt;
-  line-height: 13px;
-  text-indent: 0px;
+  line-height: 12px;
 }
 
 led.loading {
@@ -69,7 +68,6 @@ led.loading {
 led.low {
   font-size: 12pt;
   line-height: 10px;
-  text-indent: 0em;
 }
 
 led.none {

@@ -1229,6 +1229,7 @@ function recycleTorrents( torrents ) {
   const _next = function() {
     t = torrents.shift();
     if( undefined === t ) {
+      getQueuePositions();
       return null;
     }
     r = new XMLHttpRequest();
@@ -1295,7 +1296,7 @@ function recycleTorrents( torrents ) {
       } );
     } );
   }
-  _next();
+  globals.version < 14 ? _next() : doRequest( "queue-move-bottom", { ids: torrents.pluck( "id" ) }, _next );
 }
 
 function handleTorrentActionClick( e ) {
@@ -1402,7 +1403,7 @@ function handleTorrentActionClick( e ) {
         args[ "delete-local-data" ] = true;
         if( selectedMagnetIds.length > 0 ) {
           postResponse = function() {
-            doRequest( torrentActions[ action ].method, { ids: selectedMagnetIds }, postTorrentRemove ).curry( action );
+            doRequest( torrentActions[ action ].method, { ids: selectedMagnetIds }, postTorrentRemove.curry( action ) );
             globals.removed.concatUnique( selectedMagnetIds );
           }
         }
