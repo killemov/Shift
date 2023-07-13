@@ -248,7 +248,7 @@ function $S( selector ) {
   return null;
 }
 
-const magnetNameRegExp = /&dn=(.*?)&/;
+const magnetNameRegExp = /&dn=(.*?)&?/;
 const noMatchRegExp = /\0/;
 const nowordRegExp = /\\W/ig;
 const torrentRegExp = /(\b(https?|ftp|magnet):\/?\/?[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
