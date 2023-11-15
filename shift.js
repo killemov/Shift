@@ -994,6 +994,7 @@ const torrentFields = {
   "seedIdleMode": { edit: true },
   "seedRatioLimit": { edit: true },
   "seedRatioMode": { edit: true },
+  "sequentialDownload": { edit: true },
   "sizeWhenDone": {
     _column: { // 0 <= this.value
       label: "Size",
@@ -4901,6 +4902,9 @@ document.observe( "dom:loaded", function() {
 
     globals.shift.session = getArguments( response );
     globals.version = +globals.shift.session[ "rpc-version" ];
+    if( globals.version < 18 ) { // 4.10
+      _remove( "files.beginPiece", "files.endPiece", "sequentialDownload" );
+    }
     if( globals.version < 17 ) { // 4.00
       _remove( "availability", "file-count", "group", "percentComplete", "primary-mime-type", "trackerList", "trackerStats.sitename" );
       delete pathColumns.total;
