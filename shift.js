@@ -801,25 +801,8 @@ const sessionFields = {
   "version": { _ro: true }
 }
 
-const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Recycle", "Remove", "Trash" ];
+const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Reconstitute", "Recycle", "Remove", "Trash" ];
 const torrentActions = {};
-
-torrentActionLabels.concat( [ "add", "get", "set", "Rename" ] ).each( function( action ) {
-  const label = action;
-  action = action.toLowerCase();
-  torrentActions[ action ] = {
-    label: label,
-    method: "torrent-" + function( a ) {
-      switch( a ) {
-        case "check": return "verify";
-        case "refresh": return "torrent-get";
-        case "relocate": return "set-location";
-        case "rename": return "rename-path";
-        default: return a.replace( " ", "-" );
-    }
-  } ( action ) };
-} );
-torrentActions[ "trash" ].method = torrentActions[ "remove" ].method;
 
 const torrentFields = {
   "activityDate": { render: renderDateTime },
@@ -1156,6 +1139,7 @@ function updatePostSession() {
     "torrentFile",
     "totalSize"
   ).pushUnique( "id" ) );
+
   torrentFieldKeys.reduce( function( o, k ) {
     const v = torrentFields[ k ].value;
     if( undefined !== v ) {
@@ -1163,6 +1147,24 @@ function updatePostSession() {
     }
     return o;
   }, TorrentDefaults );
+
+  torrentActionLabels.concat( [ "add", "get", "set", "Rename" ] ).each( function( action ) {
+    const label = action;
+    action = action.toLowerCase();
+    torrentActions[ action ] = {
+      label: label,
+      method: "torrent-" + function( a ) {
+        switch( a ) {
+          case "check": return "verify";
+          case "reconstitute": return "verify-force";
+          case "refresh": return "torrent-get";
+          case "relocate": return "set-location";
+          case "rename": return "rename-path";
+          default: return a.replace( " ", "-" );
+      }
+    } ( action ) };
+  } );
+  torrentActions[ "trash" ].method = torrentActions[ "remove" ].method;
 }
 
 function showDone() {
@@ -4904,6 +4906,7 @@ document.observe( "dom:loaded", function() {
     globals.version = +globals.shift.session[ "rpc-version" ];
     if( globals.version < 18 ) { // 4.10
       _remove( "files.beginPiece", "files.endPiece", "sequentialDownload" );
+      torrentActionLabels.remove( "Reconstitute" );
     }
     if( globals.version < 17 ) { // 4.00
       _remove( "availability", "file-count", "group", "percentComplete", "primary-mime-type", "trackerList", "trackerStats.sitename" );
