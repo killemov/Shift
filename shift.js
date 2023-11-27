@@ -801,7 +801,7 @@ const sessionFields = {
   "version": { _ro: true }
 }
 
-const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Reconstitute", "Recycle", "Remove", "Trash" ];
+const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Recycle", "Remove", "Trash" ];
 const torrentActions = {};
 
 const torrentFields = {
@@ -1156,7 +1156,6 @@ function updatePostSession() {
       method: "torrent-" + function( a ) {
         switch( a ) {
           case "check": return "verify";
-          case "reconstitute": return "verify-force";
           case "refresh": return "torrent-get";
           case "relocate": return "set-location";
           case "rename": return "rename-path";
@@ -4906,7 +4905,6 @@ document.observe( "dom:loaded", function() {
     globals.version = +globals.shift.session[ "rpc-version" ];
     if( globals.version < 18 ) { // 4.10
       _remove( "files.beginPiece", "files.endPiece", "sequentialDownload" );
-      torrentActionLabels.remove( "Reconstitute" );
     }
     if( globals.version < 17 ) { // 4.00
       _remove( "availability", "file-count", "group", "percentComplete", "primary-mime-type", "trackerList", "trackerStats.sitename" );
