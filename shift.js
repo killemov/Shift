@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2023 Killemov.
+ * © 2024 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -1455,10 +1455,9 @@ function handleTorrentMenuClick( e ) {
 
     case "relocate":
       popup = true;
-      d.relocate.paths = renderPathSelect();
       d.additional.insert( [
-        rS( "label" ).insert( "To" ), d.relocate.paths, "<br/>",
-        rS( "label" ), d.relocate.move, " Move" ] );
+        rS( "label" ).insert( "To" ), d.relocate.paths = renderPathSelect(), "<br/>",
+        rS( "label" ), d.relocate.move.setValue( true ).makeToggle(), " Move" ] );
       input = d.relocate.paths;
       break;
 
@@ -4167,7 +4166,7 @@ function renderPage() {
     },
     relocate: {
       paths: null,
-      move: rLed( true ).makeToggle()
+      move: rLed( true )
     },
     remove: {
       trash: rLed( true )
