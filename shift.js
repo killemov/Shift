@@ -2769,8 +2769,7 @@ function showTorrentTable() {
   }
 
   const torrentTable = getTable( "torrentTable", globals.content, torrentColumns, columnKeys, function( t ) {
-    t.body.id = "torrentBody";
-    t.body.innerHTML = rE( "tbody" ).insert( globals.torrents.map( renderTorrentRow ) ).innerHTML;
+    t.body.replace( t.body = rE( "tbody", { id: "torrentBody" } ).insert( globals.torrents.map( renderTorrentRow ) ) );
 
     Object.keys( torrentColumns ).each( function( k ) {
       var style = $S( "." + k );
