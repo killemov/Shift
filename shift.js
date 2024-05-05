@@ -2398,7 +2398,7 @@ function fetchTorrents( fields, ids, handler ) {
     ids = undefined;
   }
   const args = { fields: fields, ids: ids };
-  if( globals.table && ( ids === undefined || ids.length > 1 ) ) {
+  if( globals.table && ( undefined === ids || 1 !== ids.length ) ) {
     args.format = "table";
   }
   doRequest( "torrent-get", args, handler || updateTorrents );
@@ -2493,12 +2493,19 @@ function updateTorrents( response, refresh, pre ) {
   const eids = []; // Ids of torrents with errors
   const mids = []; // Ids of magnets for special handling
 
-  const ts = getArguments( response ).torrents;
+  const args = getArguments( response );
+  if( !args || isEmpty( args.torrents ) ) {
+    return [];
+  }
+
+  const ts = args.torrents;
   const table = Object.isArray( ts[ 0 ] );
   const keys = table ? ts.shift() : Object.keys( ts[ 0 ] );
   ts.each( function( torrent, index ) {
     const id = torrent[ table ? keys.indexOf( "id" ) : "id" ];
-    console.assert( id !== undefined, "Torrent.id should never be undefined!" );
+    if( undefined === id ) {
+      console.error( "Torrent.id should never be undefined!" );
+    }
 
     if( globals.removed.includes( id ) ) {
       return;
