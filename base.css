@@ -242,20 +242,30 @@ html.base div#popupDialog div.pathselect {
   width: calc(100% - 32px);
 }
 
-div#popupBatchRename input.styled {
+div#popupBatchRename input.styled,
+div#popupSubstitute input.styled {
   width: 32em;
 }
 
-div#popupBatchRename span.example {
-  width: 32em;
+div#popupBatchRename span.example,
+div#popupSubstitute span.example {
   display: inline-block;
-  white-space: nowrap;
   overflow: clip;
+  text-indent: 3px;
+  white-space: nowrap;
+  width: 32em;
 }
 
-div#popupBatchRename led {
+div#popupBatchRename input + led,
+div#popupSubstitute input + led {
   margin-left: 8px;
   margin-right: -1px;
+}
+
+div#popupSubstitute led + span.substitute {
+  margin-left: 4px;
+  margin-right: 1em;
+  width: unset;
 }
 
 html.base div#popupUpload > div:last-child led,
@@ -509,7 +519,8 @@ span.add {
   width: 3em;
 }
 
-span.rename {
+span.rename,
+span.substitute {
   display: inline-block;
   width: 5em;
 }

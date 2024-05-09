@@ -97,7 +97,7 @@ Object.extend( Object, {
 
 Object.extend( Number.prototype, {
   limit: function( min, max ) {
-     return Math.min( Math.max( min, this ), max );
+    return Math.min( Math.max( min, this ), max );
   }
 } );
 
@@ -117,9 +117,21 @@ Object.extend( Array.prototype, {
   },
   hideAll: Enumerable.invoke.curry( "hide" ),
   isEmpty: function() {
-     return 0 === this.length;
+    return 0 === this.length;
   },
   includes: Array.prototype.includes || Array.prototype.include,
+  partitionBy: function( property ) {
+    const result = [];
+    const indexMap = [];
+    for( var i = 0, len = this.length; i < len; ++i ) {
+      const o = this[ i ];
+      const k = Object.isFunction( property ) ? property( o ) : o[ property ];
+      indexMap.pushUnique( k );
+      const index = indexMap.indexOf( k );
+      result[ index ] ? result[ index ].push( o ) : result.push( [ o ] );
+    }
+    return result;
+  },
   pushUnique: function( e ) {
     if( 1 < arguments.length ) {
       e = Array.prototype.slice.call( arguments );
@@ -155,6 +167,19 @@ Object.extend( Array.prototype, {
   setLength: function( length ) {
     this.length = length;
     return this;
+  },
+  shiftEach: function( fn, last ) { // _next / 2nd parameter must be called within fn.
+    const self = this;
+    const _next = function() {
+      const item = self.shift();
+      if( undefined === item ) {
+        last && last();
+      }
+      else {
+        fn && fn( item, _next );
+      }
+    }
+    _next();
   },
   showAll: Enumerable.invoke.curry( "show" ),
   sortByProperty: function( property, order, isString ) {
@@ -192,6 +217,9 @@ Object.extend( String.prototype, {
 } );
 
 Object.extend( Element.prototype, {
+  change: function() {
+    return this.trigger( "change" );
+  },
   getComputedStyle: function( s ) {
     const body = document.body;
     const connected = this.isConnected || body.compareDocumentPosition( this ) & Node.DOCUMENT_POSITION_CONTAINS;
@@ -201,6 +229,9 @@ Object.extend( Element.prototype, {
     return result;
   },
   trigger: function( t ) {
+    if( Event === Event.prototype.constructor ) {
+      return this.dispatchEvent( new Event( t ) );
+    }
     if( document.createEvent ) {
       const e = document.createEvent( "HTMLEvents" );
       e.initEvent( t, true, true );
@@ -786,7 +817,7 @@ const sessionFields = {
   "encryption": { values: normalizeOptions( [ "required", "preferred", "tolerated" ] ) },
   "incomplete-dir": { render: renderPathSelect },
   "peer-port": { action: function( row, keyCell ) { // actions return true if handling should continue.
-    const l = rLed( false, { id: "port-is-open", title: "Checking", readonly: true } );
+    const l = rLed( false, { id: "port-is-open", title: "Checking", readonly: "readonly" } );
     keyCell.insert( l );
     doRequest( "port-test", {}, function( response ) {
       updateFields( getArguments( response ) );
@@ -1343,9 +1374,9 @@ function handleTorrentActionClick( e ) {
     case "relocate":
       args.location = persistPath( d.paths.value );
       args.move = d.move.value;
-      fetchTorrents( [ "id", "downloadDir" ], args.ids );
+      fetchDownloadDirs( args.ids );
       postResponse = function() {
-        fetchTorrents( [ "id", "downloadDir" ], args.ids, function( response ) {
+        fetchDownloadDirs( args.ids, function( response ) {
           const oldPaths = {};
           const ts = updateTorrents( response, false, function( torrent ) {
             oldPaths[ torrent.id ] = torrent.downloadDir;
@@ -1442,45 +1473,28 @@ function handleTorrentMenuClick( e ) {
     return;
   }
 
-  var popup = false;
-  const selected = getSelected();
+  if( "select" === globals.action ) {
+    return globals.currentTorrent.toggleSelect();
+  }
+
   const d = globals.dialogs;
-  var input = null;
   d.additional.update();
 
-  switch( globals.action ) {
-    case "select":
-      globals.currentTorrent.toggleSelect();
-      return;
-
-    case "relocate":
-      popup = true;
-      d.additional.insert( [
-        rS( "label" ).insert( "To" ), d.relocate.paths = renderPathSelect(), "<br/>",
-        rS( "label" ), d.relocate.move.setValue( true ).makeToggle(), " Move" ] );
-      input = d.relocate.paths;
-      break;
-
-    case "remove":
-      popup = globals.shift.settings.confirmRemove;
-      d.additional.insert( d.remove.trash.setValue( false ), "Trash" );
-      break;
-
-    case "trash":
-      popup = globals.shift.settings.confirmTrash;
-      d.additional.insert( d.remove.trash.setValue( true ), "Trash" );
-      break;
-  }
-  globals.selected = selected;
-  if( popup ) {
-    closePopup( e )
+  globals.selected = getSelected();
+  const dialog = d[ globals.action ];
+  const open = dialog && dialog.open;
+  if( open && open() ) {
+    closePopup( e );
     const l = torrentActions[ globals.action ].label;
     const p = showPopup( "popupDialog" );
+    dialog.close && ( p.close = dialog.close );
     p.down( "h1" ).update( l );
     p.down( "span" ).update( globals.action );
-    d.torrents.update( "\"" + selected.pluck( "name" ).join( "\",<br>\n\"" ) + "\"" );
+    d.torrents.update( "\"" + globals.selected.pluck( "name" ).join( "\",<br>\n\"" ) + "\"" );
     d.action.update( l ).setAttribute( "id", globals.action );
-    input && input.focus();
+    if( "relocate" === globals.action ) {
+      d.relocate.paths.focus();
+    }
     return;
   }
   handleTorrentActionClick( e );
@@ -1808,6 +1822,8 @@ function showPopup( popup, handler, e, keepOpen ) {
       return;
     }
     elements.hideAll().invoke( "stopObserving", "click" );
+    popup.close && popup.close( e );
+    delete popup.close;
     delete popups.close;
   }
 
@@ -2129,7 +2145,7 @@ function renderLabels( labels ) {
 }
 
 function renderName( name, torrent, ignore, cell ) {
-  const s = ( torrent.isMagnet() ? "magnet#" + torrent.hashString + ": " : "" ) + name;
+  const s = ( torrent.isMagnet() ? "<i class=\"fa fa-magnet fa-rotate-90\"></i>" + " [" + torrent.hashString + "] " : "" ) + name;
   if( cell && torrent.labels && torrent.labels.length ) {
     cell.update( renderLabels( torrent.labels ) );
     cell.insert( s );
@@ -2398,11 +2414,13 @@ function fetchTorrents( fields, ids, handler ) {
     ids = undefined;
   }
   const args = { fields: fields, ids: ids };
-  if( globals.table && ( undefined === ids || 1 !== ids.length ) ) {
+  if( globals.table && ( undefined === ids || 1 < ids.length ) ) {
     args.format = "table";
   }
   doRequest( "torrent-get", args, handler || updateTorrents );
 }
+
+const fetchDownloadDirs = fetchTorrents.curry( [ "id", "downloadDir" ] );
 
 const fixTorrents = doRequest.curry( "torrent-set" );
 
@@ -3358,7 +3376,7 @@ function showDetails( torrent ) {
         }
 
         const _update = function() {
-          fetchTorrents( [ "id", f ], [ torrent.id ], function( response ) {
+          fetchDownloadDirs( [ torrent.id ], function( response ) {
             if( success( response ) ) {
               torrent.update( data );
               torrent = updateTorrents( response, true )[ 0 ];
@@ -3648,7 +3666,7 @@ const shiftFields = {
         } ),
         rB( "Scrape Paths" ).observe( "click", function() {
           paths.each( function( p ) { p.count = 0 } );
-          fetchTorrents( [ "id", "downloadDir" ], undefined, function ( response ) {
+          fetchDownloadDirs( undefined, function ( response ) {
             updateTorrents( response ).each( function( torrent ) {
               const k = torrent.downloadDir;
               ( pathHash[ k ] = pathHash[ k ] || paths.squeak( _new( k ) ) ).count++;
@@ -4049,32 +4067,6 @@ function renderPage() {
     return rB( { "class": style, value: text || "Cancel" } ).observe( "click", closePopup );
   }
 
-  const _searcher = function( search, isRegExp ) {
-    return isRegExp ? function( file ) {
-      return getFilePart( file.name ).match( search );
-    } : function( file ) {
-      return getFilePart( file.name ).includes( search );
-    }
-  }
-
-  const _preview = function() {
-    const d = globals.dialogs.batchrename;
-    var search = d.search.value;
-    const isRegExp = d.isRegExp.value;
-    search = isRegExp ? new RegExp( search, "g" ) : search;
-    var replace = d.replace.value;
-    if( isRegExp && 0 === replace.length ) {
-      for( var i = 1, len = ( new RegExp( d.search.value + "|", "g" ) ).exec( "" ).length; i < len; ++i ) {
-        replace += "$" + i;
-      }
-      d.replace.value = replace;
-    }
-    const file = globals.currentTorrent.files.find( _searcher( search, isRegExp ) );
-    const fileName = file ? getFilePart( file.name ) : "";
-    d.searchPreview.update( fileName );
-    d.replacePreview.update( fileName.replace( search, replace ) );
-  }
-
   const _browse = function( e ) {
     _file( e );
     globals.dialogs.add.file.click();
@@ -4090,9 +4082,69 @@ function renderPage() {
     globals.dialogs.add.isUrl.click();
   }
 
+  const a = globals.actions = {
+    batchrename: {
+      _searcher: function( search ) {
+        return search instanceof RegExp ? function( file ) {
+          return getFilePart( file.name ).match( search );
+        } : function( file ) {
+          return getFilePart( file.name ).includes( search );
+        }
+      },
+      _preview: function() {
+        const d = globals.dialogs.batchrename;
+        const isRegExp = d.isRegExp.value;
+        const search = isRegExp ? new RegExp( d.search.value, "g" ) : d.search.value;
+
+        var replace = d.replace.value;
+        if( isRegExp && 0 === replace.length ) {
+          for( var i = 1, len = ( new RegExp( d.search.value + "|", "g" ) ).exec( "" ).length; i < len; ++i ) {
+            replace += "$" + i;
+          }
+          d.replace.value = replace;
+        }
+        const file = globals.currentTorrent.files.find( _searcher( search ) );
+        const fileName = file ? getFilePart( file.name ) : "";
+        d.searchPreview.update( fileName );
+        d.replacePreview.update( fileName.replace( search, replace ) );
+      }
+    },
+
+    substitute: {
+      _searcher: function( search ) {
+        return search instanceof RegExp ? function( t ) {
+          return t.downloadDir && t.downloadDir.match( search );
+        } : function( t ) {
+          return t.downloadDir && t.downloadDir.includes( search );
+        }
+      },
+      _preview: function() {
+        const d = globals.dialogs.substitute;
+        const search = d.isRegExp.value ? new RegExp( d.search.value, "g" ) : d.search.value;
+
+        const _find = function( torrents ) {
+          return torrents && torrents.find( globals.actions.substitute._searcher( search ) );
+        };
+
+        const t = _find( [ globals.currentTorrent ] ) || _find( globals.selected ) || ( d.selection.value ? null : _find( globals.torrents ) );
+
+        const _display = function() {
+          d.searchPreview.update();
+          d.replacePreview.update();
+          if( t ) {
+            const s = t.downloadDir;
+            d.searchPreview.insert( s + "/" + t.name );
+            d.replacePreview.insert( s.replace( search, d.replace.value ) + "/" + t.name );
+          }
+        }
+
+        _display();
+      }
+    }
+  }
+
   const d = globals.dialogs = {
-    action: rB( { "class": "action", value: "Action" } )
-      .observe( "click", handleTorrentActionClick ),
+    action: rB( { "class": "action", value: "Action" } ).observe( "click", handleTorrentActionClick ),
     add: {
       file: rI( null, { type: "file", multiple: "multiple" } ).observe( "change", function( e ) {
         _file( e );
@@ -4126,19 +4178,22 @@ function renderPage() {
     },
     additional: rD( "additional" ),
     batchrename: {
-      search: rI().observe( "change", _preview ),
+      search: rI().observe( "change", a.batchrename._preview ),
       searchPreview: rS( "example" ),
-      isRegExp: rLed( false, { title: "Regular Expression" } ).makeToggle().observe( "click", _preview ),
-      replace: rI().observe( "change", _preview ),
+      isRegExp: rLed( false, { title: "Regular Expression" } ).makeToggle().observe( "click", a.batchrename._preview ),
+      replace: rI().observe( "change", a.batchrename._preview ),
       replacePreview: rS( "example" ),
       rename: rB( { "class": "rename", id: "batchrename", value: "Rename" } ).observe( "click", function( e ) {
         e.stop();
         closePopup();
-        const d = globals.dialogs.batchrename;
-        var search = d.search.value;
-        search = d.isRegExp.value ? new RegExp( search ) : search;
-        const replace = d.replace.value;
-        const files = globals.currentTorrent.files.filter( _searcher( search, d.isRegExp.value ) );
+        const p = d.batchrename;
+        if( p.replace.value === p.search.value ) {
+          return;
+        }
+
+        const search = p.isRegExp.value ? new RegExp( p.search.value, "g" ) : p.search.value;
+        const replace = p.replace.value;
+        const files = globals.currentTorrent.files.filter( a.batchrename._searcher( search ) );
         renameFiles( files.map( function( f ) {
           return {
             path: f.name,
@@ -4171,17 +4226,100 @@ function renderPage() {
       callback: undefined
     },
     relocate: {
+      close: function() {
+        const b = $("substitute");
+        b && b.remove();
+      },
+      open: function() {
+        if( !globals.currentTorrent.downloadDir ) {
+          fetchDownloadDirs( [ globals.currentTorrent.id ] ) ;
+        }
+        d.additional.update();
+        d.additional.insert( [
+          rS( "label" ).insert( "To" ), d.relocate.paths = renderPathSelect(), "<br/>",
+          rS( "label" ), d.relocate.move.setValue( true ).makeToggle(), " Move" ] );
+        d.cancel.insert( { after: rB( { id: "substitute", "class": "action", value: "Substitute" } ).observe( "click", function( e ) {
+          e.stop();
+          closePopup();
+          d.substitute.search.value = d.substitute.replace.value = globals.currentTorrent.downloadDir;
+          d.substitute.search.change();
+          d.substitute.selection.value = 1 < globals.selected.length;
+          showPopup( "popupSubstitute" );
+        } ) } );
+        return true;
+      },
       paths: null,
       move: rLed( true )
     },
+    substitute: {
+      search: rI().observe( "change", a.substitute._preview ),
+      searchPreview: rS( "example" ),
+      isRegExp: rLed( false, { title: "Regular Expression" } ).makeToggle().observe( "click", a.substitute._preview ),
+      replace: rI().observe( "change", a.substitute._preview ),
+      replacePreview: rS( "example" ),
+      move: rLed( true ).makeToggle(),
+      selection: rLed().makeToggle(),
+      relocate: rB( { "class": "action", value: "Relocate" } ).observe( "click", function( e ) {
+        e.stop();
+        closePopup();
+        d.relocate.open();
+        const p = showPopup( "popupDialog" );
+        p.close = d.relocate.close;
+      } ),
+      substitute: rB( { "class": "substitute", id: "substitute", value: "Substitute" } ).observe( "click", function( e ) {
+        e.stop();
+        closePopup();
+        const p = globals.dialogs.substitute;
+        if( p.replace.value === p.search.value ) {
+          return;
+        }
+
+        const search = p.isRegExp.value ? new RegExp( p.search.value, "g" ) : p.search.value;
+        const replace = p.replace.value;
+        var torrents = p.selection.value ? globals.selected : globals.torrents;
+
+        const move = p.move.value;
+        const _replace = function() {
+          const _searcher = globals.actions.substitute._searcher( search );
+          torrents.partitionBy( "downloadDir" ).shiftEach( function( batch, _next ) {
+            if( !batch.find( _searcher ) ) {
+              return _next();
+            }
+            doRequest( "torrent-set-location", { ids: batch.pluck( "id" ), location: batch[ 0 ].downloadDir.replace( search, replace ), move: move }, _next );
+          }, function() {
+            fetchDownloadDirs( torrents.pluck( "id" ) );
+          } );
+        }
+
+        var ids = torrents.filter( function( t ) { return !t.downloadDir } ).pluck( "id" );
+        if( !ids.length ) {
+          return _replace();
+        }
+
+        fetchDownloadDirs( ids, function( response ) {
+          updateTorrents( response )
+          _replace();
+        } );
+      } )
+    },
     remove: {
-      trash: rLed( true )
+      open: function() {
+        d.additional.insert( d.remove.trash.setValue( false ), "Trash" );
+        return globals.shift.settings.confirmRemove;
+      },
+      trash: rLed( true, { readonly: "readonly" } )
     },
     rename: {
       fileName: rI(),
       rename: rB( { "class": "rename", id: "rename", value: "Rename" } ).observe( "click", handleTorrentActionClick )
     },
     torrents: rD( "torrents" ),
+    trash: {
+      open: function() {
+        d.additional.insert( d.remove.trash.setValue( true ), "Trash" );
+        return globals.shift.settings.confirmTrash;
+      }
+    },
     upload: {
       uploads: rD( { id: "uploads" } ).observe( "dblclick", function( e ) {
         const l = e.findElement( "div.upload" );
@@ -4250,6 +4388,15 @@ function renderPage() {
       .insert( rE( "h1", {}, "Paths" ) )
       .insert( d.paths.paths )
       .insert( rD().insert( rCancel( "paths" ), d.paths.apply ) )
+  ).insert(
+    renderDialogPopup( "popupSubstitute" )
+      .insert( rE( "h1", {}, "Batch substitute paths" ) )
+      .insert( rD().insert( rS( "substitute", "Search" ), d.substitute.search, d.substitute.isRegExp ) )
+      .insert( rD().insert( rS( "substitute", "Example" ), d.substitute.searchPreview ) )
+      .insert( rD().insert( rS( "substitute", "Replace" ), d.substitute.replace ) )
+      .insert( rD().insert( rS( "substitute", "Example" ), d.substitute.replacePreview ) )
+      .insert( rD().insert( rS( "substitute" ), d.substitute.move, rS( "substitute", " Move " ), d.substitute.selection, rS( "substitute", " Selection only" ) ) )
+      .insert( rD().insert( rCancel( "substitute" ), d.substitute.relocate, d.substitute.substitute ) )
   ).insert(
     renderDialogPopup( "popupUpload" )
       .insert( rE( "h1", {}, "Uploading" ) )
@@ -4717,7 +4864,7 @@ function handleKeyDown( e ) {
     if( statusKeys.includes( kc ) ) {
       preventDefault( e );
       globals.hashIndex = ( globals.hashIndex + 1 ) % globals.torrentStatusKeyHash[ kc ].length;
-      $( "statusSelect" ).setValue( globals.torrentStatusKeyHash[ kc ][ globals.hashIndex ] ).dispatchEvent( new Event( "change" ) );
+      $( "statusSelect" ).setValue( globals.torrentStatusKeyHash[ kc ][ globals.hashIndex ] ).change();
     }
     else if( 32 == kc ) { // Space
       preventDefault( e );
@@ -4814,7 +4961,7 @@ function handleKeyUp( e ) {
     delete globals.select;
   }
   if( 9 == kc ) { // Tab
-    document.activeElement.trigger( "focus" );
+    document.activeElement.focus();
   }
 }
 
