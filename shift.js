@@ -1861,8 +1861,9 @@ function showAddPopup( e ) {
   const label = $( "labelDir" );
   const input = label.next();
   input && input.remove();
-  label.insert( { after: renderPathSelect() } );
   const d = globals.dialogs.add;
+  d.paths = renderPathSelect();
+  label.insert( { after: d.paths } );
   if( torrentRegExp.test( d.url.value ) ) {
     return;
   }
