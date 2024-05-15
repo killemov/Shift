@@ -227,6 +227,29 @@ Object.extend( String.prototype, {
   replaceAll: String.prototype.replaceAll || function( s, r ) {
     return this.replace( s instanceof RegExp ? s : new RegExp( s, "g" ), r );
   },
+  resolve: function( t, r ) {
+    t = t || globals.currentTorrent;
+    return this.replaceAll( templateRegExp, r || function replacer( m ) {
+      const s = globals.shift;
+      const kv = m.substring( 2, m.length - 1 ).split( '.' );
+      const v = kv[ 1 ];
+      var result = "";
+      switch( kv[ 0 ] ) {
+        case "session":
+          result = s.session[ v ];
+          break;
+        case "shift":
+          result = s.settings[ v ];
+          break;
+        case "torrent":
+          result = s.settings.screenshotMode ? v.capitalize() : t && t[ v ];
+          break;
+        default:
+          return m;
+      }
+      return result && result.resolve();
+    } );
+  },
   substringTo: function( s ) {
     const i = this.indexOf( s );
     return -1 === i ? this : this.substring( 0, i );
@@ -845,28 +868,6 @@ const sessionFields = {
 const torrentActionLabels = [ "Select", "Details", "Refresh", "Check", "Start", "Start Now", "Stop", "Reannounce", "Relocate", "Recycle", "Remove", "Trash" ];
 const torrentActions = {};
 
-function replacer( m, torrent ) {
-  torrent = torrent || globals.currentTorrent;
-  const s = globals.shift;
-  const kv = m.substring( 2, m.length - 1 ).split( '.' );
-  const v = kv[ 1 ];
-  var result = "";
-  switch( kv[ 0 ] ) {
-    case "session":
-      result = s.session[ v ];
-      break;
-    case "shift":
-      result = s.settings[ v ];
-      break;
-    case "torrent":
-      result = s.settings.screenshotMode ? v.capitalize() : torrent && torrent[ v ];
-      break;
-    default:
-      return m;
-  }
-  return result && result.replaceAll( templateRegExp, replacer );
-}
-
 const torrentFields = {
   "activityDate": { render: renderDateTime },
   "addedDate": { render: renderDateTime },
@@ -1100,7 +1101,7 @@ const torrentFields = {
         l.target = "_top";
         l.title = "Click to copy to clipboard.";
         l.observe( "click", function( e ) {
-          copyToClipboard( settings.torrentLinkTemplate.replaceAll( templateRegExp, replacer ) );
+          copyToClipboard( settings.torrentLinkTemplate.resolve( t ) );
           return false;
         } );
       }
@@ -3025,7 +3026,7 @@ function rFile( file, torrent ) {
 function rFileLink( file, torrent ) {
   const s = globals.shift.settings;
   var base = ( isDone( file ) ? s.fileLinkEnabled && s.fileLink : s.incompleteFolderLinkEnabled && s.incompleteFolderLink ) || "";
-  base = base && base.replaceAll( templateRegExp, function( m ) { return replacer( m, torrent ) } );
+  base = base && base.resolve( torrent );
   return isEmpty( base ) ? file.name : rA( base + file.name + ( !isDone( file ) && globals.shift.session[ "rename-partial-files" ] ? ".part" : "" ), "" );
 }
 
@@ -3057,6 +3058,7 @@ function renderFiles( torrent ) {
   if( !torrentDone && globals.shift.session[ "incomplete-dir-enabled" ] ) {
     folderLink = s.incompleteFolderLinkEnabled ? s.incompleteFolderLink : null;
   }
+  folderLink = folderLink.resolve( torrent );
 
   const _id = function( row ) {
     const id = row.id.split( "_" );
@@ -5012,7 +5014,7 @@ function registerMagnetHandler() {
 function extractTemplateFields( data ) {
   for( var k in data ) {
     var s = "" + data[ k ];
-    s.replaceAll( templateRegExp, function( m ) {
+    s.resolve( undefined, function( m ) {
       var kv = m.substring( 2, m.length - 1 ).split( '.' );
       "torrent" === kv[ 0 ] && globals.templateFields.pushUnique( kv[ 1 ] );
     } );

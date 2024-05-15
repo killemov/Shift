@@ -26,7 +26,7 @@
   "styleSheet": [ "shift.css", "touch.css", "terminal.css", "base.css" ],
   "torrentLink": "/secret/torrents/",
   "torrentLinkEnabled": false,
-  "torrentLinkTemplate": "wget \"${shift.torrentLink}${torrent.hash}.torrent\" -O \"${torrent.name}.torrent\"",
+  "torrentLinkTemplate": "wget \"${shift.torrentLink}${torrent.hashString}.torrent\" -O \"${torrent.name}.torrent\"",
   "torrentLinkTemplateEnabled": false,
   "trackers": ""
 }
