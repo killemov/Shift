@@ -3051,14 +3051,12 @@ const indentValue = "calc(0em + 4px);"
 const complete = renderPercentage( 1 );
 
 function renderFiles( torrent ) {
-  const torrentDone = 1.0 === torrent.percentDone;
-
   const s = globals.shift.settings;
-  var folderLink = s.folderLinkEnabled ? s.folderLink : null;
-  if( !torrentDone && globals.shift.session[ "incomplete-dir-enabled" ] ) {
-    folderLink = s.incompleteFolderLinkEnabled ? s.incompleteFolderLink : null;
+  var folderLink = s.folderLinkEnabled && s.folderLink;
+  if( 1.0 !== torrent.percentDone && globals.shift.session[ "incomplete-dir-enabled" ] ) {
+    folderLink = s.incompleteFolderLinkEnabled && s.incompleteFolderLink;
   }
-  folderLink = folderLink.resolve( torrent );
+  folderLink = folderLink && folderLink.resolve( torrent );
 
   const _id = function( row ) {
     const id = row.id.split( "_" );
