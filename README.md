@@ -1,5 +1,9 @@
 Shift is a minimalistic approach to maximum control of your Transmission.
 ===
+
+> [!WARNING]
+> There are some major changes in the works for Shift. These changes are planned to be pushed on 2024.07.14. If you have made changes to shift.js, try to move these changes to shift_gear.js before your next pull if possible. It is very likely that automatic merging with your code will fail.
+
 Shift is a web interface for transmission-daemon. It is a complete implementation of the [Transmission RPC specification](https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md). It handles 10k+ torrents so you can manage all of your hosted Linux distribution torrents with a browser.
 
 *Shift is targeted at Mozilla Firefox with degraded and untested functionality for other or older browsers.*
