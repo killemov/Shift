@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2023 Killemov.
+ * © 2024 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -38,10 +38,8 @@ led {
   color: #3F3F3F;
   font-size: 1.1em;
   font-weight: 900;
-  height: 12px;
-  margin: 2px;
+  margin: -1px 4px 1px 4px;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
-  width: 12px;
 }
 
 led.added,
@@ -60,6 +58,7 @@ led.loaded {
   line-height: 12px;
 }
 
+led.close,
 led.loading {
   line-height: 0.6em;
   text-indent: 0.15em;
@@ -106,18 +105,18 @@ select {
   font-size: 11pt;
 }
 
-ul#menu {
+menu#menu {
   width: calc( 100% - 18em );
 }
 
-body.box ul#menu {
+body.box menu#menu {
   background-color: #EFEFEF;
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border: 1px solid #D5D5D5;
   border-radius: 4px;
 }
 
-ul#menu li {
+menu#menu li {
   background-color: #5DA941;
   background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
   border-color: #5DA941 #9BE281 #9BE281 #5DA941;
@@ -130,20 +129,20 @@ ul#menu li {
   text-shadow: 0 1px 0 rgba( 0, 0, 0, 0.15 );
 }
 
-html.dark ul#menu li {
+html.dark menu#menu li {
   color: #FFFFFF;
 }
 
-ul#menu li.selected {
+menu#menu li.selected {
   color: #FFFFFF;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
 }
 
-html.dark ul#menu li.selected {
+html.dark menu#menu li.selected {
   color: #3F3F3F;
 }
 
-ul#menu li.sub {
+menu#menu li.sub {
   clear: right;
   float: left;
 }
@@ -186,13 +185,13 @@ html.dark .popup {
   margin-left: 8px;
 }
 
-.popup ul li {
+.popup menu li {
   background-color: #EFEFEF;
   background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
   border: 1px solid #D5D5D5;
 }
 
-.popup ul li:hover {
+.popup menu li:hover {
   background-color: #5DA941;
   background-image: linear-gradient( -8deg, #5DA941, #9BE281 );
   border: 1px solid #5DA941;
@@ -201,6 +200,14 @@ html.dark .popup {
 
 .popup input.styled {
   border: 1px solid #D5D5D5;
+}
+
+li#high, li#normal, li#low, li#none, li#folder {
+  padding: 0;
+}
+
+div#popupFile led {
+  margin: 2px;
 }
 
 div#popupUpload > div:last-child led:first-of-type {
@@ -214,6 +221,7 @@ div#popupUpload > div:last-child button:first-of-type {
 
 led#port-is-open {
   margin-right: -4px;
+  margin-top: 2px;
 }
 
 .styled {
@@ -222,8 +230,16 @@ led#port-is-open {
   text-align: left;
 }
 
+a:focus,
+span[tabindex]:focus,
+led[tabindex]:focus,
+.dialog:focus,
 .styled:focus {
   outline: 2px solid #5DA941;
+}
+
+table#torrentTable span[tabindex]:focus {
+  outline: 4px solid #5DA941;
 }
 
 .filter .styled {
@@ -244,6 +260,7 @@ button.styled {
   color: #FFFFFF;
   font: inherit;
   margin: 2px;
+  padding: 0.5em;
   min-width: 8em;
   text-shadow: 0 -1px 0 rgba( 0, 0, 0, 0.15 );
 }
@@ -274,12 +291,22 @@ select.styled option:hover {
   border: 1px solid #D5D5D5;
 }
 
+div#popupAdd label#dir {
+  margin-left: 22px;
+}
+
+div#popupAdd input.styled {
+  border: 1px solid #D5D5D5;
+  width: 244px;
+}
+
 div#popupAdd div.pathselect.styled {
-  width: 345px;
+  width: 374px;
 }
 
 div#popupDialog div.pathselect.styled {
-  width: calc(100% - 30px);
+  margin-bottom: 4px;
+  width: calc(100% - 38px);
 }
 
 div.upload span {
@@ -290,7 +317,6 @@ div.upload span {
 table {
   border: none;
   border-radius: 4px;
-  table-layout: fixed;
 }
 
 table thead tr th {
@@ -345,7 +371,7 @@ col.lastAnnounceTime, col.nextAnnounceTime, col.lastScrapeTime, col.nextScrapeTi
 }
 
 col.corruptEver, col.length, col.sizeWhenDone, col.uploadedEver {
-  width: 84px;
+  width: 88px;
 }
 
 col.menu, col.priority {
@@ -418,6 +444,11 @@ body.fixed div#stats {
   margin-right: 12px;
 }
 
+div#stats label {
+  width: 40px;
+  margin-right: 8px;
+}
+
 table.keyvalue div.pathselect {
   margin-left: 4px;
   width: calc(100% - 4px);
@@ -461,4 +492,27 @@ table#trackerTable tfoot tr td textarea.styled {
 
 table#trackerTable tfoot tr td textarea.styled.list {
   height: 9em;
+}
+
+img.mimeType {
+  filter: grayscale(1);
+}
+
+led.open {
+  line-height: 0.65em;
+}
+
+progress {
+  background-image: linear-gradient( -8deg, #EFEFEF, #FCFCFC );
+  border: 1px inset lightgray;
+  border-radius: 4px;
+}
+
+progress::-moz-progress-bar {
+  background-image: linear-gradient(-8deg, rgb(93, 169, 65), rgb(155, 226, 129));
+}
+
+html.shift table#torrentTable tbody span.labels {
+  margin-bottom: -16px;
+  margin-top: -9px;
 }

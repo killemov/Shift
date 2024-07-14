@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2023 Killemov.
+ * © 2024 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -17,12 +17,6 @@
 
 html.base a {
   color: purple;
-}
-
-html.base a#license {
-  bottom: 4px;
-  left: 8px;
-  position: absolute;
 }
 
 html {
@@ -72,72 +66,115 @@ html.base.dark {
 body {
   background-color: inherit;
   margin: 0;
+  min-height: 600px;
+  overflow-x: hidden;
   padding: 0;
 }
 
 h1 {
-  margin: 8px 0;
+  margin: 0;
   text-align: center;
 }
 
-ul#menu {
+menu {
   margin: 0;
   padding: 0;
 }
 
-body.box ul#menu {
+body.box menu#menu {
   margin: 8px;
 }
 
-ul#menu li {
+button.styled,
+menu#menu li {
   background-color: lightgray;
-  display: inline-block;
-  padding: 0.5em;
-}
-
-ul#menu li:hover {
   cursor: pointer;
+  display: inline-block;
+  font: inherit;
+  line-height: 32px;
+  min-width: 64px;
+  padding: 0 8px;
 }
 
-html.base ul#menu li.selected {
+html.base menu#menu li {
+  outline-offset: -2px;
+}
+
+html.base menu#menu li:focus {
+  outline: 2px solid purple;
+}
+
+html.base menu#menu li.selected {
   color: white;
   background: purple;
 }
 
-.popup div.menuSpacer {
-  height: 1em;
-  margin: 0;
-  padding: 0;
+html.base menu#menu li.selected:focus {
+  outline: 2px solid lightgray;
+}
+
+html.base button.styled {
+  border: none;
+  line-height: 32px;
+  min-width: 64px;
+  outline-offset: -2px;
+}
+
+div.popup button.styled {
+  float: right;
 }
 
 body.box th#filterContainerCell {
   display: none;
 }
 
-body.box div#filterContainer {
-  margin: 8px;
-}
-
 div.filter {
-  margin: 2px 8px;
+  margin: 2px 0;
   white-space: nowrap;
 }
 
-span.filterInput {
-  width: 272px;
+div.filterInput {
   display: inline-block;
 }
 
 label {
   display: inline-block;
-  margin-right: 0.5em;
+  font-weight: bold;
+  margin: 0px 4px;
+  white-space: nowrap;
+}
+
+led + label {
+  margin-left: 0px;
+}
+
+div#stats label {
+  margin-right: 8px;
+  text-align: right;
+  width: 4em;
+}
+
+div.filter > label {
+  margin-right: 8px;
+}
+
+label#newLabel,
+label:first-child {
   text-align: right;
   width: 6em;
 }
 
+progress {
+  background-color: lightgray;
+  width: 100%;
+}
+
+progress::-moz-progress-bar {
+  background-color: purple;
+}
+
 div.upload {
   max-width: 600px;
-  padding: 3px 4px 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -150,6 +187,7 @@ div.name {
 div#outside {
   display: none;
   height: 100%;
+  z-index: 2;
   left: 0;
   position: fixed;
   top: 0;
@@ -178,8 +216,11 @@ div#popups {
 }
 
 .dialog {
+  overflow: scroll;
   padding: 8px;
   position: fixed;
+  max-height: 80%;
+  max-width: 80%;
   min-width: 320px;
 }
 
@@ -200,38 +241,57 @@ div.dialog > div:last-child:after {
   clear: both;
 }
 
-.popup ul {
-  display: block;
-  margin: 0;
-  padding: 0;
-}
-
-.popup ul li {
-  display: block;
-  margin: 0;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-html.base .popup ul li:hover {
+.popup menu li {
   cursor: pointer;
+  display: block;
+  padding: 0 8px;
 }
 
-html.base .popup ul li:hover {
+html.base .popup menu li:hover {
   background-color: lightgray;
   color: purple;
+}
+
+.popup menu div.space {
+  height: 8px;
+}
+
+html.base .popup menu div.space {
+  background-color: purple;
+}
+
+html.base .popup menu div.space:hover {
+  background-color: white;
 }
 
 div#popupAbout {
   text-align: center;
 }
 
+div#popupAbout div:last-child {
+  height: 32px;
+  width: 100%;
+}
+
+div#popupAbout div:last-child .styled {
+  float: right;
+}
+
+div#popupAdd label {
+  width: 48px;
+}
+
+div#popupAdd led {
+  margin-right: 4px;
+}
+
 div#popupAdd input[readonly="readonly"].styled {
   cursor: pointer;
 }
 
-div#popupAdd span#labelDir {
-  padding-left: 18px;
+div#popupAdd label#dir {
+  text-align: left;
+  margin-left: 17px;
 }
 
 html.base div#popupAdd div.pathselect {
@@ -239,7 +299,7 @@ html.base div#popupAdd div.pathselect {
 }
 
 html.base div#popupDialog div.pathselect {
-  width: calc(100% - 32px);
+  width: calc(100% - 36px);
 }
 
 div#popupBatchRename input.styled,
@@ -258,19 +318,21 @@ div#popupSubstitute span.example {
 
 div#popupBatchRename input + led,
 div#popupSubstitute input + led {
-  margin-left: 8px;
-  margin-right: -1px;
+  margin: 0 -1px 0 8px;
 }
 
-div#popupSubstitute led + span.substitute {
-  margin-left: 4px;
-  margin-right: 1em;
-  width: unset;
+html.base div.popup > div:last-child led {
+  margin-left: 16px;
+  margin-right: 4px;
 }
 
-html.base div#popupUpload > div:last-child led,
-html.base div#popupUpload > div:last-child button:first-of-type {
-  margin-left: 8px;
+html.base div.popup > div:last-child button:first-child,
+html.base div.popup > div:last-child led:first-child {
+  margin-left: 0px;
+}
+
+html.base div.popup > div:last-child button:first-of-type {
+  margin-left: 16px;
 }
 
 div#uploads {
@@ -284,8 +346,6 @@ div#paths {
   display: block;
   min-height: 8em;
   min-width: 314px;
-  margin-bottom: 0px;
-  padding: 0px 4px;
   line-height: 1.3em;
   overflow: auto;
   width: unset;
@@ -309,26 +369,30 @@ html.base led#port-is-open {
   margin-top: 4px;
 }
 
-div.additional span.label {
+div.additional label {
   display: inline-block;
-  width: 2em;
+  width: 28px;
 }
 
 html.base div.additional input {
-  width: calc(100% - 2em - 6px);
+  width: calc(100% - 28px - 6px);
 }
 
 html.base div.additional select {
-  width: calc(100% - 2em);
+  width: calc(100% - 28px);
 }
 
 html.base div.additional led {
-  margin-left: 10px;
+  margin: 0 4px 0 10px;
 }
 
 li#high, li#normal, li#low, li#none {
   display: inline-block;
-  padding: 0;
+  padding: 0 4px;
+}
+
+li#folder {
+  padding: 0 4px;
 }
 
 .styled {
@@ -341,12 +405,20 @@ html.base .styled {
   outline-offset: -1px;
 }
 
+html.base a:focus,
+html.base span[tabindex]:focus,
+html.base led[tabindex]:focus,
+html.base .dialog:focus,
 html.base .styled:focus {
   outline: 2px solid purple;
 }
 
-.filter .styled {
-  margin-right: 1em;
+html.base table#torrentTable span[tabindex]:focus {
+  outline: 4px solid purple;
+}
+
+html.base .filter select.styled {
+  margin-right: 3px;
 }
 
 input.styled.number {
@@ -354,23 +426,8 @@ input.styled.number {
   width: 6em;
 }
 
-button.styled {
-  background-color: lightgray;
-  cursor: pointer;
-  font: inherit;
-  padding: 0.5em;
-}
-
-html.base button.styled {
-  outline-offset: -2px;
-}
-
-div.popup button.styled {
-  float: right;
-  margin-left: 8px;
-}
-
-div#filterContainer input.styled[type=text] {
+div#filterContainer input.styled[type="text"] {
+  background-color: inherit;
   text-indent: 4px;
 }
 
@@ -408,28 +465,29 @@ led {
   font-size: 12pt;
   height: 12px;
   line-height: 11px;
-  margin: 4px;
+  margin-top: -4px;
   overflow: hidden;
   text-align: center;
-  vertical-align: text-top;
+  vertical-align: middle;
   width: 12px;
 }
 
-led:hover {
+led.close {
+  line-height: 0.5em;
+  text-indent: 0.05em;
+}
+
+led.open {
+  line-height: 0.5em;
+}
+
+button,
+led {
   cursor: pointer;
 }
 
-led[readonly]:hover {
+led[readonly] {
   cursor: auto;
-}
-
-html.base div.popup led:first-child,
-html.base td led:first-child {
-  margin-left: 0px;
-}
-
-html.base table.keyvalue led {
-  margin-bottom: 3px;
 }
 
 html.base led.added {
@@ -438,7 +496,7 @@ html.base led.added {
 
 html.base led.duplicate {
   background-color: red;
-  font-size: 11pt;
+  font-size: 14px;
   line-height: 12px;
 }
 
@@ -448,13 +506,11 @@ html.base led.loading {
   text-indent: 2px;
 }
 
-led.low {
-}
-
 @keyframes blinker {
   50% { opacity: 0; }
 }
 
+led.checking,
 led.loading,
 led.processing,
 led.uploading {
@@ -493,13 +549,7 @@ html.base led.uploading {
 div.pathselect.styled {
   border: medium none;
   display: inline-block;
-  margin: 0px;
-  padding: 0px;
   width: 100%
-}
-
-div.pathselect.styled > .styled {
-  margin: 0;
 }
 
 html.base div.pathselect.styled > input.styled {
@@ -527,6 +577,7 @@ span.substitute {
 
 table {
   border-collapse: collapse;
+  table-layout: fixed;
   width: 100%;
 }
 
@@ -534,19 +585,30 @@ html.base table {
   border: 1px solid lightgray;
 }
 
-col.menu, col.priority {
+col.key {
+  width: 25%;
+}
+
+col.menu,
+col.priority {
+  width: 22px;
+}
+
+col.primary-mime-type {
   width: 20px;
 }
 
-table#pathTable {
+col.name {
+  width: 60%;
+}
+
+table#pathTable,
+table#ruleTable {
   width: unset;
 }
 
-html.base table#pathTable {
-  margin: -1px 0px -1px -5px;
-}
-
-html.base table#pathTable thead tr {
+html.base table#pathTable thead tr,
+html.base table#ruleTable thead tr {
   background-color: lightgray;
 }
 
@@ -570,11 +632,6 @@ table#pathTable td.total {
   white-space: nowrap;
 }
 
-table#peerTable,
-table#webseedTable {
-  margin-top: 2em;
-}
-
 td,
 th {
   padding: 0 ;
@@ -592,16 +649,30 @@ html.base th {
   padding: 0 4px;
 }
 
-table#torrentTable th:not(:first-child) {
+table#torrentTable tr.header th {
   cursor: ns-resize;
+}
+
+table#torrentTable tr.header th led {
+  margin-left: 4px;
+}
+
+led.clipboard,
+table#torrentTable th led {
+  margin-left: 16px;
+  margin-right: 4px;
+}
+
+table#torrentTable th#h_menu led {
+  margin-left: 0;
 }
 
 table#torrentTable th#filterContainerCell {
   font-weight: normal;
 }
 
-table#torrentTable th#filterContainerCell label {
-  font-weight: bold;
+td.queuePosition {
+  cursor: pointer;
 }
 
 table.keyvalue {
@@ -622,17 +693,58 @@ table.keyvalue td#s_incomplete-dir {
   padding: 0px;
 }
 
-html.base table.keyvalue td input.styled,
-html.base table.keyvalue td select.styled,
-html.base table.keyvalue td textarea.styled,
-html.base table#trackerTable textarea.styled {
-  border: unset;
+html.base table.keyvalue div.pathselect > .styled {
+  border: none;
+  margin: -1px;
+}
+
+html.base table.keyvalue td > input.styled:first-child,
+html.base table.keyvalue td > select.styled:first-child,
+html.base table.keyvalue td > textarea.styled,
+html.base table#trackerTable textarea.styled:first-child {
+  border: none;
   margin: 0px -4px;
   padding: 0px 4px;
 }
 
-html.base table.keyvalue div.pathselect > .styled {
-  margin: 0px;
+html.base table#ruleTable col.field {
+  min-width: 132px;
+}
+
+html.base table#ruleTable col.matches {
+  min-width: 256px;
+}
+
+html.base table#ruleTable col.labels {
+  min-width: 36px;
+}
+
+html.base table#ruleTable td > input.styled:first-child,
+html.base table#ruleTable td > select.styled:first-child,
+html.base table#ruleTable td > textarea.styled {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+html.base table#ruleTable td > select.styled:first-child {
+  margin-right: 8px;
+}
+
+html.base table#ruleTable td > textarea.styled {
+  line-height: 1em;
+}
+
+html.base table.keyvalue td button.styled {
+  margin: -1px 0;
+}
+
+html.base table.keyvalue td > button.styled:first-child {
+  margin-left: -5px;
+}
+
+html.base table#ruleTable td > button.styled {
+  margin-left: -1px;
 }
 
 html.base table.keyvalue select.styled {
@@ -646,28 +758,25 @@ td.flagStr {
   text-align: left;
 }
 
-table#trackerTable tr.tier {
-  height: 8px;
+table#trackerTable col.announce {
+  width: 40%;
 }
 
-table#trackerTable tr.tier td {
+table#trackerTable tr.tier {
+  background-color: lightgray;
+  height: 4px;
 }
 
 td.announce,
 td.errorString,
 td.name,
-td.status,
-td.announce {
+td.status {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
 }
 
-html.base table.keyvalue button {
-  margin-left: -4px;
-}
-
-html.base table.keyvalue button + button {
+html.base table.keyvalue td button + button {
   margin-left: 0px;
 }
 
@@ -675,18 +784,40 @@ table.keyvalue input {
   width: 100%;
 }
 
-td#d_labels input {
-  width: 8em;
+td#s_labelMaticRules,
+td#d_labels,
+td#s_labels,
+td#s_paths {
+  padding: 0;
+}
+
+html.base td#s_labelMaticRules table,
+html.base td#s_paths table {
+  margin: -1px;
+}
+
+html.base td#s_labelMaticRules table td {
+  padding: 0;
+}
+
+td#s_labelMaticEnabled led {
+  margin-right: 28px;
+}
+
+td#s_minSeeders input {
+  margin-right: 8px;
+  width: 2em;
 }
 
 html.base td#s_trackers led:first-of-type {
-  margin-left: 0px;
+  margin-right: 4px;
 }
 
 td#s_styleSheet led,
 td#s_trackers led + led,
 td#s_trackers button {
-  margin-left: 1em;
+  margin-left: 16px;
+  margin-right: 4px;
 }
 
 html.base td#s_trackers textarea {
@@ -715,16 +846,18 @@ body.fixed div#header {
   position: fixed;
   top: 0px;
   width: 100%;
+  z-index: 1;
 }
 
 body.fixed > div#content {
-  margin-top: 102px;
+  margin-top: 98px;
 }
 
 body.box div#header {
   position: fixed;
   right: 9px;
   width: 372px;
+  z-index: 1;
 }
 
 html.base body.box div#header {
@@ -738,14 +871,12 @@ table.keyvalue td#d_pieces {
 body.box div#stats {
   cursor: move;
   float: none;
-  margin: 8px;
   width: unset;
 }
 
 canvas {
   border: 0px solid rgba(255, 255, 255, 0); /* marker for NO color, creates HSL gradient */
   height: 1.1em;
-  margin: 0;
   width: 100%;
 }
 
@@ -770,19 +901,23 @@ html.base table#fileTable th canvas.pieces {
   margin-bottom: -4px;
 }
 
+div.reloaded {
+  text-align: center;
+}
+
 div#stats span {
   display: inline-block;
   font-weight: inherit;
   font-size: inherit;
 }
 
-div#stats span.label {
-  width: 3.5em;
-}
-
 td#d_downloadDir {
   overflow-x: hidden;
   white-space: nowrap;
+}
+
+led#d_move {
+  margin-right: 4px;
 }
 
 html.base td#d_downloadDir div.pathselect {
@@ -810,28 +945,110 @@ div.torrents {
   white-space: nowrap;
 }
 
-table#torrentTable span.labels {
-  float: right;
-  white-space: nowrap;
+img.mimeType {
+  cursor: pointer;
+  height: 16px;
+  margin: -3px -4px 0 -3px;
+  vertical-align: middle;
+  width: 16px;
 }
 
-.labels span.label {
-  background-color: lightgray;
-  margin-left: 0.5em;
-  padding: 0 0.5em;
+#detailsTable img.mimeType {
+cursor: auto;
 }
 
-.labels span.label.example {
+img.mimeType.application\/octet-stream {
+  display: none;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+img.hover {
+  border: 1px solid rgba( 255, 255, 255, 0.5 );
+  cursor: pointer;
+  display: block;
+  height: auto;
+  margin-top: 1.35em;
+  max-height: 128px;
+  max-width: 128px;
+  opacity: 0;
+  position: absolute;
+  width: auto;
+}
+
+html.dark img.hover {
+  -moz-filter: invert( 85% );
+  -ms-filter: invert( 85% );
+  -o-filter: invert( 85% );
+  -webkit-filter: invert( 85% );
+  filter: invert( 85% );
+}
+
+td.hover > img.hover {
+  animation: fade 0.5s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
+}
+
+td.hover:hover > img.hover {
+  opacity: 1;
+}
+
+html.base span.labels span.border {
+  margin-top: 2px;
+}
+
+html.base span.labels span.border:focus {
   background-color: purple;
 }
 
-.labels span.label.example:before {
-  background-image: url( "" );
-  content: "";
-  position: absolute;
-  pointer-events: none;
+html.base span.labels span.label {
+  filter: grayscale();
 }
 
-table#detailsTable .labels .label {
-  cursor: pointer;
+html.base span.labels span.border:focus span.label {
+  mix-blend-mode: overlay;
+}
+
+table#torrentTable tr.header th span.labels {
+  float: right;
+}
+
+div#popupRevert {
+  width: 60%;
+}
+
+div#popupRevert div.scroll {
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+table#revertTable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+table#revertTable col.key {
+  width: 200px;
+}
+
+table#revertTable col.value {
+  width: calc(50% - 122px);
+}
+
+table#revertTable col.local,
+table#revertTable col.remote {
+  width: 22px;
+}
+
+table#revertTable td {
+  text-align: left;
+  white-space: wrap;
+  word-break: break-all;
 }

@@ -1099,9 +1099,7 @@ var Enumerable = (function() {
 function $A(iterable) {
   if (!iterable) return [];
   if ('toArray' in Object(iterable)) return iterable.toArray();
-  var length = iterable.length || 0, results = new Array(length);
-  while (length--) results[length] = iterable[length];
-  return results;
+  return Array.prototype.slice.call( iterable );
 }
 
 
@@ -1111,7 +1109,7 @@ function $w(string) {
   return string ? string.split(/\s+/) : [];
 }
 
-Array.from = $A;
+Array.from = Array.from || $A;
 
 
 (function() {
@@ -2378,8 +2376,16 @@ Ajax.PeriodicalUpdater = Class.create(Ajax.Base, {
   }
 
   function insertContentAt(element, content, position) {
-    position   = position.toLowerCase();
-    var method = INSERTION_TRANSLATIONS[position];
+    var method;
+    if( Object.isNumber( position ) || !isNaN( position ) ) {
+      method = function( element, node ) {
+        element.insertBefore( node, element.childNodes[ position++ ] );
+      }
+    }
+    else {
+      position = position.toLowerCase();
+      method = INSERTION_TRANSLATIONS[position];
+    }
 
     if (content && content.toElement) content = content.toElement();
     if (Object.isElement(content)) {

@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2023 Killemov.
+ * © 2024 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -64,14 +64,14 @@ div#header {
   background-color: unset;
 }
 
-ul#menu {
+menu#menu {
   display: block;
   font-weight: bold;
   margin: 4px 2px;
   padding: 0;
 }
 
-ul#menu li {
+menu#menu li {
   background-color: #00A000;
   border-color: #00F000 #004000 #004000 #00F000;
   border-style: solid;
@@ -83,13 +83,13 @@ ul#menu li {
   text-align: center;
 }
 
-ul#menu li.selected {
+menu#menu li.selected {
   background-color: #004000;
   border-color: #004000 #00F000 #00F000 #004000;
   color: #00F000;
 }
 
-ul#menu li.sub {
+menu#menu li.sub {
   padding: 0.2em 1em;
   vertical-align: bottom;
 }
@@ -107,7 +107,7 @@ div#stats span {
   font-size: inherit;
 }
 
-div#stats span.label {
+div#stats label {
   width: 3.5em;
 }
 
@@ -116,7 +116,7 @@ div#filterContainer {
 }
 
 label {
-  width: 4em;
+  min-width: 4em;
 }
 
 .popup {
@@ -141,13 +141,13 @@ label {
   margin: 0 0 0 2px;
 }
 
-.popup ul {
+.popup menu {
   display: block;
   padding: 0;
   margin: 0;
 }
 
-.popup ul li {
+.popup menu li {
   border: 1px solid #004000;
   display: block;
   font-weight: bold;
@@ -156,7 +156,7 @@ label {
   margin: 0;
 }
 
-.popup ul li:hover {
+.popup menu li:hover {
   background-color: #00F000;
   color: black;
 }
@@ -167,13 +167,22 @@ div#popupAbout {
   width: 424px;
 }
 
+a#license {
+  background-color: #00F000;
+  height: 31px;
+}
+
+a#license img {
+  mix-blend-mode: multiply;
+}
+
 div#popupAdd {
   position: fixed;
   width: 372px;
 }
 
-div#popupAdd span#labelDir {
-  padding-left: 16px;
+div#popupAdd input.styled {
+  width: 198px;
 }
 
 table.keyvalue div.pathselect > input.styled {
@@ -198,11 +207,11 @@ td#downloadDir div.pathselect.styled > select.styled {
 }
 
 div#popupAdd div.pathselect.styled {
-  width: 324px;
+  width: calc(100% - 78px);
 }
 
 div#popupDialog div.pathselect.styled {
-  width: calc(100% - 24px);
+  width: calc(100% - 64px);
 }
 
 div#popupAdd div.pathselect.styled > input.styled,
@@ -224,8 +233,12 @@ led#port-is-open {
   margin-right: 8px;
 }
 
+a:focus,
+span[tabindex]:focus,
+led[tabindex]:focus,
+.dialog:focus,
 .styled:focus {
-  outline: 2px solid rgba( 0, 255, 0, 0.5 ) !important;
+  outline: 2px solid rgb(0, 255, 0);
 }
 
 input.styled,
@@ -288,7 +301,6 @@ led {
   display: inline-block;
   font-size: 14pt;
   height: 12px;
-  margin: 2px;
   width: 12px;
 }
 
@@ -447,6 +459,22 @@ td.menu {
   text-align: left;
 }
 
+span.border {
+  background-color: green;
+}
+
+span.label {
+  mix-blend-mode: overlay;
+}
+
+html.terminal .label.trash::before {
+  color: black;
+}
+
+table#torrentTable tbody span.border {
+  margin-top: 0;
+}
+
 table#shiftTable td#s_trackers textarea {
   resize: vertical;
   min-height: 3em;
@@ -486,6 +514,10 @@ span.drop {
 
 td#d_errorString {
   font-weight: bold;
+}
+
+img.hover {
+  filter: contrast(0.5) sepia(100%) hue-rotate(60deg) brightness(0.9) saturate(4);
 }
 
 /* Wellbutrin font by Karen Clemens & Apostrophe */

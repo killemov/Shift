@@ -1,7 +1,7 @@
 /**
  * Shift: a Transmission web interface.
  *
- * © 2023 Killemov.
+ * © 2024 Killemov.
  *
  * This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a
@@ -79,18 +79,18 @@ select {
   font-size: 11pt;
 }
 
-ul#menu {
+menu#menu {
   border-radius: 8px;
   display: block;
   font-weight: bold;
 }
 
-body.box ul#menu {
+body.box menu#menu {
   background-color: rgba( 255, 255, 255, 0.25 );
   border-radius: 8px;
 }
 
-ul#menu li {
+menu#menu li {
   background-color: rgba( 255, 255, 255, 0.25 );
   border: 1px solid rgba( 255, 255, 255, 0.5 );
   border-radius: 8px;
@@ -105,23 +105,23 @@ ul#menu li {
   width:96px;
 }
 
-ul#menu li:hover {
+menu#menu li:hover {
   background-color: rgba( 255, 255, 255, 0.5 );
   box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 ), inset 0 0 8px rgba( 0, 255, 0, 0.5 );
   color: #FFFFFF;
 }
 
-ul#menu li.selected:hover {
+menu#menu li.selected:hover {
   background-color: rgba( 255, 255, 255, 0.75 );
 }
 
-ul#menu li.selected {
+menu#menu li.selected {
   background-color: rgba( 255, 255, 255, 0.75 );
   color: #FFFFFF;
   text-shadow: -1px -1px 4px #3F3F3F, 1px -1px 4px #3F3F3F, -1px 1px 4px #3F3F3F, 1px 1px 4px #3F3F3F;
 }
 
-ul#menu li.sub {
+menu#menu li.sub {
   padding: 0.2em 1em;
 }
 
@@ -174,7 +174,7 @@ div#outside {
   float: unset;
 }
 
-.popup ul li {
+.popup menu li {
   border-color: #7F7F7F #000000 #000000 #7F7F7F;
   border-style: solid;
   border-width: 1px;
@@ -182,7 +182,7 @@ div#outside {
   padding: 8px;
 }
 
-.popup ul li:hover {
+.popup menu li:hover {
   background-color: #BFBFBF !important;
   color: #FFFFFF;
 }
@@ -203,11 +203,10 @@ div#popupAdd button.styled {
   margin: 2px 0 0 8px;
 }
 
-div#popupAdd span#labelDir {
+div#popupAdd label#dir {
   display: inline-block;
   line-height: 38px;
-  margin-left: 26px;
-  padding-left: 22px;
+  margin: 0 0 0 46px;
 }
 
 div.pathselect.styled > .styled {
@@ -227,8 +226,8 @@ div.pathselect.styled {
 }
 
 div#popupAdd div.pathselect.styled {
-  margin-left: 8px;
-  width: 334px;
+  margin-left: 4px;
+  width: calc(100% - 106px);
 }
 
 led#port-is-open {
@@ -248,7 +247,12 @@ led#port-is-open {
   transition: box-shadow 0.4s ease 0s, color 0.4s ease 0s;
 }
 
+a:focus,
+span[tabindex]:focus,
+led[tabindex]:focus,
+dialog:focus,
 .styled:focus {
+  box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 );
   outline: 2px solid rgba( 0, 255, 0, 0.5 ) !important;
 }
 
@@ -262,10 +266,12 @@ led#port-is-open {
 
 .filter input.styled {
   background-color: transparent;
+  width: 234px;
 }
 
 input.styled.number {
   text-align: right;
+  width: 70px;
 }
 
 button.styled {
@@ -493,7 +499,7 @@ table#torrentTable thead th#h_name {
   display: flex;
 }
 
-table#torrentTable thead th#h_name span.labels {
+html.touch table#torrentTable thead th#h_name span.labels {
   position: absolute;
   right: 16px;
 }
@@ -538,6 +544,10 @@ table#torrentTable tbody tr.active:hover {
 table#torrentTable tbody tr.active:hover td {
   background-color: rgba( 255, 255, 255, 0.75 );
   box-shadow: 0 0 16px rgba( 0, 255, 0, 0.8 ), inset 0 0 16px rgba( 0, 255, 0, 0.5 );
+}
+
+html.touch table#torrentTable tbody span.labels {
+  margin: -4px 0 0 0;
 }
 
 table#peerTable {
@@ -661,17 +671,17 @@ body.box div#header {
   width: 300px;
 }
 
-body.box ul#menu {
+body.box menu#menu {
   background-color: unset;
   display: block;
 }
 
-body.box ul#menu li {
+body.box menu#menu li {
   display: block;
   margin: 8px;
 }
 
-body.box ul#menu li.sub {
+body.box menu#menu li.sub {
   margin-left: 64px;
 }
 
@@ -708,7 +718,6 @@ div#stats {
   border-radius: 8px;
   float: right;
   font-size: 8pt;
-  font-weight: bold;
   height: 48px;
   line-height: 10px;
   padding: 0 4px;
@@ -721,8 +730,8 @@ div#stats span {
   font-size: inherit;
 }
 
-div#stats span.label {
-  margin: 4px 0 0 4px;
+div#stats label {
+  margin: 4px 4px 0 0;
 }
 
 div.drop div led {
@@ -753,4 +762,8 @@ div.drop div led.added {
 
 div.drop div led.duplicate {
   background-color: #00FF00;
+}
+
+.label.trash::before {
+  color: lightgray;
 }
