@@ -6342,8 +6342,12 @@ document.observe( "dom:loaded", function() {
 
   doRequest( { url: "shift.json", evalJSON: "force", method: "get", onSuccess: function( response ) {
     const d = globals.shift.defaultSettings = response.responseJSON;
-    const l = localStorage.getItem( STORE_KEY ) && window.atob( localStorage.getItem( STORE_KEY ) ).evalJSON() || {};
-    const s = globals.shift.settings = Object.extend( Object.extend( Object.extend( {}, d ), l ), window.atob( retrieve( STORE_KEY ) ).evalJSON() );
+    const s = globals.shift.settings = function() {
+      const j = function( s ) {
+        return s && window.atob( s ).evalJSON() || {};
+      }
+      return Object.extend( Object.extend( Object.extend( {}, d ), j( localStorage.getItem( STORE_KEY ) ) ), j( retrieve( STORE_KEY ) ) );
+    } ();
 
     for( var k in d ) {
       var o = d[ k ];
