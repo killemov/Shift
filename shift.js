@@ -35,7 +35,7 @@ const UNITS = [ "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" ];
 const cssMapRexExp = /\.|%[0-9a-z]{2}/gi;
 const coverRegExp = /(front|cover|folder)/i;
 const imageRegExp = /\.(bmp|gif|jpe?g|png|svg|webp)$/i;
-const magnetNameRegExp = /&dn=(.*?)&?/;
+const magnetNameRegExp = /dn=(.*?)(&..=)/;
 const mimeTypeMapRegExp = /^(?!#)(\S*)\s+(\S*)/gm;
 const noMatchRegExp = /\0/;
 const noWordRegExp = /\\W/ig;
@@ -344,6 +344,9 @@ Object.extend( String.prototype, {
   },
   includes: String.prototype.includes || function( s ) {
     return -1 !== this.indexOf( s );
+  },
+  isMagnet: function() {
+    return this.startsWith( "magnet:" );
   },
   quote: function() {
     return this.includes( " " ) ? '"' + this + '"' : this;
@@ -5995,7 +5998,7 @@ function upload( uploads, target, start ) {
       switch( notifyUpload( response ) ) {
         case 1:
           u.update( "added" );
-          if( u.url && u.url.startsWith( "magnet:" ) ) {
+          if( u.url && u.url.isMagnet() ) {
             globals.magnets.push( t.id );
           }
           break;
@@ -6011,10 +6014,10 @@ function upload( uploads, target, start ) {
   }
 
   const _url = function( s ) {
-    var name = decodeURIComponent( s );
+    var n = decodeURIComponent( s );
     return {
       url: s,
-      name: name.startsWith( "magnet:" ) ? magnetNameRegExp.exec( name )[ 1 ] : getFilePart( name )
+      name: n.isMagnet() ? ( s = magnetNameRegExp.exec( n ) ) && s[ 1 ] || n.substring( n.indexOf( "dn=" ) + 3 ) : getFilePart( n )
     }
   }
 
