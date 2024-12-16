@@ -39,7 +39,7 @@ const magnetNameRegExp = /dn=(.*?)(&..=)/;
 const mimeTypeMapRegExp = /^(?!#)(\S*)\s+(\S*)/gm;
 const noMatchRegExp = /\0/;
 const noWordRegExp = /\\W/ig;
-const quotedRegExp = /\w+|"[^"]+"/g;
+const quotedRegExp = /\S+|"[^"]+"/g;
 const rgbaRegExp = /[\.\d]+/g;
 const templateRegExp = /\$\{.*?\}/g;
 const torrentRegExp = /(\b(https?|ftp|magnet):\/?\/?[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/ig;
