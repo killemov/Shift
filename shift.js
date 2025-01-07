@@ -4212,7 +4212,7 @@ function showTrackers( torrent ) {
     } );
 
     const tl = undefined === torrent.trackerList;
-    const trackerArea = rT( "styled " + ( tl ? "add" : "list" ) );
+    const trackerArea = rT( { class: "styled " + ( tl ? "add" : "list" ), id: "trackers", placeholder: "Add trackers here." } );
     trackerArea.value = torrent.trackerList || "" ;
 
     const p = Object.entries( {
@@ -4294,6 +4294,7 @@ function showTrackers( torrent ) {
   }
 
   renderTrackers();
+  $( "trackers" ).focus();
 
   const webseedTable = getTable( "webseedTable", trackerDiv, webseedColumns, undefined, function( t ) {
     torrent.webseeds.each( function( webseed ) {
@@ -5367,7 +5368,7 @@ function renderPage() {
           }
           d.replace.value = replace;
         }
-        const file = globals.currentTorrent.files.find( _searcher( search ) );
+        const file = globals.currentTorrent.files.find( a.batchrename._searcher( search ) );
         const fileName = file ? getFilePart( file.name ) : "";
         d.searchPreview.update( fileName );
         d.replacePreview.update( fileName.replace( search, replace ) );
@@ -5387,7 +5388,7 @@ function renderPage() {
         const search = d.search.value.toRegExp( d.isRegExp.value );
 
         const _find = function( torrents ) {
-          return torrents && torrents.find( globals.actions.substitute._searcher( search ) );
+          return torrents && torrents.find( a.substitute._searcher( search ) );
         };
 
         const t = _find( [ globals.currentTorrent ] ) || _find( globals.selected ) || ( d.selection.value ? null : _find( globals.torrents ) );
@@ -5564,7 +5565,7 @@ function renderPage() {
 
         const move = p.move.value;
         const _replace = function() {
-          const _searcher = globals.actions.substitute._searcher( search );
+          const _searcher = a.substitute._searcher( search );
           torrents.partitionBy( "downloadDir" ).shiftEach( function( batch, _next ) {
             if( !batch.find( _searcher ) ) {
               return _next();
