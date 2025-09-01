@@ -5468,6 +5468,14 @@ function renderPage() {
       } )
     },
     cancel: rCancel( "cancel" ),
+    check: {
+      _open: function() {
+        d.buttons.insert( d.cancel, d.action );
+        return globals.shift.settings.confirmCheck && globals.selected.some( function( t ) {
+          return 1.0 === t.percentDone || 0.0 === t.percentDone && 0 < t.sizeWhenDone;
+        } );
+      }
+    },
     paths: {
       paths: rD( { id: "paths", "class": "styled", contentEditable: "true", spellcheck: "false" } )
       .observe( "keydown", function( e ) {

@@ -1,4 +1,5 @@
 {
+  "confirmCheck": false,
   "confirmRemove": false,
   "confirmStartAll": true,
   "confirmStopAll": false,
