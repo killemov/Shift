@@ -6272,13 +6272,23 @@ document.observe( "dom:loaded", function() {
   globals.html.observe( "drop", function( e ) {
     e.stop();
 
-    const d = e.dataTransfer;
-    if( d && !isEmpty( d.files ) ) {
-      const files = Array.from( d.files );
-      return upload( isEmpty( files ) ? [ t.getData( "URL" ) ] : files );
+    const d = e.dataTransfer || Object.getPrototypeOf( e ).dataTransfer;
+    if( !d ) {
+      return;
     }
 
     if( !globals.drag ) {
+      if( !isEmpty( d.files ) ) {
+        return upload( Array.from( d.files ) );
+      }
+
+      for( const i of d.items ) {
+        if( "text/uri-list" === i.type ) {
+          return i.getAsString( function( url ) {
+            upload( url.match( torrentRegExp ) );
+          } );
+        }
+      }
       return;
     }
 
