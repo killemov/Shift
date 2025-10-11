@@ -6260,6 +6260,27 @@ document.observe( "dom:loaded", function() {
   // This is the catch-all element for clicking outside popups or modal dialogs.
   globals.body.insert( rD( { id: "outside" } ) );
 
+  const _upload = function( d ) {
+    if( !d ) {
+      return;
+    }
+
+    if( !isEmpty( d.files ) ) {
+      return upload( Array.from( d.files ) );
+    }
+
+    for( const i of d.items ) {
+      if( "text/plain" === i.type || "text/uri-list" === i.type ) {
+        return i.getAsString( function( url ) {
+          upload( url.match( torrentRegExp ).filter( function( s ) {
+            return !s.endsWith( "/announce" );
+          } ) );
+        } );
+      }
+    }
+  }
+
+
   /**
    * Handle the following dropped items:
    * - torrent file
@@ -6278,18 +6299,7 @@ document.observe( "dom:loaded", function() {
     }
 
     if( !globals.drag ) {
-      if( !isEmpty( d.files ) ) {
-        return upload( Array.from( d.files ) );
-      }
-
-      for( const i of d.items ) {
-        if( "text/uri-list" === i.type ) {
-          return i.getAsString( function( url ) {
-            upload( url.match( torrentRegExp ) );
-          } );
-        }
-      }
-      return;
+      return _upload( d );
     }
 
     const s = d.getData( "text" );
@@ -6360,6 +6370,15 @@ document.observe( "dom:loaded", function() {
     getRowTorrent( target, true );
     getSelected().shiftEach( fixLabels.curry( $( "addLabel" ).value, s ) );
     delete globals.drag;
+  } );
+
+  globals.html.observe( "paste", function( e ) {
+    if( [ "input", "textarea" ].includes( e.target.localName ) ) {
+      return;
+    }
+
+    e.stop();
+    _upload( e.clipboardData || Object.getPrototypeOf( e ).clipboardData );
   } );
 
   doRequest( { url: "shift.json", evalJSON: "force", method: "get", onSuccess: function( response ) {
