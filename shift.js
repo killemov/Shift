@@ -2522,6 +2522,9 @@ function showAddPopup( e ) {
   if( torrentRegExp.test( d.url.value ) ) {
     return;
   }
+  if( !d.isFile.value ) {
+    d.url.focus();
+  }
   if( globals.shift.settings.pasteMagnet && navigator.clipboard && navigator.clipboard.readText ) {
     navigator.clipboard.readText().then( function( text ) {
       if( d.url.value = text.match( torrentRegExp ) ) {
@@ -6197,7 +6200,6 @@ function handleKeyDown( e ) {
     preventDefault( e );
     return action( e );
   }
-  console.log( e );
 }
 
 function handleKeyUp( e ) {
@@ -6400,7 +6402,7 @@ document.observe( "dom:loaded", function() {
               if( !t.find( function( r2 ) {
                 return Object.equals( r1, r2 );
               } ) ) {
-                t.push( o );
+                t.push( r1 );
               }
             } );
 
