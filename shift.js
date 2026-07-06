@@ -6375,7 +6375,8 @@ document.observe( "dom:loaded", function() {
   } );
 
   globals.html.observe( "paste", function( e ) {
-    if( [ "input", "textarea" ].includes( e.target.localName ) ) {
+    const t = e.target;
+    if( [ "input", "textarea" ].includes( t.localName ) || [ "true", "plaintext-only" ].includes( t.contentEditable ) ) {
       return;
     }
 
