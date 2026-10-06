@@ -6275,7 +6275,7 @@ document.observe( "dom:loaded", function() {
       if( "text/plain" === i.type || "text/uri-list" === i.type ) {
         return i.getAsString( function( url ) {
           upload( url.match( torrentRegExp ).filter( function( s ) {
-            return !s.endsWith( "/announce" );
+            return s.startsWith( "magnet:" ) || !s.endsWith( "/announce" );
           } ) );
         } );
       }
